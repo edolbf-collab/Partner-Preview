@@ -1,0 +1,16 @@
+{
+  "product": "Tâmo On Partners Preview",
+  "version": "0.1",
+  "channel": "partners-preview",
+  "environment": "isolated-prototype",
+  "database": "not-connected",
+  "asaas": "sandbox-planned-disabled",
+  "real_money": false,
+  "released_at": "2026-08-03",
+  "notes": [
+    "Protótipo navegável das áreas do usuário, parceiro e administração.",
+    "Reservas simuladas apenas no navegador.",
+    "Integração Asaas ainda desativada.",
+    "Planejamento mestre incluído em docs/PLANEJAMENTO-MESTRE-TAMO-ON.md."
+  ]
+}

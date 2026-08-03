@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1f17">
+  <meta name="description" content="Protótipo isolado da futura área de parceiros do Tâmo On.">
+  <title>Tâmo On — Partners Preview 0.1</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sandbox-ribbon" role="status">
+    Ambiente de homologação · dados fictícios · nenhum pagamento real
+  </div>
+
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-lockup" aria-label="Tâmo On Partners Preview">
+        <div class="brand-symbol" aria-hidden="true">✓</div>
+        <div>
+          <div class="brand-name">Tâmo On</div>
+          <div class="brand-subtitle">Partners Preview 0.1</div>
+        </div>
+      </div>
+      <button class="icon-button" id="openReleaseNotes" aria-label="Informações da versão">i</button>
+    </header>
+
+    <section class="role-switcher" aria-label="Alternar área demonstrativa">
+      <button class="role-chip active" data-role="user">Usuário</button>
+      <button class="role-chip" data-role="partner">Parceiro</button>
+      <button class="role-chip" data-role="admin">Administração</button>
+    </section>
+
+    <main id="app" tabindex="-1"></main>
+  </div>
+
+  <dialog id="reservationDialog" class="dialog">
+    <form method="dialog" id="reservationForm">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">Reserva de teste</span>
+          <h2 id="reservationTitle">Confirmar horário</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="summary-card" id="reservationSummary"></div>
+
+      <label class="field">
+        <span>Vincular a um evento</span>
+        <select id="eventSelect">
+          <option value="">Não vincular agora</option>
+          <option value="pelada-quinta">Pelada de quinta-feira</option>
+          <option value="amistoso-sabado">Amistoso de sábado</option>
+        </select>
+      </label>
+
+      <div class="payment-preview">
+        <div>
+          <strong>Pagamento</strong>
+          <p>Será integrado ao Asaas Sandbox em uma versão posterior.</p>
+        </div>
+        <span class="status status-neutral">Desativado</span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="button ghost" value="cancel">Cancelar</button>
+        <button class="button primary" id="confirmReservation" value="default">Criar reserva de teste</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="infoDialog" class="dialog compact">
+    <form method="dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">Versão</span>
+          <h2>Partners Preview 0.1</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <p>Protótipo isolado da futura área de quadras e canchas parceiras. Não usa o banco da linha Beta 1.0 e não realiza chamadas para o Asaas.</p>
+      <ul class="plain-list">
+        <li>Área do usuário com busca, filtros e reserva simulada.</li>
+        <li>Portal do parceiro com agenda, espaços e indicadores.</li>
+        <li>Painel administrativo com aprovação e acompanhamento.</li>
+        <li>Backup do planejamento incluído na pasta <code>docs</code>.</li>
+      </ul>
+      <button class="button primary full" value="cancel">Entendi</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.preview.js"></script>
+  <script src="asaas-sandbox.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
