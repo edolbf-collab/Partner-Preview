@@ -321,3 +321,33 @@ code { color: #9ef1c4; }
 .action-dialog-body .muted-copy,
 .muted-copy { color: var(--muted); font-size: 13px; }
 .action-summary { margin-bottom: 14px; }
+
+
+/* Partners Preview 0.1.2 — busca simplificada, promoções e estados da reserva */
+.promotion-card { padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+.promotion-title { margin-top: 8px; font-size: 25px; line-height: 1.05; font-weight: 950; letter-spacing: -.035em; max-width: 320px; }
+.promotion-voucher { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px dashed rgba(244,184,74,.45); border-radius: 16px; background: rgba(244,184,74,.09); }
+.promotion-voucher strong { color: var(--amber); font-size: 19px; white-space: nowrap; }
+.promotion-voucher span { color: var(--muted); font-size: 11px; line-height: 1.35; }
+.slot.reservation-pending { color: var(--amber); border-color: rgba(244,184,74,.62); background: rgba(244,184,74,.14); }
+.slot.reservation-confirmed { color: var(--green); border-color: rgba(30,209,122,.64); background: rgba(30,209,122,.16); }
+.slot.reservation-cancelled { color: #ff9090; border-color: rgba(255,107,107,.58); background: rgba(255,107,107,.13); text-decoration: line-through; }
+.slot.reservation-pending:hover, .slot.reservation-confirmed:hover, .slot.reservation-cancelled:hover { filter: brightness(1.14); }
+.slot-legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 10px; color: var(--muted); font-size: 10px; }
+.slot-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(255,255,255,.08); }
+.legend-dot.pending { border-color: var(--amber); background: var(--amber); }
+.legend-dot.confirmed { border-color: var(--green); background: var(--green); }
+.legend-dot.cancelled { border-color: var(--red); background: var(--red); }
+.reservation-list-item { border-left: 4px solid var(--line-strong); }
+.reservation-list-item.reservation-pending { border-left-color: var(--amber); background: rgba(244,184,74,.055); }
+.reservation-list-item.reservation-confirmed { border-left-color: var(--green); background: rgba(30,209,122,.055); }
+.reservation-list-item.reservation-cancelled { border-left-color: var(--red); background: rgba(255,107,107,.045); }
+.reservation-actions { flex-basis: 100%; margin-left: 54px; }
+@media (max-width: 620px) { .reservation-actions { margin-left: 0; } }
+
+/* Ajuste de composição da lista de reservas em telas largas */
+.reservation-list-item { flex-wrap: wrap; }
+.reservation-list-item .list-item-main { min-width: 240px; }
+.reservation-list-item > .status { margin-left: auto; }
+.reservation-actions { width: calc(100% - 54px); }

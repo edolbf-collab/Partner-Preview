@@ -1,23 +1,29 @@
-# Tâmo On — Partners Preview 0.1.1
+# Tâmo On — Partners Preview 0.1.2
 
-Atualização incremental da primeira build isolada da futura área de quadras e canchas parceiras.
+Atualização incremental da linha isolada da futura área de quadras e canchas parceiras.
 
 ## Escopo entregue
 
-- todos os botões e controles visíveis ativados;
-- respostas provisórias específicas para ações ainda sem tela definitiva;
-- horários indisponíveis clicáveis, com explicação do bloqueio;
-- seleção demonstrativa dos dias da agenda;
-- exportação administrativa em CSV;
+- busca da área do usuário somente por nome da quadra ou cidade;
+- remoção do filtro direto de esportes;
+- futsal, society e campo mantidos como tipos cadastrados pelo parceiro;
+- card de horários disponíveis substituído por uma área demonstrativa de Promoções;
+- criação local de reserva com horário marcado em cor de pendência;
+- mudança visual para confirmação ou cancelamento conforme endpoint demonstrativo;
+- botões locais para simular `payment.confirmed` e `reservation.cancelled`;
+- todos os controles da Preview 0.1.1 preservados.
 
-- protótipo responsivo da área do usuário;
-- busca e filtros de espaços fictícios;
-- horários e criação de reserva simulada;
-- portal do parceiro com agenda, espaços e indicadores;
-- painel administrativo com aprovação demonstrativa;
-- feature flags de pagamento e produção bloqueadas;
-- adaptador Asaas Sandbox criado, porém desativado;
-- backup integral do planejamento na pasta `docs`.
+## Regra futura de compatibilidade esportiva
+
+O esporte será escolhido na criação de cada grupo. Ao iniciar a busca de espaço a partir desse grupo, o sistema deverá apresentar somente parceiros e quadras compatíveis com o esporte definido. A busca geral desta Preview permanece limitada a quadra ou cidade.
+
+## Estados demonstrativos da reserva
+
+- `reservation.created` → reserva pendente, em amarelo;
+- `payment.confirmed` → reserva confirmada, em verde;
+- `reservation.cancelled` → reserva cancelada, em vermelho.
+
+As transições são locais e existem apenas para validar a interface.
 
 ## O que não está conectado
 
@@ -25,13 +31,10 @@ Atualização incremental da primeira build isolada da futura área de quadras e
 - usuários reais;
 - banco da linha Beta 1.0;
 - Asaas Sandbox;
-- webhooks;
-- subcontas e split;
+- webhooks reais;
 - pagamentos reais.
 
 ## Execução local
-
-Use um servidor HTTP simples. Exemplo:
 
 ```bash
 python -m http.server 8080
@@ -42,12 +45,3 @@ Abra `http://localhost:8080`.
 ## Segurança
 
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Nenhuma chave de API deve ser inserida no frontend.
-
-## Próximo ciclo sugerido — Preview 0.2
-
-- detalhamento do parceiro e dos espaços;
-- calendário mensal e regras de disponibilidade;
-- estados completos da reserva;
-- persistência em projeto Supabase separado;
-- perfis e matriz de permissões;
-- preparação das Edge Functions do Asaas Sandbox sem publicar na linha Beta.

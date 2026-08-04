@@ -17,11 +17,19 @@
   const state = {
     role: "user",
     search: "",
-    sport: "Todos",
     partnerDay: 6,
     selectedReservation: null,
     reservations: [
-      { id: "R-0007", venue: "Arena Central", date: "06/08", time: "20:00", status: "Aguardando confirmação" }
+      {
+        id: "R-0007",
+        venueId: "arena-central",
+        venue: "Arena Central",
+        date: "06/08",
+        time: "20:00",
+        statusKey: "pending",
+        status: "Reserva pendente",
+        endpoint: "reservation.created"
+      }
     ],
     partners: [
       { id: 1, name: "Arena Central", city: "Curitiba", spaces: 3, status: "Aprovado", rating: 4.8, color: "" },
@@ -64,7 +72,7 @@
       distance: "11,7 km",
       rating: 4.7,
       reviews: 91,
-      sports: ["Futsal", "Vôlei", "Basquete"],
+      sports: ["Futsal", "Campo"],
       price: 95,
       color: "warm",
       slots: ["18:00", "19:30", "21:00"],
@@ -76,6 +84,38 @@
     ["SEG", 3], ["TER", 4], ["QUA", 5], ["QUI", 6], ["SEX", 7], ["SÁB", 8], ["DOM", 9]
   ];
 
+  const reservationStatuses = Object.freeze({
+    pending: { label: "Reserva pendente", statusClass: "status-warning", slotClass: "reservation-pending" },
+    confirmed: { label: "Confirmada pelo pagamento", statusClass: "status-ok", slotClass: "reservation-confirmed" },
+    cancelled: { label: "Cancelada", statusClass: "status-danger", slotClass: "reservation-cancelled" }
+  });
+
+  function getReservationStatus(reservation) {
+    return reservationStatuses[reservation?.statusKey] || reservationStatuses.pending;
+  }
+
+  function getReservationForSlot(venueId, time) {
+    return state.reservations.find((reservation) =>
+      reservation.venueId === venueId && reservation.time === time && reservation.date === "06/08"
+    );
+  }
+
+  function applyReservationEndpoint(reservationId, endpoint) {
+    const reservation = state.reservations.find((item) => item.id === reservationId);
+    if (!reservation) return;
+
+    const endpointMap = {
+      "payment.confirmed": { statusKey: "confirmed", status: "Confirmada pelo pagamento" },
+      "reservation.cancelled": { statusKey: "cancelled", status: "Cancelada" }
+    };
+    const next = endpointMap[endpoint];
+    if (!next) return;
+
+    Object.assign(reservation, next, { endpoint });
+    render();
+    showToast(`${reservation.id}: ${next.status}.`);
+  }
+
   function money(value) {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   }
@@ -83,6 +123,14 @@
   function escapeCsv(value) {
     const text = String(value ?? "");
     return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  function nextReservationId() {
+    const highest = state.reservations.reduce((max, reservation) => {
+      const number = Number.parseInt(String(reservation.id).replace(/\D/g, ""), 10);
+      return Number.isFinite(number) ? Math.max(max, number) : max;
+    }, 0);
+    return `R-${String(highest + 1).padStart(4, "0")}`;
   }
 
   function showToast(message) {
@@ -110,6 +158,17 @@
     const venue = venues.find((item) => item.id === venueId);
     if (!venue) return;
 
+    const existingReservation = getReservationForSlot(venueId, time);
+    if (existingReservation) {
+      const status = getReservationStatus(existingReservation);
+      showAction({
+        eyebrow: "Status do horário",
+        title: `${venue.name} · ${time}`,
+        body: `<div class="summary-card action-summary"><strong>${status.label}</strong><div class="meta-row" style="margin-top:8px"><span>Reserva ${existingReservation.id}</span><span>Endpoint: ${existingReservation.endpoint}</span></div></div><p class="muted-copy">A cor deste horário acompanha o estado da reserva. Na integração real, a alteração será aplicada pelo endpoint ou webhook correspondente.</p>`
+      });
+      return;
+    }
+
     if (venue.unavailable.includes(time)) {
       showAction({
         eyebrow: "Horário indisponível",
@@ -134,7 +193,6 @@
   function showVenueDetails(venueId) {
     const venue = venues.find((item) => item.id === venueId);
     if (!venue) return;
-    const availableCount = venue.slots.length - venue.unavailable.length;
     showAction({
       eyebrow: "Espaço selecionado",
       title: venue.name,
@@ -147,8 +205,8 @@
             <span>${money(venue.price)} por hora</span>
           </div>
         </div>
-        <p>${availableCount} horários disponíveis nesta demonstração.</p>
-        <p class="muted-copy">O botão já responde com os dados essenciais. A futura tela detalhada concentrará fotos, estrutura, regras, avaliações, mapa e disponibilidade ampliada.</p>`
+        <p>Tipos identificados pelo parceiro: ${venue.sports.join(" · ")}.</p>
+        <p class="muted-copy">Esses tipos não funcionam como filtro nesta área. Futuramente, o esporte será definido na criação do grupo e somente parceiros compatíveis serão apresentados.</p>`
     });
   }
 
@@ -182,7 +240,7 @@
       "new-space": {
         eyebrow: "Cadastro do parceiro",
         title: "Cadastrar espaço",
-        body: `<p>A entrada para um novo espaço foi ativada.</p><p class="muted-copy">A tela posterior reunirá nome, modalidade, capacidade, estrutura, preço-base, fotos e regras de disponibilidade.</p>`
+        body: `<p>A entrada para um novo espaço foi ativada.</p><p class="muted-copy">A tela posterior reunirá nome, tipo da quadra (futsal, society ou campo), capacidade, estrutura, preço-base, fotos e regras de disponibilidade.</p>`
       },
       calendar: {
         eyebrow: "Agenda ampliada",
@@ -229,7 +287,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "tamo-on-partners-preview-0.1.1-relatorio.csv";
+    link.download = "tamo-on-partners-preview-0.1.2-relatorio.csv";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -238,11 +296,9 @@
   }
 
   function userView() {
-    const filtered = venues.filter((venue) => {
-      const textMatch = `${venue.name} ${venue.city} ${venue.sports.join(" ")}`.toLowerCase().includes(state.search.toLowerCase());
-      const sportMatch = state.sport === "Todos" || venue.sports.includes(state.sport);
-      return textMatch && sportMatch;
-    });
+    const filtered = venues.filter((venue) =>
+      `${venue.name} ${venue.city}`.toLowerCase().includes(state.search.toLowerCase())
+    );
 
     const cards = filtered.map((venue) => `
       <article class="card venue-card">
@@ -261,8 +317,18 @@
           <div class="slot-row">
             ${venue.slots.map((slot) => {
               const unavailable = venue.unavailable.includes(slot);
-              return `<button type="button" class="slot ${unavailable ? "unavailable" : ""}" data-reserve="${venue.id}" data-time="${slot}" data-unavailable="${unavailable}" aria-label="${slot}${unavailable ? ", indisponível; clique para ver o motivo" : ", disponível para reserva"}" title="${unavailable ? "Ver motivo da indisponibilidade" : "Reservar este horário"}">${slot}</button>`;
+              const reservation = getReservationForSlot(venue.id, slot);
+              const reservationStatus = reservation ? getReservationStatus(reservation) : null;
+              const slotClass = unavailable ? "unavailable" : reservationStatus?.slotClass || "";
+              const slotState = unavailable ? "indisponível; clique para ver o motivo" : reservationStatus ? `${reservationStatus.label}; clique para ver o status` : "disponível para reserva";
+              return `<button type="button" class="slot ${slotClass}" data-reserve="${venue.id}" data-time="${slot}" aria-label="${slot}, ${slotState}" title="${slotState}">${slot}</button>`;
             }).join("")}
+          </div>
+          <div class="slot-legend" aria-label="Legenda dos horários">
+            <span><i class="legend-dot available"></i>Livre</span>
+            <span><i class="legend-dot pending"></i>Pendente</span>
+            <span><i class="legend-dot confirmed"></i>Confirmado</span>
+            <span><i class="legend-dot cancelled"></i>Cancelado</span>
           </div>
           <div class="price-row">
             <div class="price"><small>A partir de</small>${money(venue.price)}</div>
@@ -275,37 +341,42 @@
       <section class="hero">
         <article class="hero-card">
           <span class="eyebrow">Área do usuário</span>
-          <h1>Encontre um espaço e transforme a reserva em evento.</h1>
-          <p>Protótipo da futura experiência de busca, disponibilidade, reserva e vínculo com os grupos do Tâmo On.</p>
+          <h1>Encontre uma quadra e transforme a reserva em evento.</h1>
+          <p>A busca considera somente o nome da quadra ou a cidade. A compatibilidade por esporte será aplicada futuramente a partir do esporte escolhido no grupo.</p>
           <div class="hero-actions">
             <button type="button" class="button primary" data-scroll="venues">Explorar horários</button>
             <button type="button" class="button ghost" data-show-reservations>Minhas reservas</button>
           </div>
         </article>
-        <article class="hero-card kpi-card">
-          <div><span class="eyebrow">Hoje</span><div class="kpi-value">14</div><div class="kpi-label">horários disponíveis próximos</div></div>
-          <div class="kpi-delta">3 novos espaços em homologação</div>
+        <article class="hero-card promotion-card">
+          <div>
+            <span class="eyebrow">Promoções</span>
+            <div class="promotion-title">Vouchers e ofertas dos parceiros</div>
+            <p>Espaço reservado para descontos de primeira reserva, horários promocionais e benefícios vinculados aos grupos.</p>
+          </div>
+          <div class="promotion-voucher"><strong>10% OFF</strong><span>Exemplo de voucher · não aplicável nesta Preview</span></div>
         </article>
       </section>
 
       <div class="toolbar" id="venues">
-        <label class="search"><span>⌕</span><input id="venueSearch" value="${state.search}" placeholder="Buscar quadra, cidade ou modalidade"></label>
-        <select class="filter-select" id="sportFilter" aria-label="Filtrar modalidade">
-          ${["Todos", "Futsal", "Society", "Vôlei", "Basquete"].map((item) => `<option ${state.sport === item ? "selected" : ""}>${item}</option>`).join("")}
-        </select>
+        <label class="search"><span>⌕</span><input id="venueSearch" value="${state.search}" placeholder="Buscar por quadra ou cidade" aria-label="Buscar por quadra ou cidade"></label>
       </div>
 
-      <div class="section-title"><div><h2>Espaços em destaque</h2><p>Dados fictícios para validação do fluxo.</p></div><span class="status status-info">Preview</span></div>
-      <section class="grid">${cards || `<div class="empty-state"><div class="empty-icon">⌕</div>Nenhum espaço encontrado para esse filtro.</div>`}</section>
+      <div class="section-title"><div><h2>Espaços em destaque</h2><p>Futsal, society e campo são identificações cadastradas pelo parceiro, sem filtro nesta busca.</p></div><span class="status status-info">Preview</span></div>
+      <section class="grid">${cards || `<div class="empty-state"><div class="empty-icon">⌕</div>Nenhuma quadra encontrada para esta busca.</div>`}</section>
 
-      <div class="section-title" id="reservations"><div><h2>Próxima reserva</h2><p>Acompanhamento antes da integração financeira.</p></div></div>
+      <div class="section-title" id="reservations"><div><h2>Minhas reservas</h2><p>O status e a cor acompanham o endpoint demonstrativo aplicado.</p></div></div>
       <section class="card">
-        ${state.reservations.map((reservation) => `
-          <div class="list-item">
+        ${state.reservations.map((reservation) => {
+          const status = getReservationStatus(reservation);
+          return `
+          <div class="list-item reservation-list-item ${status.slotClass}">
             <div class="avatar">${reservation.venue.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
-            <div class="list-item-main"><strong>${reservation.venue}</strong><small>${reservation.date} · ${reservation.time} · Reserva ${reservation.id}</small></div>
-            <span class="status status-warning">${reservation.status}</span>
-          </div>`).join("")}
+            <div class="list-item-main"><strong>${reservation.venue}</strong><small>${reservation.date} · ${reservation.time} · Reserva ${reservation.id}<br>Último endpoint: ${reservation.endpoint}</small></div>
+            <span class="status ${status.statusClass}">${status.label}</span>
+            ${reservation.statusKey === "pending" ? `<div class="item-actions reservation-actions"><button type="button" class="button secondary small" data-reservation-endpoint="payment.confirmed" data-reservation-id="${reservation.id}">Simular pagamento</button><button type="button" class="button danger small" data-reservation-endpoint="reservation.cancelled" data-reservation-id="${reservation.id}">Cancelar</button></div>` : ""}
+          </div>`;
+        }).join("")}
       </section>`;
   }
 
@@ -370,7 +441,7 @@
           </div>
         </article>
         <article class="hero-card kpi-card">
-          <div><span class="eyebrow">Implantação</span><div class="kpi-value">0.1.1</div><div class="kpi-label">controles provisórios ativados</div></div>
+          <div><span class="eyebrow">Implantação</span><div class="kpi-value">0.1.2</div><div class="kpi-label">busca e estados da reserva ajustados</div></div>
           <div class="kpi-delta">Banco e Asaas ainda isolados</div>
         </article>
       </section>
@@ -424,7 +495,6 @@
 
   function bindDynamicEvents() {
     const search = document.getElementById("venueSearch");
-    const sportFilter = document.getElementById("sportFilter");
 
     if (search) {
       search.addEventListener("input", (event) => {
@@ -436,9 +506,11 @@
       });
     }
 
-    if (sportFilter) sportFilter.addEventListener("change", (event) => { state.sport = event.target.value; render(); });
 
     document.querySelectorAll("[data-reserve]").forEach((button) => button.addEventListener("click", () => openReservation(button.dataset.reserve, button.dataset.time)));
+    document.querySelectorAll("[data-reservation-endpoint]").forEach((button) => button.addEventListener("click", () => {
+      applyReservationEndpoint(button.dataset.reservationId, button.dataset.reservationEndpoint);
+    }));
     document.querySelectorAll("[data-details]").forEach((button) => button.addEventListener("click", () => showVenueDetails(button.dataset.details)));
     document.querySelectorAll("[data-scroll]").forEach((button) => button.addEventListener("click", () => {
       document.getElementById(button.dataset.scroll)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -471,10 +543,19 @@
     event.preventDefault();
     const selected = state.selectedReservation;
     if (!selected) return;
-    const id = `R-${String(8 + state.reservations.length).padStart(4, "0")}`;
-    state.reservations.unshift({ id, venue: selected.venue.name, date: "06/08", time: selected.time, status: "Aguardando confirmação" });
+    const id = nextReservationId();
+    state.reservations.unshift({
+      id,
+      venueId: selected.venue.id,
+      venue: selected.venue.name,
+      date: "06/08",
+      time: selected.time,
+      statusKey: "pending",
+      status: "Reserva pendente",
+      endpoint: "reservation.created"
+    });
     reservationDialog.close();
-    showToast(`Reserva ${id} criada apenas para demonstração.`);
+    showToast(`Reserva ${id} criada com status pendente.`);
     render();
   });
 
