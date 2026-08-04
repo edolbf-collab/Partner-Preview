@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1",
+  "version": "0.1.1",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -8,9 +8,10 @@
   "real_money": false,
   "released_at": "2026-08-03",
   "notes": [
-    "Protótipo navegável das áreas do usuário, parceiro e administração.",
-    "Reservas simuladas apenas no navegador.",
-    "Integração Asaas ainda desativada.",
-    "Planejamento mestre incluído em docs/PLANEJAMENTO-MESTRE-TAMO-ON.md."
+    "Todos os botões e controles visíveis possuem resposta ativa.",
+    "Horários indisponíveis agora explicam o bloqueio sem ficarem inertes.",
+    "Detalhes, calendário, cadastro, edição e análise exibem retornos provisórios específicos.",
+    "Exportação administrativa gera relatório CSV demonstrativo.",
+    "Banco, Asaas e dinheiro real permanecem desativados."
   ]
 }

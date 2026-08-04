@@ -1,8 +1,14 @@
-# Tâmo On — Partners Preview 0.1
+# Tâmo On — Partners Preview 0.1.1
 
-Primeira build isolada da futura área de quadras e canchas parceiras.
+Atualização incremental da primeira build isolada da futura área de quadras e canchas parceiras.
 
 ## Escopo entregue
+
+- todos os botões e controles visíveis ativados;
+- respostas provisórias específicas para ações ainda sem tela definitiva;
+- horários indisponíveis clicáveis, com explicação do bloqueio;
+- seleção demonstrativa dos dias da agenda;
+- exportação administrativa em CSV;
 
 - protótipo responsivo da área do usuário;
 - busca e filtros de espaços fictícios;

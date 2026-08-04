@@ -289,3 +289,35 @@ code { color: #9ef1c4; }
   .dialog-actions { flex-direction: column-reverse; }
   .dialog-actions .button { width: 100%; }
 }
+
+/* Partners Preview 0.1.1 — feedback provisório para todos os controles */
+.button:focus-visible,
+.icon-button:focus-visible,
+.role-chip:focus-visible,
+.slot:focus-visible,
+.day:focus-visible {
+  outline: 3px solid rgba(102,179,255,.72);
+  outline-offset: 2px;
+}
+.button:active,
+.icon-button:active,
+.role-chip:active,
+.slot:active,
+.day:active { transform: translateY(1px); }
+.slot.unavailable {
+  cursor: pointer;
+}
+.slot.unavailable:hover {
+  opacity: .68;
+  color: var(--amber);
+  border-color: rgba(244,184,74,.55);
+}
+.day {
+  color: var(--text);
+  cursor: pointer;
+}
+.action-dialog-body { color: var(--text); line-height: 1.55; }
+.action-dialog-body p { margin-bottom: 14px; }
+.action-dialog-body .muted-copy,
+.muted-copy { color: var(--muted); font-size: 13px; }
+.action-summary { margin-bottom: 14px; }
