@@ -1,6 +1,6 @@
 window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
   appName: "Tâmo On Partners Preview",
-  version: "0.1.2",
+  version: "0.1.3",
   environment: "partners_preview",
   realMoney: false,
   asaas: {
@@ -14,6 +14,9 @@ window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
     mockReservations: true,
     partnerPortal: true,
     adminPortal: true,
+    localPersistence: true,
+    editableMockData: true,
+    fullSubmenus: true,
     asaasCheckout: false,
     split: false,
     productionWrites: false

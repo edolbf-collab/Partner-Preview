@@ -1,0 +1,6 @@
+Tâmo On Partners Preview 0.1.3 — pacote incremental
+
+Base obrigatória: Partners Preview 0.1.2.
+Substitua os arquivos correspondentes preservando a estrutura de pastas.
+Arquivos não listados neste pacote permanecem iguais à versão anterior.
+Não há migração SQL nem publicação de Edge Function.

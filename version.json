@@ -1,18 +1,19 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
+  "persistence": "browser-local-storage",
   "asaas": "sandbox-planned-disabled",
   "real_money": false,
-  "released_at": "2026-08-03",
+  "released_at": "2026-08-04",
   "notes": [
-    "Busca da área do usuário limitada ao nome da quadra ou cidade.",
-    "Futsal, society e campo permanecem como tipos identificados pelo parceiro, sem filtro direto do usuário.",
-    "Card de quantidade de horários substituído por área demonstrativa de Promoções e vouchers.",
-    "Horários reservados exibem estados visuais pendente, confirmado ou cancelado.",
-    "Endpoints demonstrativos payment.confirmed e reservation.cancelled alteram cor e status localmente.",
-    "Banco, Asaas e dinheiro real permanecem desativados."
+    "Todos os submenus das áreas do usuário, parceiro e administração estão navegáveis.",
+    "Dados fictícios podem ser cadastrados, editados, ativados, bloqueados e exportados localmente.",
+    "Cadastro do parceiro reúne dados empresariais, responsável, endereço, contratos, LGPD, emissão fiscal, comissão, dados bancários e documentos.",
+    "Navegação reorganizada por tarefas, com menu lateral compacto no desktop e navegação horizontal no celular.",
+    "Busca do usuário permanece limitada a nome da quadra ou cidade; futsal, society e campo são características cadastradas pelo parceiro.",
+    "Banco, Supabase, Asaas, webhooks, emissão fiscal e dinheiro real permanecem desativados."
   ]
 }

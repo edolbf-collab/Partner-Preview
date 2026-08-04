@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a1f17">
-  <meta name="description" content="Protótipo isolado da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.2</title>
+  <meta name="theme-color" content="#0b1f17">
+  <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
+  <title>Tâmo On — Partners Preview 0.1.3</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="sandbox-ribbon" role="status">
-    Ambiente de homologação · dados fictícios · nenhum pagamento real
+    Homologação local · dados fictícios · sem pagamento ou emissão fiscal real
   </div>
 
   <div class="app-shell">
@@ -21,10 +21,13 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.2</div>
+          <div class="brand-subtitle">Partners Preview 0.1.3</div>
         </div>
       </div>
-      <button class="icon-button" id="openReleaseNotes" aria-label="Informações da versão">i</button>
+      <div class="header-actions">
+        <button class="icon-button" id="resetPreview" aria-label="Restaurar dados fictícios" title="Restaurar dados fictícios">↺</button>
+        <button class="icon-button" id="openReleaseNotes" aria-label="Informações da versão" title="Informações da versão">i</button>
+      </div>
     </header>
 
     <section class="role-switcher" aria-label="Alternar área demonstrativa">
@@ -45,9 +48,7 @@
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
-
       <div class="summary-card" id="reservationSummary"></div>
-
       <label class="field">
         <span>Vincular a um evento</span>
         <select id="eventSelect">
@@ -56,18 +57,75 @@
           <option value="amistoso-sabado">Amistoso de sábado</option>
         </select>
       </label>
-
+      <label class="field">
+        <span>Voucher</span>
+        <select id="voucherSelect">
+          <option value="">Sem voucher</option>
+          <option value="BEMVINDO10">BEMVINDO10 · 10% de desconto</option>
+          <option value="FORADEPICO">FORADEPICO · R$ 15,00</option>
+        </select>
+      </label>
       <div class="payment-preview">
         <div>
           <strong>Pagamento</strong>
-          <p>Será integrado ao Asaas Sandbox em uma versão posterior.</p>
+          <p>O status ficará pendente até a simulação de um endpoint.</p>
         </div>
-        <span class="status status-neutral">Desativado</span>
+        <span class="status status-neutral">Sandbox desativado</span>
       </div>
+      <div class="dialog-actions">
+        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button primary" id="confirmReservation" value="default">Criar reserva pendente</button>
+      </div>
+    </form>
+  </dialog>
 
+  <dialog id="formDialog" class="dialog form-dialog">
+    <form method="dialog" id="dynamicForm">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow" id="formEyebrow">Editar dados</span>
+          <h2 id="formTitle">Formulário</h2>
+          <p class="dialog-description" id="formDescription"></p>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <div id="formFields" class="form-grid"></div>
       <div class="dialog-actions">
         <button class="button ghost" value="cancel">Cancelar</button>
-        <button class="button primary" id="confirmReservation" value="default">Criar reserva de teste</button>
+        <button class="button primary" id="formSubmit" value="default">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog" class="dialog detail-dialog">
+    <form method="dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow" id="detailEyebrow">Detalhes</span>
+          <h2 id="detailTitle">Informações</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <div id="detailBody" class="detail-body"></div>
+      <div class="dialog-actions">
+        <button class="button primary" value="cancel">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" class="dialog compact">
+    <form method="dialog" id="confirmForm">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">Confirmar ação</span>
+          <h2 id="confirmTitle">Tem certeza?</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <p id="confirmMessage" class="dialog-description"></p>
+      <div class="dialog-actions">
+        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button danger" id="confirmSubmit" value="default">Confirmar</button>
       </div>
     </form>
   </dialog>
@@ -77,32 +135,18 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.2</h2>
+          <h2>Partners Preview 0.1.3</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
-      <p>Protótipo isolado da futura área de quadras e canchas parceiras. Não usa o banco da linha Beta 1.0 e não realiza chamadas para o Asaas.</p>
+      <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro e administração. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
       <ul class="plain-list">
-        <li>Área do usuário com busca por quadra ou cidade e estados visuais da reserva.</li>
-        <li>Portal do parceiro com agenda, espaços e indicadores.</li>
-        <li>Painel administrativo com aprovação e acompanhamento.</li>
-        <li>Backup do planejamento incluído na pasta <code>docs</code>.</li>
+        <li>Dados persistidos apenas no armazenamento local do navegador.</li>
+        <li>Cadastro de parceiros com blocos cadastral, operacional, contratual, fiscal e financeiro.</li>
+        <li>Reservas, agenda, espaços, equipe, clientes, promoções e controles administrativos funcionais.</li>
+        <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
       </ul>
       <button class="button primary full" value="cancel">Entendi</button>
-    </form>
-  </dialog>
-
-  <dialog id="actionDialog" class="dialog compact">
-    <form method="dialog">
-      <div class="dialog-header">
-        <div>
-          <span class="eyebrow" id="actionEyebrow">Ação provisória</span>
-          <h2 id="actionTitle">Função ativada</h2>
-        </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
-      </div>
-      <div id="actionBody" class="action-dialog-body"></div>
-      <button class="button primary full" value="cancel">Fechar</button>
     </form>
   </dialog>
 

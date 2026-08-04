@@ -9,7 +9,7 @@
     },
 
     async createCheckout() {
-      throw new Error("Asaas Sandbox ainda não está habilitado na Partners Preview 0.1.2.");
+      throw new Error("Asaas Sandbox ainda não está habilitado na Partners Preview 0.1.3.");
     },
 
     async getPaymentStatus() {

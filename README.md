@@ -1,38 +1,59 @@
-# Tâmo On — Partners Preview 0.1.2
+# Tâmo On — Partners Preview 0.1.3
 
-Atualização incremental da linha isolada da futura área de quadras e canchas parceiras.
+Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 
-## Escopo entregue
+## Áreas e submenus ativos
 
-- busca da área do usuário somente por nome da quadra ou cidade;
-- remoção do filtro direto de esportes;
-- futsal, society e campo mantidos como tipos cadastrados pelo parceiro;
-- card de horários disponíveis substituído por uma área demonstrativa de Promoções;
-- criação local de reserva com horário marcado em cor de pendência;
-- mudança visual para confirmação ou cancelamento conforme endpoint demonstrativo;
-- botões locais para simular `payment.confirmed` e `reservation.cancelled`;
-- todos os controles da Preview 0.1.1 preservados.
+### Usuário
 
-## Regra futura de compatibilidade esportiva
+- Buscar quadras;
+- Minhas reservas;
+- Favoritos;
+- Promoções;
+- Perfil.
 
-O esporte será escolhido na criação de cada grupo. Ao iniciar a busca de espaço a partir desse grupo, o sistema deverá apresentar somente parceiros e quadras compatíveis com o esporte definido. A busca geral desta Preview permanece limitada a quadra ou cidade.
+A busca geral permanece limitada ao nome da quadra ou à cidade. Futsal, society e campo são apresentados apenas como tipos identificados pelo parceiro. A compatibilidade esportiva será aplicada futuramente a partir do esporte escolhido no grupo.
+
+### Parceiro
+
+- Visão geral;
+- Agenda;
+- Reservas;
+- Espaços;
+- Clientes;
+- Equipe;
+- Financeiro;
+- Cadastro.
+
+O cadastro inclui dados empresariais, responsável, endereço, documentos, contrato, termos, LGPD, política de cancelamento, emissão fiscal, comissão, dados bancários e futura subconta.
+
+### Administração
+
+- Visão geral;
+- Parceiros;
+- Reservas;
+- Usuários;
+- Financeiro;
+- Configurações.
+
+A homologação dos parceiros permite cadastrar, editar, consultar o dossiê, aprovar, suspender e exportar dados fictícios.
+
+## Persistência local
+
+As alterações são gravadas no `localStorage` do navegador. O botão de restauração no cabeçalho recupera os dados fictícios iniciais. Não há sincronização com a linha Beta 1.0.
 
 ## Estados demonstrativos da reserva
 
-- `reservation.created` → reserva pendente, em amarelo;
-- `payment.confirmed` → reserva confirmada, em verde;
-- `reservation.cancelled` → reserva cancelada, em vermelho.
+- `reservation.created` → pendente;
+- `payment.confirmed` → confirmada;
+- `reservation.cancelled` → cancelada.
 
-As transições são locais e existem apenas para validar a interface.
+## Estrutura fiscal e financeira simulada
 
-## O que não está conectado
-
-- Supabase;
-- usuários reais;
-- banco da linha Beta 1.0;
-- Asaas Sandbox;
-- webhooks reais;
-- pagamentos reais.
+- o parceiro presta o serviço esportivo e emite o documento fiscal ao usuário;
+- o Tâmo On atua como plataforma/intermediador e emite NFS-e da comissão ao parceiro;
+- valores do parceiro e comissão aparecem segregados nos demonstrativos;
+- split, subconta, conciliação, estorno e reembolso permanecem apenas modelados.
 
 ## Execução local
 
@@ -44,4 +65,4 @@ Abra `http://localhost:8080`.
 
 ## Segurança
 
-A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Nenhuma chave de API deve ser inserida no frontend.
+A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
