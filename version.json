@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,9 +9,10 @@
   "real_money": false,
   "released_at": "2026-08-05",
   "notes": [
-    "Cancelamento pós-pagamento disponível para o usuário com aviso das implicações.",
-    "Cancelamento pelo parceiro exige justificativa e comunica o usuário.",
-    "Estorno, liberação do horário, cancelamento do evento e push são simulados localmente.",
-    "Asaas, Supabase, banco, webhooks e envio real de push permanecem desativados."
+    "Cancelamento pelo usuário dentro do prazo gera voucher; fora do prazo não gera reembolso ou voucher automático.",
+    "Cancelamentos realizados pelo parceiro ou pelo Tâmo On geram reembolso integral, com taxas e custos suportados pelo responsável.",
+    "Situações excepcionais fora do prazo podem ser submetidas à análise conjunta do Tâmo On e do parceiro.",
+    "A validade do voucher considera disponibilidade compatível com o período e proximidade do horário original, com prorrogação automática quando insuficiente.",
+    "Asaas, Supabase, banco, emissão fiscal, webhooks e envio real de push permanecem desativados."
   ]
 }

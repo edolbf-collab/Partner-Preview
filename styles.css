@@ -988,7 +988,7 @@ tr:last-child td { border-bottom: 0; }
 }
 
 
-/* Partners Preview 0.1.9 — cancelamento pós-pagamento */
+/* Partners Preview 0.1.11 — cancelamentos por responsabilidade */
 .cancellation-dialog { width: min(620px, calc(100% - 24px)); }
 .cancellation-warning {
   margin: 0 0 14px;
@@ -1014,4 +1014,30 @@ tr:last-child td { border-bottom: 0; }
   .cancellation-dialog { width: calc(100% - 18px); max-width: calc(100vw - 18px); }
   .cancellation-dialog form { padding: 16px; }
   .cancellation-warning { padding: 12px; }
+}
+
+
+/* Partners Preview 0.1.11 — política e disponibilidade compatível */
+.voucher-payment-preview,
+.cancellation-policy-acceptance {
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.025);
+}
+.voucher-payment-preview strong,
+.cancellation-policy-acceptance strong { display: block; font-size: 11px; }
+.voucher-payment-preview p,
+.cancellation-policy-acceptance p { margin: 6px 0 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
+.voucher-calculation { display: grid; gap: 6px; margin-top: 10px; }
+.voucher-calculation span { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 9px; }
+.voucher-calculation b { color: var(--text); }
+.voucher-calculation .voucher-total { padding-top: 7px; border-top: 1px solid var(--line); color: var(--text); font-weight: 850; }
+.cancellation-policy-acceptance .cancellation-acknowledge { margin-top: 11px; }
+.voucher-card .voucher-value { font-size: 17px; color: var(--green); }
+@media (max-width: 700px) {
+  .voucher-calculation span { align-items: flex-start; }
+  .voucher-payment-preview,
+  .cancellation-policy-acceptance { padding: 11px; }
 }

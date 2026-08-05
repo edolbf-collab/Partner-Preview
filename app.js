@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.9";
-  const STORAGE_KEY = "tamo_on_partners_preview_019";
+  const VERSION = "0.1.11";
+  const STORAGE_KEY = "tamo_on_partners_preview_0111";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -17,6 +17,9 @@
   const newEventTitle = document.getElementById("newEventTitle");
   const reservationAutomationPreview = document.getElementById("reservationAutomationPreview");
   const voucherSelect = document.getElementById("voucherSelect");
+  const reservationVoucherPreview = document.getElementById("reservationVoucherPreview");
+  const reservationPolicyAcknowledge = document.getElementById("reservationPolicyAcknowledge");
+  const reservationPolicyText = document.getElementById("reservationPolicyText");
   const formDialog = document.getElementById("formDialog");
   const dynamicForm = document.getElementById("dynamicForm");
   const formEyebrow = document.getElementById("formEyebrow");
@@ -40,9 +43,11 @@
   const cancellationTitle = document.getElementById("cancellationTitle");
   const cancellationSummary = document.getElementById("cancellationSummary");
   const cancellationImpactList = document.getElementById("cancellationImpactList");
+  const cancellationWarningText = document.getElementById("cancellationWarningText");
   const cancellationReasonLabel = document.getElementById("cancellationReasonLabel");
   const cancellationReason = document.getElementById("cancellationReason");
   const cancellationAcknowledge = document.getElementById("cancellationAcknowledge");
+  const cancellationAcknowledgeText = document.getElementById("cancellationAcknowledgeText");
   const cancellationSubmit = document.getElementById("cancellationSubmit");
 
   let formHandler = null;
@@ -109,6 +114,12 @@
       ],
       pushLog: [],
       cancellationLog: [],
+      cancellationVouchers: [],
+      cancellationExceptionReviews: [],
+      accountingLedger: [
+        { id: "LED-0001", type: "service_payment", reservationId: "R-0008", venueId: "arena-central", venue: "Arena Central", amount: 130, accountingMonth: "08/2026", fiscalAmount: 130, description: "Pagamento original da reserva" },
+        { id: "LED-0002", type: "service_payment", reservationId: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", amount: 105, accountingMonth: "08/2026", fiscalAmount: 105, description: "Pagamento original da reserva" }
+      ],
       favorites: ["arena-central"],
       appliedVouchers: [],
       ui: {},
@@ -155,8 +166,8 @@
       ],
       reservations: [
         { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
-        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "payment.confirmed", paymentStatus: "Pago", paymentProvider: "Asaas", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
-        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
+        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "payment.confirmed", paymentStatus: "Pago", paymentProvider: "Asaas", accountingRecognizedValue: 130, accountingMonth: "08/2026", fiscalObligationValue: 130, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
+        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", accountingRecognizedValue: 105, accountingMonth: "08/2026", fiscalObligationValue: 105, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
         { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", groupId: "G-020", groupName: "Grupo do Paulo", eventId: "", event: "", eventMode: "none", eventPublicationStatus: "cancelled", pushStatus: "Não enviado", voucher: "" }
       ],
       partnerAgenda: [
@@ -173,7 +184,7 @@
       partnerReservations: [
         { id: "RP-101", client: "Grupo Quinta sem Falta", date: "06/08/2026", time: "18:00", space: "Quadra Society 1", value: 120, status: "Confirmada", payment: "Externo" },
         { id: "RP-102", client: "Amigos do Bairro", date: "06/08/2026", time: "19:00", space: "Quadra Society 1", value: 120, status: "Pendente", payment: "Não iniciado" },
-        { id: "RP-103", client: "Amigos do Bairro", date: "07/08/2026", time: "18:00", space: "Quadra Society 1", value: 130, status: "Confirmada", payment: "Pago via Asaas", userReservationId: "R-0008", groupName: "Amigos do Bairro", eventId: "EV-0202" },
+        { id: "RP-103", client: "Amigos do Bairro", date: "07/08/2026", time: "18:00", space: "Quadra Society 1", value: 130, status: "Confirmada", payment: "Pago via Asaas", userReservationId: "R-0008", groupName: "Amigos do Bairro", eventId: "EV-0202", accountingRecognizedValue: 130, accountingMonth: "08/2026" },
         { id: "RP-104", client: "Turma do Sábado", date: "08/08/2026", time: "16:00", space: "Quadra Society 1", value: 120, status: "Cancelada", payment: "Estornado externamente" }
       ],
       partnerClients: [
@@ -208,7 +219,8 @@
         contractStatus: "Assinado",
         termsStatus: "Aceitos",
         privacyStatus: "Aceita",
-        cancellationPolicy: "24 horas antes do horário reservado",
+        cancellationPolicy: "Cancelamento pelo usuário até 24 horas antes gera voucher. Cancelamento pelo parceiro ou Tâmo On gera reembolso integral, com taxas suportadas por quem cancelou. Fora do prazo, não há voucher ou reembolso automático.",
+        venueId: "arena-central",
         fiscalIssuer: "Parceiro emite documento fiscal ao usuário",
         commissionInvoice: "Tâmo On emite NFS-e da comissão ao parceiro",
         paymentModel: "Pagamento externo nesta fase",
@@ -227,9 +239,9 @@
         ]
       },
       adminPartners: [
-        { id: 1, tradeName: "Arena Central", legalName: "Arena Central Espaços Esportivos Ltda.", cnpj: "12.345.678/0001-90", city: "Curitiba", spaces: 2, types: "Futsal · Society", status: "Aprovado", responsible: "Lucas Ferreira", email: "contato@arenacentral.exemplo", phone: "(41) 3333-4455", taxRegime: "Simples Nacional", activity: "Gestão e locação de espaços esportivos", contract: "Assinado", fiscal: "Parceiro emite ao usuário", banking: "Em conferência", commission: 6, score: 92 },
-        { id: 2, tradeName: "Cancha Horizonte", legalName: "Horizonte Esportes e Eventos Ltda.", cnpj: "23.456.789/0001-01", city: "São José dos Pinhais", spaces: 2, types: "Society", status: "Em análise", responsible: "Fernanda Ribeiro", email: "financeiro@horizonte.exemplo", phone: "(41) 3344-7788", taxRegime: "Simples Nacional", activity: "Locação de espaços esportivos", contract: "Enviado", fiscal: "A validar", banking: "Pendente", commission: 6, score: 68 },
-        { id: 3, tradeName: "Complexo Vale Verde", legalName: "Vale Verde Centro Esportivo Ltda.", cnpj: "34.567.890/0001-12", city: "Colombo", spaces: 4, types: "Futsal · Campo", status: "Pendente", responsible: "Gustavo Almeida", email: "gestao@valeverde.exemplo", phone: "(41) 3656-2010", taxRegime: "Lucro Presumido", activity: "Centro esportivo e eventos", contract: "Não enviado", fiscal: "A validar", banking: "Não informado", commission: 6, score: 41 }
+        { id: 1, venueId: "arena-central", tradeName: "Arena Central", legalName: "Arena Central Espaços Esportivos Ltda.", cnpj: "12.345.678/0001-90", city: "Curitiba", spaces: 2, types: "Futsal · Society", status: "Aprovado", responsible: "Lucas Ferreira", email: "contato@arenacentral.exemplo", phone: "(41) 3333-4455", taxRegime: "Simples Nacional", activity: "Gestão e locação de espaços esportivos", contract: "Assinado", fiscal: "Parceiro emite ao usuário", banking: "Em conferência", commission: 6, score: 92 },
+        { id: 2, venueId: "cancha-horizonte", tradeName: "Cancha Horizonte", legalName: "Horizonte Esportes e Eventos Ltda.", cnpj: "23.456.789/0001-01", city: "São José dos Pinhais", spaces: 2, types: "Society", status: "Em análise", responsible: "Fernanda Ribeiro", email: "financeiro@horizonte.exemplo", phone: "(41) 3344-7788", taxRegime: "Simples Nacional", activity: "Locação de espaços esportivos", contract: "Enviado", fiscal: "A validar", banking: "Pendente", commission: 6, score: 68 },
+        { id: 3, venueId: "vale-verde", tradeName: "Complexo Vale Verde", legalName: "Vale Verde Centro Esportivo Ltda.", cnpj: "34.567.890/0001-12", city: "Colombo", spaces: 4, types: "Futsal · Campo", status: "Pendente", responsible: "Gustavo Almeida", email: "gestao@valeverde.exemplo", phone: "(41) 3656-2010", taxRegime: "Lucro Presumido", activity: "Centro esportivo e eventos", contract: "Não enviado", fiscal: "A validar", banking: "Não informado", commission: 6, score: 41 }
       ],
       adminUsers: [
         { id: "U-1001", name: "Eduardo Batista", email: "eduardo.teste@exemplo.com", city: "Curitiba", groups: 3, reservations: 4, status: "Ativo", createdAt: "14/06/2026" },
@@ -245,7 +257,12 @@
         automaticApproval: false,
         notificationEmails: true,
         defaultCommission: 6,
-        cancellationHours: 24
+        cancellationHours: 24,
+        voucherValidityDays: 30,
+        voucherCompatibilityWindowHours: 2,
+        voucherMinimumCompatibleDates: 4,
+        voucherExtensionDays: 7,
+        cancellationVoucherPolicy: true
       }
     };
   }
@@ -276,6 +293,165 @@
 
   function money(value) {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+  }
+
+
+  function parsePtDateTime(date, time = "00:00") {
+    const [day, month, year] = String(date || "").split("/").map(Number);
+    const [hour, minute] = String(time || "00:00").split(":").map(Number);
+    return new Date(year, Math.max(0, month - 1), day, hour || 0, minute || 0, 0, 0);
+  }
+
+  function formatPtDate(date) {
+    return new Intl.DateTimeFormat("pt-BR").format(date);
+  }
+
+  function accountingMonth(date = new Date()) {
+    return new Intl.DateTimeFormat("pt-BR", { month: "2-digit", year: "numeric" }).format(date);
+  }
+
+  function cancellationEligibility(reservation, source = "user") {
+    if (!reservation) return { eligible: false, hoursRemaining: 0, mode: "none" };
+    const useAt = parsePtDateTime(reservation.date, reservation.time);
+    const hoursRemaining = (useAt.getTime() - Date.now()) / 3600000;
+    if (source === "partner" || source === "tamo") return { eligible: true, hoursRemaining, mode: "refund" };
+    const eligible = hoursRemaining >= Number(state.settings.cancellationHours || 24);
+    return { eligible, hoursRemaining, mode: eligible ? "voucher" : "no_compensation" };
+  }
+
+  function timeToMinutes(time) {
+    const [hour, minute] = String(time || "00:00").split(":").map(Number);
+    return Math.max(0, Math.min(1439, (hour || 0) * 60 + (minute || 0)));
+  }
+
+  function minutesToTime(minutes) {
+    const normalized = Math.max(0, Math.min(1439, Number(minutes || 0)));
+    return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+  }
+
+  function timePeriod(time) {
+    const minutes = timeToMinutes(time);
+    if (minutes < 360) return "madrugada";
+    if (minutes < 720) return "manhã";
+    if (minutes < 1080) return "tarde";
+    return "noite";
+  }
+
+  function voucherCompatibleWindow(originalTime) {
+    const center = timeToMinutes(originalTime);
+    const tolerance = Number(state.settings.voucherCompatibilityWindowHours || 2) * 60;
+    return { start: Math.max(0, center - tolerance), end: Math.min(1439, center + tolerance), period: timePeriod(originalTime) };
+  }
+
+  function compatibleAvailabilityForVoucher(voucher) {
+    const venue = state.venues.find((item) => item.id === voucher.venueId);
+    if (!venue) return { dates: [], count: 0, slots: 0 };
+    const window = voucherCompatibleWindow(voucher.originalTime || "20:00");
+    const issuedDate = voucher.issuedDate || String(voucher.issuedAt || "").split(",")[0];
+    const startsAt = parsePtDateTime(issuedDate, "00:00");
+    const endsAt = parsePtDateTime(voucher.expiresAt, "23:59");
+    const dates = [];
+    let slots = 0;
+    venue.schedule.forEach((day) => {
+      const dayDate = parsePtDateTime(day.date, "00:00");
+      if (dayDate < startsAt || dayDate > endsAt) return;
+      const matching = day.slots.filter((slot) => {
+        const minutes = timeToMinutes(slot.time);
+        const occupied = findReservationForSlot(venue.id, slot.time, day.shortDate);
+        return !slot.blocked && !occupied && timePeriod(slot.time) === window.period && minutes >= window.start && minutes <= window.end;
+      });
+      if (matching.length) {
+        dates.push(day.date);
+        slots += matching.length;
+      }
+    });
+    const uniqueDates = [...new Set(dates)];
+    return { dates: uniqueDates, count: uniqueDates.length, slots };
+  }
+
+  function voucherStatusLabel(voucher) {
+    const map = { active: "Disponível", active_extended: "Prorrogado por disponibilidade", reserved: "Reservado", used: "Utilizado", expired: "Expirado", reassigned: "Realocado" };
+    return map[voucher.status] || voucher.status;
+  }
+
+  function refreshVoucherAvailability(voucher) {
+    if (!voucher || !["active", "active_extended", "reserved"].includes(voucher.status)) return voucher;
+    if (voucher.status === "reserved") return voucher;
+    const minimum = Number(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates || 4);
+    let availability = compatibleAvailabilityForVoucher(voucher);
+    voucher.compatibleDatesCount = availability.count;
+    voucher.compatibleSlotsCount = availability.slots;
+    voucher.compatibleDates = availability.dates;
+    const window = voucherCompatibleWindow(voucher.originalTime || "20:00");
+    voucher.compatibilityWindow = voucher.compatibilityWindow || `${minutesToTime(window.start)}–${minutesToTime(window.end)}`;
+    let expiry = parsePtDateTime(voucher.expiresAt, "23:59");
+    let guard = 0;
+    while (expiry.getTime() < Date.now() && availability.count < minimum && guard < 24) {
+      expiry.setDate(expiry.getDate() + Number(state.settings.voucherExtensionDays || 7));
+      voucher.expiresAt = formatPtDate(expiry);
+      voucher.status = "active_extended";
+      voucher.extensionCount = Number(voucher.extensionCount || 0) + 1;
+      voucher.extensionReason = `Disponibilidade compatível insuficiente: ${availability.count} de ${minimum} datas.`;
+      availability = compatibleAvailabilityForVoucher(voucher);
+      voucher.compatibleDatesCount = availability.count;
+      voucher.compatibleSlotsCount = availability.slots;
+      voucher.compatibleDates = availability.dates;
+      guard += 1;
+    }
+    if (expiry.getTime() < Date.now() && availability.count >= minimum) voucher.status = "expired";
+    return voucher;
+  }
+
+  function voucherIsExpired(voucher) {
+    refreshVoucherAvailability(voucher);
+    return voucher?.status === "expired";
+  }
+
+  function activeCancellationVouchers() {
+    state.cancellationVouchers.forEach(refreshVoucherAvailability);
+    return state.cancellationVouchers.filter((voucher) => ["active", "active_extended", "reserved"].includes(voucher.status));
+  }
+
+  function activeVoucherLiability(venueId) {
+    const items = activeCancellationVouchers().filter((voucher) => voucher.venueId === venueId);
+    return { items, count: items.length, value: items.reduce((sum, voucher) => sum + Number(voucher.value || 0), 0) };
+  }
+
+  function cancellationVoucherByValue(value) {
+    if (!String(value || "").startsWith("CANCEL:")) return null;
+    const id = String(value).slice(7);
+    return state.cancellationVouchers.find((voucher) => voucher.id === id) || null;
+  }
+
+  function eligibleCancellationVouchersForReservation() {
+    if (!selectedReservation) return [];
+    activeCancellationVouchers();
+    return state.cancellationVouchers.filter((voucher) =>
+      ["active", "active_extended"].includes(voucher.status) &&
+      voucher.user === state.userProfile.name &&
+      voucher.venueId === selectedReservation.venue.id &&
+      Number(selectedReservation.value) >= Number(voucher.value)
+    );
+  }
+
+  function populateVoucherOptions() {
+    const eligible = eligibleCancellationVouchersForReservation();
+    const promoOptions = state.promotions.filter((promo) => promo.active).map((promo) => `<option value="PROMO:${esc(promo.code)}">${esc(promo.code)} · ${esc(promo.benefit)}</option>`).join("");
+    const cancellationOptions = eligible.map((voucher) => `<option value="CANCEL:${esc(voucher.id)}">${esc(voucher.code)} · crédito ${money(voucher.value)}</option>`).join("");
+    voucherSelect.innerHTML = `<option value="">Sem voucher</option>${cancellationOptions ? `<optgroup label="Vouchers de cancelamento">${cancellationOptions}</optgroup>` : ""}${promoOptions ? `<optgroup label="Promoções">${promoOptions}</optgroup>` : ""}`;
+    voucherSelect.value = "";
+    updateVoucherPaymentPreview();
+  }
+
+  function updateVoucherPaymentPreview() {
+    if (!reservationVoucherPreview || !selectedReservation) return;
+    const voucher = cancellationVoucherByValue(voucherSelect.value);
+    if (!voucher) {
+      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><p>${money(selectedReservation.value)} será processado pelos meios disponibilizados no app após a criação da reserva pendente.</p>`;
+      return;
+    }
+    const complement = Math.max(0, Number(selectedReservation.value) - Number(voucher.value));
+    reservationVoucherPreview.innerHTML = `<strong>Voucher de cancelamento selecionado</strong><div class="voucher-calculation"><span>Valor da nova reserva <b>${money(selectedReservation.value)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Complemento a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único e será consumido integralmente. Apenas o complemento, quando houver, gera novo pagamento e nova obrigação fiscal e contábil.</p>`;
   }
 
   function initials(name) {
@@ -382,11 +558,12 @@
     const group = userGroup(groupSelect.value);
     const validGroup = canManageGroupEvents(group);
     const validEvent = Boolean(eventSelect.value) && (eventSelect.value !== "__new__" || newEventTitle.value.trim());
+    const validPolicy = Boolean(reservationPolicyAcknowledge?.checked);
     const submit = document.getElementById("confirmReservation");
-    if (submit) submit.disabled = !(validGroup && validEvent);
+    if (submit) submit.disabled = !(validGroup && validEvent && validPolicy);
   }
 
-  function publishStandbyEventForReservation(reservation) {
+  function publishStandbyEventForReservation(reservation, publicationEndpoint = "event.publish_after_payment") {
     if (reservation.eventMode !== "new" || !reservation.eventId) return false;
     const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
     if (!linkedEvent || linkedEvent.statusKey !== "standby_payment") return false;
@@ -395,12 +572,12 @@
     linkedEvent.status = "Publicado";
     linkedEvent.published = true;
     linkedEvent.publishedAt = new Date().toLocaleString("pt-BR");
-    linkedEvent.publicationEndpoint = "event.publish_after_payment";
+    linkedEvent.publicationEndpoint = publicationEndpoint;
     linkedEvent.pushStatus = "Enviado";
     linkedEvent.pushEndpoint = "push.group_members";
     reservation.eventPublicationStatus = "published";
     reservation.pushStatus = "Enviado";
-    reservation.automationEndpoint = "event.publish_after_payment";
+    reservation.automationEndpoint = publicationEndpoint;
     state.pushLog.unshift({
       id: nextId("PUSH-", state.pushLog),
       groupId: reservation.groupId,
@@ -415,19 +592,38 @@
     return true;
   }
 
-  function cancellationImpacts(source) {
-    return source === "partner" ? [
-      "O valor pago será estornado ao usuário pela rotina simulada do Asaas.",
-      "O horário será liberado imediatamente para uma nova reserva.",
-      "O evento criado ou vinculado será cancelado e retirado do grupo.",
-      "O usuário e os membros do grupo receberão uma comunicação de cancelamento.",
-      "A justificativa ficará registrada no histórico administrativo do parceiro."
-    ] : [
-      "O valor pago será enviado para a rotina simulada de estorno do Asaas.",
-      "O horário da quadra será liberado para outra reserva.",
-      "O evento criado ou vinculado será cancelado no grupo selecionado.",
-      "O parceiro e os demais membros do grupo serão comunicados.",
-      "A operação ficará registrada no histórico da reserva."
+  function cancellationSourceLabel(source) {
+    return source === "partner" ? "Parceiro" : source === "tamo" ? "Tâmo On" : "Usuário";
+  }
+
+  function cancellationImpacts(source, mode) {
+    const common = [
+      "O horário cancelado será liberado imediatamente para uma nova reserva.",
+      "O evento criado ou vinculado será cancelado e os membros do grupo serão comunicados.",
+      "A operação e o motivo permanecerão registrados no histórico."
+    ];
+    if (mode === "voucher") return [
+      `Será emitido um voucher de uso único no valor integral pago, com prazo nominal de ${state.settings.voucherValidityDays} dias.`,
+      "O voucher poderá ser utilizado em qualquer novo dia ou horário disponível do mesmo parceiro, em reserva de valor igual ou superior.",
+      `Para o prazo expirar normalmente, o parceiro deverá oferecer ao menos ${state.settings.voucherMinimumCompatibleDates} datas distintas em faixa compatível de até ${state.settings.voucherCompatibilityWindowHours} horas antes ou depois do horário original e no mesmo período do dia.`,
+      "Horários apenas pela manhã ou tarde não contam como disponibilidade compatível para um voucher originado à noite.",
+      "Se a disponibilidade compatível for insuficiente, a validade será prorrogada automaticamente.",
+      "Ao utilizar o voucher, todo o crédito será consumido; eventual diferença deverá ser paga no app.",
+      ...common,
+      "O pagamento original permanece contabilizado no mês em que ocorreu; somente eventual complemento futuro gera nova obrigação fiscal e contábil."
+    ];
+    if (mode === "refund") return [
+      "O usuário receberá reembolso integral do valor pago.",
+      `${cancellationSourceLabel(source)} assumirá integralmente taxas, custos de transação, cancelamento e reembolso, sem prejuízo ao usuário, às demais partes ou ao Asaas.`,
+      "Nenhum voucher será gerado.",
+      ...common
+    ];
+    return [
+      `O cancelamento ocorre fora do prazo de ${state.settings.cancellationHours} horas.`,
+      "Não haverá reembolso nem geração de voucher.",
+      "Situações excepcionais poderão ser submetidas à análise conjunta do Tâmo On e do parceiro, sem concessão automática.",
+      ...common,
+      "O pagamento original permanece contabilizado conforme a operação já realizada."
     ];
   }
 
@@ -436,82 +632,71 @@
     const partnerReservation = partnerReservationId ? state.partnerReservations.find((item) => item.id === partnerReservationId) : state.partnerReservations.find((item) => item.userReservationId === reservationId);
     if (!reservation && !partnerReservation) return;
     const effectiveReservation = reservation || state.reservations.find((item) => item.id === partnerReservation?.userReservationId);
-    selectedCancellation = { source, reservationId: effectiveReservation?.id || "", partnerReservationId: partnerReservation?.id || partnerReservationId };
-    cancellationEyebrow.textContent = source === "partner" ? "Cancelamento pelo parceiro" : "Cancelamento pelo usuário";
-    cancellationTitle.textContent = source === "partner" ? "Cancelar reserva paga" : "Cancelar e solicitar estorno";
+    const eligibility = cancellationEligibility(effectiveReservation, source);
+    const mode = eligibility.mode;
+    selectedCancellation = { source, mode, reservationId: effectiveReservation?.id || "", partnerReservationId: partnerReservation?.id || partnerReservationId, outsideDeadline: mode === "no_compensation" };
+    cancellationEyebrow.textContent = `Cancelamento pelo ${cancellationSourceLabel(source)}`;
+    cancellationTitle.textContent = mode === "voucher" ? "Cancelar e gerar voucher" : mode === "refund" ? "Cancelar com reembolso integral" : "Cancelar fora do prazo";
     cancellationSummary.innerHTML = `<strong>${esc(effectiveReservation?.venue || partnerReservation?.space || "Reserva")}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(effectiveReservation?.date || partnerReservation?.date || "")}</span><span>${esc(effectiveReservation?.time || partnerReservation?.time || "")}</span><span>${money(effectiveReservation?.value || partnerReservation?.value || 0)}</span></div>`;
-    cancellationImpactList.innerHTML = cancellationImpacts(source).map((item) => `<li>${esc(item)}</li>`).join("");
-    cancellationReasonLabel.textContent = source === "partner" ? "Justificativa obrigatória ao usuário" : "Motivo do cancelamento";
-    cancellationReason.placeholder = source === "partner" ? "Explique por que o parceiro precisa cancelar este horário já reservado e pago." : "Informe brevemente o motivo do cancelamento.";
+    cancellationWarningText.textContent = mode === "voucher" ? "O usuário está dentro do prazo e receberá voucher conforme a política aceita antes do pagamento." : mode === "refund" ? "Quem efetua este cancelamento assume o reembolso integral e todos os custos decorrentes." : "O prazo regular foi encerrado. O cancelamento será concluído sem reembolso ou voucher.";
+    cancellationImpactList.innerHTML = cancellationImpacts(source, mode).map((item) => `<li>${esc(item)}</li>`).join("");
+    cancellationReasonLabel.textContent = source === "user" ? "Motivo do cancelamento" : "Justificativa obrigatória ao usuário";
+    cancellationReason.placeholder = source === "user" ? "Informe brevemente o motivo do cancelamento." : `Explique por que ${cancellationSourceLabel(source)} precisa cancelar este horário já reservado e pago.`;
     cancellationReason.value = "";
     cancellationAcknowledge.checked = false;
-    cancellationSubmit.textContent = source === "partner" ? "Cancelar, estornar e comunicar" : "Cancelar e solicitar estorno";
+    cancellationAcknowledgeText.textContent = mode === "voucher" ? "Estou ciente de que o horário e o evento serão cancelados e o valor pago será convertido em voucher conforme as regras de disponibilidade compatível." : mode === "refund" ? "Confirmo o reembolso integral e a responsabilidade do cancelador por todas as taxas e custos, sem desconto para o usuário." : "Estou ciente de que este cancelamento fora do prazo não gera reembolso nem voucher.";
+    cancellationSubmit.textContent = mode === "voucher" ? "Cancelar e gerar voucher" : mode === "refund" ? "Cancelar e reembolsar integralmente" : "Cancelar sem reembolso ou voucher";
     cancellationDialog.showModal();
     focusDialog(cancellationDialog);
   }
 
-  function completePaidCancellation({ source, reservationId, partnerReservationId, reason }) {
+  function cancelLinkedEventAndNotify(reservation, source, now) {
+    const linkedEvent = reservation?.eventId ? state.groupEvents.find((event) => event.id === reservation.eventId) : null;
+    if (linkedEvent) Object.assign(linkedEvent, { statusKey: "cancelled", status: "Cancelado", published: false, publicationEndpoint: `${source}.reservation.cancelled`, pushStatus: "Cancelamento comunicado" });
+    const group = reservation ? userGroup(reservation.groupId) : null;
+    if (reservation?.groupId) state.pushLog.unshift({ id: nextId("PUSH-", state.pushLog), groupId: reservation.groupId, groupName: reservation.groupName, eventId: reservation.eventId, eventTitle: reservation.event, recipients: Math.max(0, Number(group?.memberCount || 1) - 1), endpoint: "push.group_cancellation", status: "Enviado", createdAt: now });
+  }
+
+  function completePaidCancellation({ source, mode, reservationId, partnerReservationId, reason, outsideDeadline }) {
     const reservation = reservationId ? state.reservations.find((item) => item.id === reservationId) : null;
     const partnerReservation = partnerReservationId ? state.partnerReservations.find((item) => item.id === partnerReservationId) : state.partnerReservations.find((item) => item.userReservationId === reservationId);
-    const linkedEvent = reservation?.eventId ? state.groupEvents.find((event) => event.id === reservation.eventId) : null;
-    const now = new Date().toLocaleString("pt-BR");
-    const refundId = nextId("REF-", state.cancellationLog);
-    if (reservation) {
-      Object.assign(reservation, {
-        statusKey: "cancelled",
-        status: "Cancelada e estornada",
-        endpoint: source === "partner" ? "partner.reservation.cancelled_after_payment" : "user.reservation.cancelled_after_payment",
-        paymentStatus: "Estornado",
-        refundStatus: "Estorno confirmado",
-        refundEndpoint: "refund.confirmed",
-        refundId,
-        cancellationSource: source,
-        cancellationReason: reason,
-        cancelledAt: now,
-        slotReleased: true,
-        pushStatus: "Cancelamento comunicado",
-        eventPublicationStatus: "cancelled"
-      });
+    const nowDate = new Date();
+    const now = nowDate.toLocaleString("pt-BR");
+    const value = Number(reservation?.value || partnerReservation?.value || 0);
+    const venueId = reservation?.venueId || state.partnerProfile.venueId;
+    const venueName = reservation?.venue || state.venues.find((venue) => venue.id === venueId)?.name || state.partnerProfile.tradeName;
+    const cancellationId = nextId("CAN-", state.cancellationLog);
+    let voucher = null;
+    let endpoint = "";
+    let paymentStatus = "";
+    if (mode === "voucher") {
+      const voucherId = nextId("VC-", state.cancellationVouchers);
+      const voucherCode = `CANCELA-${voucherId.replace(/\D/g, "")}`;
+      const expiresAtDate = new Date(nowDate);
+      expiresAtDate.setDate(expiresAtDate.getDate() + Number(state.settings.voucherValidityDays || 30));
+      const originalTime = reservation?.time || partnerReservation?.time || "20:00";
+      const window = voucherCompatibleWindow(originalTime);
+      voucher = { id: voucherId, code: voucherCode, sourceReservationId: reservation?.id || "", partnerReservationId: partnerReservation?.id || "", user: reservation?.user || state.userProfile.name, venueId, venue: venueName, value, originalValue: value, originalTime, originalPeriod: timePeriod(originalTime), compatibilityWindow: `${minutesToTime(window.start)}–${minutesToTime(window.end)}`, minimumCompatibleDates: Number(state.settings.voucherMinimumCompatibleDates || 4), status: "active", issuedAt: now, issuedDate: formatPtDate(nowDate), expiresAt: formatPtDate(expiresAtDate), validityDays: Number(state.settings.voucherValidityDays || 30), useType: "single", minimumReservationValue: value, partnerLiability: true, accountingOriginMonth: reservation?.accountingMonth || accountingMonth(nowDate), accountingTreatment: "Pagamento original mantido; resgate sem nova obrigação, salvo complemento", cancellationSource: source, cancellationReason: reason, reassignmentStatus: "Vinculado ao parceiro original" };
+      refreshVoucherAvailability(voucher);
+      state.cancellationVouchers.unshift(voucher);
+      endpoint = "user.reservation.cancelled_with_voucher";
+      paymentStatus = "Pago — convertido em voucher";
+      state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "voucher_issued", reservationId: reservation?.id || "", voucherId, venueId, venue: venueName, amount: value, fiscalAmount: 0, accountingMonth: reservation?.accountingMonth || accountingMonth(nowDate), description: "Voucher emitido sem reversão do pagamento original" });
+    } else if (mode === "refund") {
+      endpoint = source === "partner" ? "partner.reservation.cancelled_with_full_refund" : "tamo_on.reservation.cancelled_with_full_refund";
+      paymentStatus = "Reembolso integral confirmado — simulado";
+      state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "full_refund", reservationId: reservation?.id || "", venueId, venue: venueName, amount: value, fiscalAmount: 0, accountingMonth: accountingMonth(nowDate), responsible: source, feeResponsibility: source, description: `Reembolso integral; taxas e custos suportados por ${cancellationSourceLabel(source)}` });
+    } else {
+      endpoint = "user.reservation.cancelled_outside_deadline";
+      paymentStatus = "Pago — sem reembolso ou voucher";
     }
-    if (partnerReservation) {
-      Object.assign(partnerReservation, {
-        status: "Cancelada",
-        payment: "Estornado via Asaas",
-        cancellationSource: source,
-        cancellationReason: reason,
-        refundStatus: "Estorno confirmado",
-        refundEndpoint: "refund.confirmed",
-        refundId,
-        cancelledAt: now
-      });
-    }
-    if (linkedEvent) {
-      Object.assign(linkedEvent, {
-        statusKey: "cancelled",
-        status: "Cancelado",
-        published: false,
-        publicationEndpoint: source === "partner" ? "partner.reservation.cancelled" : "user.reservation.cancelled",
-        pushStatus: "Cancelamento comunicado"
-      });
-    }
-    const group = reservation ? userGroup(reservation.groupId) : null;
-    if (reservation?.groupId) {
-      state.pushLog.unshift({
-        id: nextId("PUSH-", state.pushLog),
-        groupId: reservation.groupId,
-        groupName: reservation.groupName,
-        eventId: reservation.eventId,
-        eventTitle: reservation.event,
-        recipients: Math.max(0, Number(group?.memberCount || 1) - 1),
-        endpoint: "push.group_cancellation",
-        status: "Enviado",
-        createdAt: now
-      });
-    }
-    state.cancellationLog.unshift({ id: refundId, source, reservationId: reservation?.id || "", partnerReservationId: partnerReservation?.id || "", reason, refundEndpoint: "refund.confirmed", slotReleased: true, eventId: reservation?.eventId || partnerReservation?.eventId || "", createdAt: now });
+    if (reservation) Object.assign(reservation, { statusKey: "cancelled", status: mode === "voucher" ? "Cancelada com voucher" : mode === "refund" ? "Cancelada com reembolso integral" : "Cancelada fora do prazo", endpoint, paymentStatus, voucherGeneratedId: voucher?.id || "", voucherGeneratedCode: voucher?.code || "", cancellationSource: source, cancellationMode: mode, cancellationReason: reason, cancelledAt: now, slotReleased: true, refundValue: mode === "refund" ? value : 0, refundStatus: mode === "refund" ? "confirmed" : "not_applicable", refundFeePayer: mode === "refund" ? source : "", outsideDeadline: Boolean(outsideDeadline), pushStatus: "Cancelamento comunicado", eventPublicationStatus: "cancelled" });
+    if (partnerReservation) Object.assign(partnerReservation, { status: "Cancelada", payment: mode === "voucher" ? "Pago — voucher emitido" : mode === "refund" ? "Reembolso integral — simulado" : "Pago — sem compensação", cancellationSource: source, cancellationMode: mode, cancellationReason: reason, voucherGeneratedId: voucher?.id || "", voucherGeneratedCode: voucher?.code || "", voucherStatus: voucher ? voucherStatusLabel(voucher) : "Não emitido", refundValue: mode === "refund" ? value : 0, refundFeePayer: mode === "refund" ? source : "", cancelledAt: now });
+    cancelLinkedEventAndNotify(reservation, source, now);
+    state.cancellationLog.unshift({ id: cancellationId, source, mode, reservationId: reservation?.id || "", partnerReservationId: partnerReservation?.id || "", reason, voucherId: voucher?.id || "", voucherCode: voucher?.code || "", refundValue: mode === "refund" ? value : 0, feeResponsibility: mode === "refund" ? source : "", outsideDeadline: Boolean(outsideDeadline), slotReleased: true, eventId: reservation?.eventId || partnerReservation?.eventId || "", createdAt: now });
     saveState();
     render();
-    showToast(source === "partner" ? "Reserva cancelada pelo parceiro, estorno registrado e comunicações simuladas." : "Reserva cancelada, estorno registrado e horário liberado.");
+    showToast(mode === "voucher" ? "Reserva cancelada; voucher gerado e horário liberado." : mode === "refund" ? "Reserva cancelada com reembolso integral simulado." : "Reserva cancelada fora do prazo, sem reembolso ou voucher.");
   }
 
   function focusDialog(dialog) {
@@ -669,7 +854,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? `<button class="button danger small" data-action="cancel-paid-user-reservation" data-id="${esc(reservation.id)}">Cancelar e solicitar estorno</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? `<button class="button danger small" data-action="cancel-paid-user-reservation" data-id="${esc(reservation.id)}">Cancelar reserva</button>` : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -679,8 +864,11 @@
   }
 
   function userPromotions() {
-    return `${pageHeader("Área do usuário", "Promoções", "Vouchers fictícios para validar regras, aplicação e comunicação das ofertas.")}
-      <section class="grid">${state.promotions.map((promo) => `<article class="card"><span class="status ${promo.active ? "status-ok" : "status-neutral"}">${promo.active ? "Disponível" : "Encerrada"}</span><h3>${esc(promo.title)}</h3><p class="meta-row"><span>${esc(promo.venue)}</span><span>Até ${esc(promo.validUntil)}</span></p><div class="promo-code"><div><strong>${esc(promo.code)}</strong><div class="meta-row">${esc(promo.benefit)}</div></div><button class="button ${state.appliedVouchers.includes(promo.code) ? "ghost" : "secondary"} small" data-action="apply-voucher" data-code="${esc(promo.code)}">${state.appliedVouchers.includes(promo.code) ? "Aplicado" : "Aplicar"}</button></div></article>`).join("")}</section>`;
+    activeCancellationVouchers();
+    const vouchers = state.cancellationVouchers.filter((voucher) => voucher.user === state.userProfile.name);
+    return `${pageHeader("Área do usuário", "Promoções e vouchers", "Consulte promoções e créditos gerados por cancelamentos elegíveis.")}
+      <section class="section"><div class="section-heading"><div><h2>Vouchers de cancelamento</h2><p>Uso único, no mesmo parceiro, em nova reserva de valor igual ou superior.</p></div></div><div class="grid two">${vouchers.map((voucher) => `<article class="card voucher-card"><div class="section-heading"><div><span class="status ${["active", "active_extended"].includes(voucher.status) ? "status-ok" : voucher.status === "reserved" ? "status-warning" : "status-neutral"}">${esc(voucherStatusLabel(voucher))}</span><h3>${esc(voucher.code)}</h3></div><strong class="voucher-value">${money(voucher.value)}</strong></div><div class="detail-list"><div class="detail-line"><span>Parceiro</span><strong>${esc(voucher.venue)}</strong></div><div class="detail-line"><span>Validade atual</span><strong>${esc(voucher.expiresAt)}</strong></div><div class="detail-line"><span>Regra de uso</span><strong>Reserva de ${money(voucher.minimumReservationValue)} ou mais</strong></div><div class="detail-line"><span>Uso</span><strong>Integral e único</strong></div><div class="detail-line"><span>Horário original</span><strong>${esc(voucher.originalTime || "—")} · ${esc(voucher.originalPeriod || "—")}</strong></div><div class="detail-line"><span>Faixa compatível</span><strong>${esc(voucher.compatibilityWindow || "—")}</strong></div><div class="detail-line"><span>Datas compatíveis</span><strong>${esc(voucher.compatibleDatesCount || 0)} de ${esc(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates)}</strong></div>${voucher.extensionReason ? `<div class="detail-line"><span>Prorrogação</span><strong>${esc(voucher.extensionReason)}</strong></div>` : ""}${voucher.reassignedFrom ? `<div class="detail-line"><span>Realocação</span><strong>${esc(voucher.reassignmentStatus)}</strong></div>` : ""}</div></article>`).join("") || emptyState("%", "Nenhum voucher de cancelamento foi gerado para este usuário.")}</div></section>
+      <section class="section"><div class="section-heading"><div><h2>Promoções</h2><p>Ofertas demonstrativas independentes dos vouchers de cancelamento.</p></div></div><div class="grid">${state.promotions.map((promo) => `<article class="card"><span class="status ${promo.active ? "status-ok" : "status-neutral"}">${promo.active ? "Disponível" : "Encerrada"}</span><h3>${esc(promo.title)}</h3><p class="meta-row"><span>${esc(promo.venue)}</span><span>Até ${esc(promo.validUntil)}</span></p><div class="promo-code"><div><strong>${esc(promo.code)}</strong><div class="meta-row">${esc(promo.benefit)}</div></div><button class="button ${state.appliedVouchers.includes(promo.code) ? "ghost" : "secondary"} small" data-action="apply-voucher" data-code="${esc(promo.code)}">${state.appliedVouchers.includes(promo.code) ? "Aplicado" : "Aplicar"}</button></div></article>`).join("")}</div></section>`;
   }
 
   function userProfile() {
@@ -723,7 +911,7 @@
     const items = state.partnerReservations.filter((item) => filter === "Todos" || item.status === filter);
     return `${pageHeader("Portal do parceiro", "Reservas", "Aceite solicitações, registre reservas manuais e acompanhe os pagamentos externos.", `<button class="button primary" data-action="new-partner-reservation">Nova reserva manual</button>`)}
       <div class="toolbar"><select class="filter-select" id="partnerReservationFilter"><option>Todos</option><option>Pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-partner-reservations">Exportar CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar reserva paga</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
+      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar e reembolsar</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   function partnerSpaces() {
@@ -742,12 +930,14 @@
   }
 
   function partnerFinance() {
-    const gross = state.partnerReservations.filter((item) => item.status === "Confirmada").reduce((sum,item) => sum + item.value,0);
-    const commission = gross * (state.partnerProfile.commissionRate / 100);
-    return `${pageHeader("Portal do parceiro", "Financeiro", "Simulação de conciliação. Nesta fase, os pagamentos continuam externos e nenhum valor é movimentado.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
-      <section class="stats-grid">${stat(money(gross), "valor bruto")}${stat(`${state.partnerProfile.commissionRate}%`, "comissão simulada")}${stat(money(commission), "comissão da plataforma")}${stat(money(gross - commission), "líquido estimado")}</section>
-      <section class="grid two"><article class="card"><h2>Modelo fiscal previsto</h2><div class="detail-list"><div class="detail-line"><span>Serviço esportivo</span><strong>${esc(state.partnerProfile.fiscalIssuer)}</strong></div><div class="detail-line"><span>Comissão da plataforma</span><strong>${esc(state.partnerProfile.commissionInvoice)}</strong></div><div class="detail-line"><span>Modelo atual</span><strong>${esc(state.partnerProfile.paymentModel)}</strong></div></div></article><article class="card"><h2>Conta para recebimento</h2><div class="detail-list"><div class="detail-line"><span>Banco</span><strong>${esc(state.partnerProfile.bank)}</strong></div><div class="detail-line"><span>Agência e conta</span><strong>${esc(state.partnerProfile.branch)} · ${esc(state.partnerProfile.account)}</strong></div><div class="detail-line"><span>Subconta Asaas</span><strong>${esc(state.partnerProfile.asaasSubaccount)}</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-bank-data">Editar dados</button></article></section>
-      <div class="callout section"><strong>Sem transação real</strong><p>Split, subconta, conciliação, reembolso, estorno e emissão fiscal continuam apenas documentados para validação do fluxo.</p></div>`;
+    const recognized = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
+    const complements = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const commission = recognized * (state.partnerProfile.commissionRate / 100);
+    const liability = activeVoucherLiability(state.partnerProfile.venueId);
+    return `${pageHeader("Portal do parceiro", "Financeiro", "Conciliação demonstrativa com pagamentos originais, vouchers e complementos.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
+      <section class="stats-grid">${stat(money(recognized), "valor contabilizado")}${stat(money(liability.value), "vouchers a honrar", `${liability.count} ativos`)}${stat(money(complements), "complementos novos")}${stat(money(commission), "comissão simulada")}</section>
+      <section class="grid two"><article class="card"><h2>Tratamento do voucher</h2><div class="detail-list"><div class="detail-line"><span>Pagamento cancelado</span><strong>Permanece no mês original</strong></div><div class="detail-line"><span>Uso integral do voucher</span><strong>Sem nova obrigação</strong></div><div class="detail-line"><span>Reserva de valor superior</span><strong>Somente o complemento é novo</strong></div><div class="detail-line"><span>Responsabilidade</span><strong>Parceiro da quadra</strong></div></div></article><article class="card"><h2>Conta para recebimento</h2><div class="detail-list"><div class="detail-line"><span>Banco</span><strong>${esc(state.partnerProfile.bank)}</strong></div><div class="detail-line"><span>Agência e conta</span><strong>${esc(state.partnerProfile.branch)} · ${esc(state.partnerProfile.account)}</strong></div><div class="detail-line"><span>Subconta Asaas</span><strong>${esc(state.partnerProfile.asaasSubaccount)}</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-bank-data">Editar dados</button></article></section>
+      <div class="callout section"><strong>Obrigação pendente</strong><p>O parceiro não pode encerrar as atividades na plataforma enquanto houver vouchers ativos. Para encerrar, deverá honrar os créditos ou ressarcir o Tâmo On para permitir a realocação.</p></div>`;
   }
 
   function partnerRegistration() {
@@ -761,6 +951,7 @@
         ${group("Contratos e regras", [["Contrato",p.contractStatus],["Termos",p.termsStatus],["LGPD",p.privacyStatus],["Cancelamento",p.cancellationPolicy]], "edit-contract-data")}
         ${group("Fiscal e financeiro", [["Documento ao usuário",p.fiscalIssuer],["NFS-e da comissão",p.commissionInvoice],["Pagamento",p.paymentModel],["Comissão",`${p.commissionRate}%`],["Subconta",p.asaasSubaccount]], "edit-fiscal-data")}
         <article class="detail-group"><div class="section-heading"><div><h2>Documentos</h2></div><button class="button ghost small" data-action="add-document">Adicionar</button></div><div class="detail-list">${p.documents.map((doc,index) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(doc.name)}</strong><small>${esc(doc.status)}</small></div><button class="button ghost small" data-action="edit-document" data-index="${index}">Alterar</button></div>`).join("")}</div></article>
+        <article class="detail-group"><div class="section-heading"><div><h2>Vouchers e encerramento</h2></div><button class="button danger small" data-action="request-partner-closure">Solicitar encerramento</button></div><div class="detail-list"><div class="detail-line"><span>Vouchers ativos</span><strong>${activeVoucherLiability(p.venueId).count}</strong></div><div class="detail-line"><span>Valor a honrar</span><strong>${money(activeVoucherLiability(p.venueId).value)}</strong></div><div class="detail-line"><span>Regra</span><strong>Encerramento bloqueado com créditos pendentes</strong></div></div></article>
       </section>`;
   }
 
@@ -784,7 +975,7 @@
     const items = state.adminPartners.filter((partner) => `${partner.tradeName} ${partner.legalName} ${partner.city} ${partner.cnpj}`.toLowerCase().includes(query) && (filter === "Todos" || partner.status === filter));
     return `${pageHeader("Administração", "Parceiros", "Homologação cadastral, documental, contratual, fiscal e financeira.", `<button class="button primary" data-action="new-admin-partner">Cadastrar parceiro</button>`)}
       <div class="toolbar"><label class="search"><span>⌕</span><input id="adminPartnerSearch" value="${esc(state.search.adminPartner)}" placeholder="Buscar nome, CNPJ ou cidade"></label><select class="filter-select" id="adminPartnerFilter"><option>Todos</option><option>Aprovado</option><option>Em análise</option><option>Pendente</option><option>Suspenso</option></select><button class="button ghost" data-action="export-admin-partners">Exportar CSV</button></div>
-      <section class="card"><div class="list">${items.map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.legalName)} · ${esc(partner.cnpj)}<br>${esc(partner.city)} · ${esc(partner.spaces)} espaços · cadastro ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><div class="item-actions"><button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Dossiê</button><button class="button ghost small" data-action="edit-admin-partner" data-id="${partner.id}">Editar</button>${partner.status !== "Aprovado" ? `<button class="button secondary small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Aprovado">Aprovar</button>` : `<button class="button danger small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Suspenso">Suspender</button>`}</div></div>`).join("") || emptyState("◇", "Nenhum parceiro corresponde aos filtros.")}</div></section>`;
+      <section class="card"><div class="list">${items.map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.legalName)} · ${esc(partner.cnpj)}<br>${esc(partner.city)} · ${esc(partner.spaces)} espaços · cadastro ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><div class="item-actions"><button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Dossiê</button><button class="button ghost small" data-action="edit-admin-partner" data-id="${partner.id}">Editar</button>${partner.status !== "Aprovado" ? `<button class="button secondary small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Aprovado">Aprovar</button>` : `<button class="button danger small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Suspenso">Suspender</button><button class="button ghost small" data-action="request-admin-partner-closure" data-id="${partner.id}">Encerramento</button>`}</div></div>`).join("") || emptyState("◇", "Nenhum parceiro corresponde aos filtros.")}</div></section>`;
   }
 
   function adminReservations() {
@@ -792,7 +983,7 @@
     const items = state.reservations.filter((item) => filter === "Todos" || reservationStatus(item.statusKey).label === filter);
     return `${pageHeader("Administração", "Reservas", "Acompanhe o status operacional e o último endpoint aplicado.")}
       <div class="toolbar"><select class="filter-select" id="adminReservationFilter"><option>Todos</option><option>Reserva pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-admin-reservations">Exportar CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Parceiro</th><th>Usuário</th><th>Data</th><th>Valor</th><th>Status</th><th>Endpoint</th><th>Ações</th></tr></thead><tbody>${items.map((item) => { const visual = reservationStatus(item.statusKey); return `<tr><td>${esc(item.id)}</td><td>${esc(item.venue)}</td><td>${esc(item.user)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${money(item.value)}</td><td><span class="status ${visual.status}">${visual.label}</span></td><td>${esc(item.endpoint)}</td><td><button class="button ghost small" data-action="admin-reservation-edit" data-id="${esc(item.id)}">Alterar status</button></td></tr>`; }).join("")}</tbody></table></div>`;
+      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Parceiro</th><th>Usuário</th><th>Data</th><th>Valor</th><th>Status</th><th>Endpoint</th><th>Ações</th></tr></thead><tbody>${items.map((item) => { const visual = reservationStatus(item.statusKey); return `<tr><td>${esc(item.id)}</td><td>${esc(item.venue)}</td><td>${esc(item.user)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${money(item.value)}</td><td><span class="status ${visual.status}">${visual.label}</span></td><td>${esc(item.endpoint)}</td><td><div class="item-actions"><button class="button ghost small" data-action="admin-reservation-edit" data-id="${esc(item.id)}">Alterar status</button>${item.statusKey === "confirmed" ? `<button class="button danger small" data-action="cancel-paid-tamo-reservation" data-id="${esc(item.id)}">Cancelar pelo Tâmo On</button>` : ""}</div></td></tr>`; }).join("")}</tbody></table></div>`;
   }
 
   function adminUsers() {
@@ -804,20 +995,25 @@
   }
 
   function adminFinance() {
-    const confirmed = state.reservations.filter((item) => item.statusKey === "confirmed");
-    const gross = confirmed.reduce((sum,item) => sum + item.value,0);
-    const commission = gross * (state.settings.defaultCommission / 100);
-    return `${pageHeader("Administração", "Financeiro", "Modelo demonstrativo de segregação dos valores do parceiro e da comissão da plataforma.", `<button class="button ghost" data-action="export-admin-finance">Exportar conciliação</button>`)}
-      <section class="stats-grid">${stat(money(gross), "serviços esportivos")}${stat(`${state.settings.defaultCommission}%`, "comissão padrão")}${stat(money(commission), "receita da plataforma")}${stat(money(gross - commission), "valor dos parceiros")}</section>
-      <section class="card"><div class="table-wrap" style="border:0"><table><thead><tr><th>Reserva</th><th>Parceiro</th><th>Valor bruto</th><th>Comissão</th><th>Parceiro</th><th>Documento fiscal</th></tr></thead><tbody>${confirmed.map((item) => { const fee = item.value * state.settings.defaultCommission / 100; return `<tr><td>${esc(item.id)}</td><td>${esc(item.venue)}</td><td>${money(item.value)}</td><td>${money(fee)}</td><td>${money(item.value-fee)}</td><td>Parceiro ao usuário; Tâmo On ao parceiro</td></tr>`; }).join("")}</tbody></table></div></section>
-      <div class="callout section"><strong>Estrutura prevista</strong><p>Receita própria limitada à comissão; valor do serviço esportivo segregado; futura conciliação por reserva, pagamento, tarifa, comissão, estorno e reembolso.</p></div>`;
+    const recognized = state.reservations.reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
+    const complements = state.reservations.reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const refunds = state.cancellationLog.reduce((sum, item) => sum + Number(item.refundValue || 0), 0);
+    const commission = recognized * (state.settings.defaultCommission / 100);
+    const activeVouchers = activeCancellationVouchers();
+    const voucherLiability = activeVouchers.reduce((sum, item) => sum + Number(item.value || 0), 0);
+    return `${pageHeader("Administração", "Financeiro", "Conciliação demonstrativa de pagamentos, vouchers, reembolsos, complementos e obrigações dos parceiros.", `<button class="button ghost" data-action="export-admin-finance">Exportar conciliação</button>`)}
+      <section class="stats-grid">${stat(money(recognized), "valores contabilizados")}${stat(money(voucherLiability), "vouchers ativos", `${activeVouchers.length} créditos`)}${stat(money(refunds), "reembolsos integrais")}${stat(money(complements), "complementos pagos")}</section>
+      <section class="card"><div class="section-heading"><div><h2>Vouchers de cancelamento</h2><p>Prazo condicionado à oferta de horários compatíveis e responsabilidade do parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Voucher</th><th>Parceiro</th><th>Valor</th><th>Faixa</th><th>Datas</th><th>Validade</th><th>Status</th><th>Ação</th></tr></thead><tbody>${state.cancellationVouchers.map((voucher) => `<tr><td>${esc(voucher.code)}</td><td>${esc(voucher.venue)}</td><td>${money(voucher.value)}</td><td>${esc(voucher.originalTime || "—")} · ${esc(voucher.compatibilityWindow || "—")}</td><td>${esc(voucher.compatibleDatesCount || 0)}/${esc(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates)}</td><td>${esc(voucher.expiresAt)}</td><td><span class="status ${["active", "active_extended"].includes(voucher.status) ? "status-ok" : voucher.status === "reserved" ? "status-warning" : "status-neutral"}">${esc(voucherStatusLabel(voucher))}</span></td><td>${["active", "active_extended"].includes(voucher.status) ? `<button class="button ghost small" data-action="reassign-cancellation-voucher" data-id="${esc(voucher.id)}">Ressarcir e realocar</button>` : "—"}</td></tr>`).join("") || `<tr><td colspan="8">Nenhum voucher gerado.</td></tr>`}</tbody></table></div></section>
+      <section class="card section"><div class="section-heading"><div><h2>Cancelamentos e reembolsos</h2><p>O responsável pelo cancelamento suporta a consequência financeira aplicável.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Registro</th><th>Reserva</th><th>Responsável</th><th>Modalidade</th><th>Reembolso</th><th>Taxas</th></tr></thead><tbody>${state.cancellationLog.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.reservationId || item.partnerReservationId)}</td><td>${esc(cancellationSourceLabel(item.source))}</td><td>${item.mode === "voucher" ? "Voucher" : item.mode === "refund" ? "Reembolso integral" : "Sem compensação"}</td><td>${money(item.refundValue || 0)}</td><td>${item.feeResponsibility ? esc(cancellationSourceLabel(item.feeResponsibility)) : "Não aplicável"}</td></tr>`).join("") || `<tr><td colspan="6">Nenhum cancelamento processado.</td></tr>`}</tbody></table></div></section>
+      <section class="card section"><div class="section-heading"><div><h2>Análises excepcionais</h2><p>Cancelamentos fora do prazo submetidos conjuntamente ao Tâmo On e ao parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Solicitação</th><th>Reserva</th><th>Parceiro</th><th>Status</th><th>Decisões</th></tr></thead><tbody>${state.cancellationExceptionReviews.map((review) => `<tr><td>${esc(review.id)}</td><td>${esc(review.reservationId)}</td><td>${esc(review.venue)}</td><td><span class="status status-warning">${esc(review.status)}</span></td><td>Tâmo On: ${esc(review.tamoDecision)} · Parceiro: ${esc(review.partnerDecision)}</td></tr>`).join("") || `<tr><td colspan="5">Nenhuma análise excepcional pendente.</td></tr>`}</tbody></table></div></section>
+      <div class="callout section"><strong>Regra contábil simulada</strong><p>O pagamento que originou o voucher permanece no exercício original. Cancelamentos do parceiro ou do Tâmo On geram reembolso integral e os custos ficam com o responsável. Fora do prazo, não há crédito automático.</p></div>`;
   }
 
   function adminSettings() {
     const settings = state.settings;
     const toggle = (key,title,help,locked=false) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(title)}</strong><small>${esc(help)}</small></div><button class="switch ${settings[key] ? "on" : ""}" data-action="toggle-setting" data-key="${esc(key)}" aria-pressed="${settings[key]}" ${locked ? "disabled" : ""}></button></div>`;
     return `${pageHeader("Administração", "Configurações", "Controles locais da Preview. Pagamentos reais permanecem bloqueados.", `<button class="button ghost" data-action="edit-commercial-settings">Editar regras comerciais</button>`)}
-      <section class="grid two"><article class="card"><h2>Operação</h2>${toggle("marketplaceEnabled","Área de parceiros","Exibe as áreas demonstrativas.")}${toggle("newPartners","Novos cadastros","Permite incluir parceiros fictícios.")}${toggle("vouchersEnabled","Vouchers","Exibe promoções na área do usuário.")}${toggle("notificationEmails","Avisos por e-mail","Simulação de comunicações operacionais.")}</article><article class="card"><h2>Segurança</h2>${toggle("realMoney","Pagamentos reais","Bloqueado nesta linha de Preview.",true)}${toggle("automaticApproval","Aprovação automática","Mantida desligada para validar a homologação manual.")}<div class="detail-list" style="margin-top:14px"><div class="detail-line"><span>Comissão padrão</span><strong>${esc(settings.defaultCommission)}%</strong></div><div class="detail-line"><span>Prazo de cancelamento</span><strong>${esc(settings.cancellationHours)} horas</strong></div><div class="detail-line"><span>Persistência</span><strong>LocalStorage do navegador</strong></div></div></article></section>
+      <section class="grid two"><article class="card"><h2>Operação</h2>${toggle("marketplaceEnabled","Área de parceiros","Exibe as áreas demonstrativas.")}${toggle("newPartners","Novos cadastros","Permite incluir parceiros fictícios.")}${toggle("vouchersEnabled","Vouchers","Exibe promoções na área do usuário.")}${toggle("notificationEmails","Avisos por e-mail","Simulação de comunicações operacionais.")}</article><article class="card"><h2>Regras comerciais</h2><div class="detail-list" style="margin-top:14px"><div class="detail-line"><span>Comissão padrão</span><strong>${esc(settings.defaultCommission)}%</strong></div><div class="detail-line"><span>Prazo do usuário</span><strong>${esc(settings.cancellationHours)} horas</strong></div><div class="detail-line"><span>Validade nominal</span><strong>${esc(settings.voucherValidityDays)} dias</strong></div><div class="detail-line"><span>Faixa compatível</span><strong>± ${esc(settings.voucherCompatibilityWindowHours)} horas</strong></div><div class="detail-line"><span>Mínimo de datas</span><strong>${esc(settings.voucherMinimumCompatibleDates)}</strong></div><div class="detail-line"><span>Prorrogação</span><strong>${esc(settings.voucherExtensionDays)} dias</strong></div><div class="detail-line"><span>Persistência</span><strong>LocalStorage do navegador</strong></div></div></article></section>
       <section class="section"><button class="button danger" data-action="reset-local-data">Restaurar dados iniciais</button></section>`;
   }
 
@@ -889,7 +1085,9 @@
     reservationReturnContext = { venueId: venue.id, shortDate: day.shortDate };
     reservationTitle.textContent = `${venue.name} · ${time}`;
     reservationSummary.innerHTML = `<strong>${esc(venue.name)}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(day.date)}</span><span>${esc(time)}</span><span>${money(slot.price)}</span></div>`;
-    voucherSelect.value = "";
+    reservationPolicyAcknowledge.checked = false;
+    if (reservationPolicyText) reservationPolicyText.textContent = `Cancelamento pelo usuário até ${state.settings.cancellationHours} horas antes gera voucher de uso único. Cancelamento pelo parceiro ou pelo Tâmo On gera reembolso integral, com taxas suportadas pelo responsável. Fora do prazo não há crédito automático. O voucher tem prazo nominal de ${state.settings.voucherValidityDays} dias, mas só expira normalmente se houver ao menos ${state.settings.voucherMinimumCompatibleDates} datas em faixa compatível de ±${state.settings.voucherCompatibilityWindowHours} horas e no mesmo período do dia.`;
+    populateVoucherOptions();
     populateReservationGroups();
     if (detailDialog.open) detailDialog.close();
     reservationDialog.showModal();
@@ -899,13 +1097,34 @@
   function applyUserReservationStatus(id, statusKey) {
     const reservation = state.reservations.find((item) => item.id === id);
     if (!reservation) return;
+    const linkedVoucher = reservation.cancellationVoucherId ? state.cancellationVouchers.find((voucher) => voucher.id === reservation.cancellationVoucherId) : null;
     if (statusKey === "confirmed") {
-      Object.assign(reservation, { statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed" });
-      const published = publishStandbyEventForReservation(reservation);
+      const complement = Number(reservation.paymentDue || 0);
+      const hadAccounting = Number(reservation.accountingRecognizedValue || 0) > 0;
+      Object.assign(reservation, {
+        statusKey: "confirmed",
+        status: complement > 0 ? "Confirmada — complemento pago" : "Confirmada",
+        endpoint: complement > 0 ? "payment.complement.confirmed" : "payment.confirmed",
+        paymentStatus: complement > 0 ? "Complemento pago via Asaas" : "Pago",
+        complementPaid: complement,
+        accountingRecognizedValue: complement > 0 ? complement : Number(reservation.accountingRecognizedValue || reservation.value),
+        fiscalObligationValue: complement > 0 ? complement : Number(reservation.fiscalObligationValue || reservation.value),
+        accountingMonth: accountingMonth()
+      });
+      if (linkedVoucher) {
+        Object.assign(linkedVoucher, { status: "used", usedAt: new Date().toLocaleString("pt-BR"), usedReservationId: reservation.id, consumedValue: linkedVoucher.value });
+      }
+      if (complement > 0) {
+        state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "voucher_complement", reservationId: reservation.id, voucherId: linkedVoucher?.id || "", venueId: reservation.venueId, venue: reservation.venue, amount: complement, fiscalAmount: complement, accountingMonth: reservation.accountingMonth, description: "Complemento pago em reserva com voucher" });
+      } else if (!linkedVoucher && !hadAccounting) {
+        state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "service_payment", reservationId: reservation.id, venueId: reservation.venueId, venue: reservation.venue, amount: reservation.value, fiscalAmount: reservation.value, accountingMonth: reservation.accountingMonth, description: "Pagamento da reserva" });
+      }
+      const published = publishStandbyEventForReservation(reservation, complement > 0 ? "event.publish_after_complement" : "event.publish_after_payment");
       saveState(); render();
       showToast(published ? `${id}: pagamento confirmado, evento publicado e push registrado.` : `${id}: pagamento confirmado.`);
       return;
     }
+    if (linkedVoucher?.status === "reserved") Object.assign(linkedVoucher, { status: "active", reservedReservationId: "", reservedAt: "" });
     Object.assign(reservation, { statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", pushStatus: "Não enviado" });
     if (reservation.eventMode === "new" && reservation.eventId) {
       const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
@@ -922,7 +1141,7 @@
       <div class="detail-group"><h3>Empresa</h3><div class="detail-list"><div class="detail-line"><span>Razão social</span><strong>${esc(partner.legalName)}</strong></div><div class="detail-line"><span>CNPJ</span><strong>${esc(partner.cnpj)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(partner.city)}</strong></div><div class="detail-line"><span>Atividade declarada</span><strong>${esc(partner.activity)}</strong></div><div class="detail-line"><span>Regime tributário</span><strong>${esc(partner.taxRegime)}</strong></div></div></div>
       <div class="detail-group"><h3>Responsável</h3><div class="detail-list"><div class="detail-line"><span>Nome</span><strong>${esc(partner.responsible)}</strong></div><div class="detail-line"><span>E-mail</span><strong>${esc(partner.email)}</strong></div><div class="detail-line"><span>Telefone</span><strong>${esc(partner.phone)}</strong></div><div class="detail-line"><span>Tipos de espaço</span><strong>${esc(partner.types)}</strong></div></div></div>
       <div class="detail-group"><h3>Contrato e fiscal</h3><div class="detail-list"><div class="detail-line"><span>Contrato</span><strong>${esc(partner.contract)}</strong></div><div class="detail-line"><span>Documento fiscal</span><strong>${esc(partner.fiscal)}</strong></div><div class="detail-line"><span>Comissão</span><strong>${esc(partner.commission)}%</strong></div></div></div>
-      <div class="detail-group"><h3>Financeiro e homologação</h3><div class="detail-list"><div class="detail-line"><span>Dados bancários</span><strong>${esc(partner.banking)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(partner.status)}</strong></div><div class="detail-line"><span>Completude</span><strong>${esc(partner.score)}%</strong></div><div class="progress"><span style="width:${Math.min(100,partner.score)}%"></span></div></div></div>
+      <div class="detail-group"><h3>Financeiro e homologação</h3><div class="detail-list"><div class="detail-line"><span>Dados bancários</span><strong>${esc(partner.banking)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(partner.status)}</strong></div><div class="detail-line"><span>Completude</span><strong>${esc(partner.score)}%</strong></div><div class="detail-line"><span>Vouchers ativos</span><strong>${esc(activeVoucherLiability(partner.venueId).count)} · ${money(activeVoucherLiability(partner.venueId).value)}</strong></div><div class="progress"><span style="width:${Math.min(100,partner.score)}%"></span></div></div></div>
     </div>`;
   }
 
@@ -944,10 +1163,14 @@
       if (reservation) {
         const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
         const latestPush = state.pushLog.find((push) => push.eventId === reservation.eventId);
-        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div><div class="detail-line"><span>Valor</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento e estorno</h3><div class="detail-list"><div class="detail-line"><span>Origem</span><strong>${reservation.cancellationSource === "partner" ? "Parceiro" : "Usuário"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Estorno</span><strong>${esc(reservation.refundStatus || "Pendente")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.refundEndpoint || "refund.requested")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
+        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div><div class="detail-line"><span>Valor</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div><div class="detail-line"><span>Valor abatido</span><strong>${money(reservation.voucherAppliedValue || 0)}</strong></div><div class="detail-line"><span>Complemento</span><strong>${money(reservation.paymentDue || reservation.complementPaid || 0)}</strong></div><div class="detail-line"><span>Política aceita</span><strong>${reservation.cancellationPolicyAccepted ? "Sim" : "Não"}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(reservation.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.cancellationMode === "voucher" ? "Voucher" : reservation.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(reservation.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${reservation.refundFeePayer ? esc(cancellationSourceLabel(reservation.refundFeePayer)) : "Não aplicável"}</strong></div><div class="detail-line"><span>Análise excepcional</span><strong>${esc(reservation.exceptionReviewStatus || "Não solicitada")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint || "cancellation.pending")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
       }
     } else if (action === "cancel-paid-user-reservation") {
       openPaidCancellation("user", id);
+    } else if (action === "request-cancellation-exception") {
+      const reservation = state.reservations.find((item) => item.id === id);
+      if (!reservation) return;
+      openForm({ eyebrow: "Análise excepcional", title: `Solicitar análise de ${reservation.id}`, description: "A solicitação será analisada conjuntamente pelo Tâmo On e pelo parceiro. Não há concessão automática de reembolso ou voucher.", fields: [{ name: "details", label: "Justificativa e circunstâncias excepcionais", type: "textarea", value: "", required: true, full: true }], submitLabel: "Enviar para análise", onSubmit: (data) => { const reviewId = nextId("EXC-", state.cancellationExceptionReviews); state.cancellationExceptionReviews.unshift({ id: reviewId, reservationId: reservation.id, venueId: reservation.venueId, venue: reservation.venue, user: reservation.user, details: data.details, status: "Pendente de análise conjunta", partnerDecision: "Pendente", tamoDecision: "Pendente", createdAt: new Date().toLocaleString("pt-BR") }); reservation.exceptionReviewId = reviewId; reservation.exceptionReviewStatus = "Pendente de análise conjunta"; saveState(); render(); showToast("Solicitação excepcional enviada ao Tâmo On e ao parceiro."); } });
     } else if (action === "reservation-status") {
       const label = button.dataset.status === "confirmed" ? "confirmar pelo pagamento" : "cancelar";
       askConfirm({ title: "Alterar reserva", message: `Deseja ${label} a reserva ${id}?`, confirmLabel: "Aplicar endpoint", onConfirm: () => applyUserReservationStatus(id, button.dataset.status) });
@@ -983,7 +1206,7 @@
       const item=state.partnerAgenda.find((entry)=>entry.id===id); if(!item)return;
       openForm({eyebrow:"Agenda",title:"Editar compromisso",fields:[{name:"day",label:"Dia",type:"number",value:item.day,min:3,max:9},{name:"time",label:"Horário",type:"time",value:item.time},{name:"title",label:"Título",value:item.title},{name:"space",label:"Espaço",type:"select",value:item.space,options:state.partnerSpaces.map((s)=>s.name)},{name:"type",label:"Tipo",type:"select",value:item.type,options:[{value:"confirmed",label:"Confirmado"},{value:"pending",label:"Pendente"},{value:"blocked",label:"Bloqueio"}]},{name:"detail",label:"Observação",type:"textarea",value:item.detail,full:true}],onSubmit:(data)=>{Object.assign(item,data,{day:Number(data.day)});saveState();render();showToast("Agenda atualizada.");}});
     } else if (action === "partner-reservation-details") {
-      const item=state.partnerReservations.find((r)=>r.id===id); if(item)openDetail({eyebrow:"Reserva do parceiro",title:item.id,body:`<div class="details-grid"><div class="detail-group"><h3>Reserva</h3><div class="detail-list"><div class="detail-line"><span>Cliente</span><strong>${esc(item.client)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(item.date)} · ${esc(item.time)}</strong></div><div class="detail-line"><span>Espaço</span><strong>${esc(item.space)}</strong></div></div></div><div class="detail-group"><h3>Financeiro</h3><div class="detail-list"><div class="detail-line"><span>Valor</span><strong>${money(item.value)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(item.status)}</strong></div><div class="detail-line"><span>Pagamento</span><strong>${esc(item.payment)}</strong></div><div class="detail-line"><span>Estorno</span><strong>${esc(item.refundStatus || "Não iniciado")}</strong></div></div></div>${item.cancellationSource ? `<div class="detail-group"><h3>Justificativa do cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Origem</span><strong>${item.cancellationSource === "partner" ? "Parceiro" : "Usuário"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(item.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(item.refundEndpoint || "refund.requested")}</strong></div></div></div>` : ""}</div>`});
+      const item=state.partnerReservations.find((r)=>r.id===id); if(item)openDetail({eyebrow:"Reserva do parceiro",title:item.id,body:`<div class="details-grid"><div class="detail-group"><h3>Reserva</h3><div class="detail-list"><div class="detail-line"><span>Cliente</span><strong>${esc(item.client)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(item.date)} · ${esc(item.time)}</strong></div><div class="detail-line"><span>Espaço</span><strong>${esc(item.space)}</strong></div></div></div><div class="detail-group"><h3>Financeiro</h3><div class="detail-list"><div class="detail-line"><span>Valor</span><strong>${money(item.value)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(item.status)}</strong></div><div class="detail-line"><span>Pagamento</span><strong>${esc(item.payment)}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(item.voucherGeneratedCode || "Não gerado")}</strong></div></div></div>${item.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(item.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${item.cancellationMode === "voucher" ? "Voucher" : item.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(item.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(item.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(item.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${item.refundFeePayer ? esc(cancellationSourceLabel(item.refundFeePayer)) : "Não aplicável"}</strong></div></div></div>` : ""}</div>`});
     } else if (action === "cancel-paid-partner-reservation") {
       const item = state.partnerReservations.find((r) => r.id === id);
       if (item) openPaidCancellation("partner", item.userReservationId || "", item.id);
@@ -1007,7 +1230,7 @@
     } else if (action === "toggle-team-member") {
       const item=state.partnerTeam.find((m)=>m.id===id);if(item){item.status=item.status==="Ativo"?"Inativo":"Ativo";saveState();render();showToast(`${item.name}: ${item.status}.`);}
     } else if (action === "export-partner-finance") {
-      exportCsv(`financeiro-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Valor","Status","Pagamento"],...state.partnerReservations.map((r)=>[r.id,r.client,r.value,r.status,r.payment])]);
+      exportCsv(`financeiro-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Valor","Status","Pagamento","Voucher","Reconhecido"],...state.partnerReservations.map((r)=>[r.id,r.client,r.value,r.status,r.payment,r.voucherGeneratedCode||"",r.accountingRecognizedValue||0])]);
     } else if (action === "edit-bank-data") {
       const p=state.partnerProfile;openForm({eyebrow:"Financeiro",title:"Editar dados bancários",fields:[{name:"bank",label:"Banco",value:p.bank},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount,full:true}],onSubmit:(data)=>{Object.assign(p,data);saveState();render();showToast("Dados bancários atualizados localmente.");}});
     } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data"].includes(action)) {
@@ -1030,6 +1253,8 @@
       exportCsv(`parceiros-${VERSION}.csv`,[["Nome fantasia","Razão social","CNPJ","Cidade","Status","Completude"],...state.adminPartners.map((p)=>[p.tradeName,p.legalName,p.cnpj,p.city,p.status,p.score])]);
     } else if (action === "export-admin-reservations") {
       exportCsv(`reservas-administracao-${VERSION}.csv`,[["Reserva","Parceiro","Usuário","Data","Hora","Status","Endpoint"],...state.reservations.map((r)=>[r.id,r.venue,r.user,r.date,r.time,r.status,r.endpoint])]);
+    } else if (action === "cancel-paid-tamo-reservation") {
+      openPaidCancellation("tamo", id);
     } else if (action === "admin-reservation-edit") {
       const item=state.reservations.find((r)=>r.id===id);if(!item)return;
       openForm({eyebrow:"Reservas",title:`Alterar ${item.id}`,fields:[{name:"statusKey",label:"Status",type:"select",value:item.statusKey,options:[{value:"pending",label:"Reserva pendente"},{value:"confirmed",label:"Confirmada"},{value:"cancelled",label:"Cancelada"}]},{name:"endpoint",label:"Endpoint",value:item.endpoint,full:true}],onSubmit:(data)=>{item.statusKey=data.statusKey;item.status=reservationStatus(data.statusKey).label;item.endpoint=data.endpoint;saveState();render();showToast("Reserva atualizada.");}});
@@ -1044,7 +1269,28 @@
     } else if (action === "toggle-setting") {
       const key=button.dataset.key;if(key!=="realMoney"){state.settings[key]=!state.settings[key];saveState();render();showToast("Configuração atualizada.");}
     } else if (action === "edit-commercial-settings") {
-      openForm({eyebrow:"Configurações",title:"Regras comerciais",fields:[{name:"defaultCommission",label:"Comissão padrão (%)",type:"number",step:"0.1",value:state.settings.defaultCommission},{name:"cancellationHours",label:"Prazo de cancelamento (horas)",type:"number",value:state.settings.cancellationHours}],onSubmit:(data)=>{state.settings.defaultCommission=Number(data.defaultCommission);state.settings.cancellationHours=Number(data.cancellationHours);saveState();render();showToast("Regras comerciais atualizadas.");}});
+      openForm({eyebrow:"Configurações",title:"Regras comerciais",fields:[{name:"defaultCommission",label:"Comissão padrão (%)",type:"number",step:"0.1",value:state.settings.defaultCommission},{name:"cancellationHours",label:"Prazo do cancelamento pelo usuário (horas)",type:"number",value:state.settings.cancellationHours},{name:"voucherValidityDays",label:"Validade nominal do voucher (dias)",type:"number",value:state.settings.voucherValidityDays},{name:"voucherCompatibilityWindowHours",label:"Tolerância da faixa compatível (horas)",type:"number",value:state.settings.voucherCompatibilityWindowHours},{name:"voucherMinimumCompatibleDates",label:"Mínimo de datas compatíveis",type:"number",value:state.settings.voucherMinimumCompatibleDates},{name:"voucherExtensionDays",label:"Prorrogação automática (dias)",type:"number",value:state.settings.voucherExtensionDays}],onSubmit:(data)=>{state.settings.defaultCommission=Number(data.defaultCommission);state.settings.cancellationHours=Number(data.cancellationHours);state.settings.voucherValidityDays=Number(data.voucherValidityDays);state.settings.voucherCompatibilityWindowHours=Number(data.voucherCompatibilityWindowHours);state.settings.voucherMinimumCompatibleDates=Number(data.voucherMinimumCompatibleDates);state.settings.voucherExtensionDays=Number(data.voucherExtensionDays);saveState();render();showToast("Regras comerciais atualizadas.");}});
+    } else if (action === "request-partner-closure") {
+      const liability = activeVoucherLiability(state.partnerProfile.venueId);
+      if (liability.count > 0) {
+        openDetail({ eyebrow: "Encerramento bloqueado", title: "Existem vouchers pendentes", body: `<div class="cancellation-warning"><strong>${liability.count} voucher(es) · ${money(liability.value)}</strong><p>O parceiro deve manter a operação até o uso dos créditos ou ressarcir o Tâmo On. Após o ressarcimento, a administração poderá realocar os vouchers para outra quadra.</p></div>` });
+      } else {
+        askConfirm({ title: "Solicitar encerramento", message: "Não há vouchers ativos. Registrar solicitação de encerramento do parceiro?", confirmLabel: "Solicitar", onConfirm: () => showToast("Solicitação de encerramento registrada na Preview.") });
+      }
+    } else if (action === "request-admin-partner-closure") {
+      const partner = state.adminPartners.find((item) => String(item.id) === String(id));
+      if (!partner) return;
+      const liability = activeVoucherLiability(partner.venueId);
+      if (liability.count > 0) {
+        openDetail({ eyebrow: "Encerramento bloqueado", title: partner.tradeName, body: `<div class="cancellation-warning"><strong>${liability.count} voucher(es) ativos · ${money(liability.value)}</strong><p>O encerramento somente poderá ser concluído depois da utilização dos vouchers ou do ressarcimento ao Tâmo On para realocação dos créditos.</p></div>` });
+      } else {
+        askConfirm({ title: "Encerrar parceiro", message: `Registrar o encerramento de ${partner.tradeName}?`, confirmLabel: "Encerrar", onConfirm: () => { partner.status = "Encerrado"; saveState(); render(); showToast("Parceiro encerrado na Preview."); } });
+      }
+    } else if (action === "reassign-cancellation-voucher") {
+      const voucher = state.cancellationVouchers.find((item) => item.id === id);
+      if (!voucher) return;
+      const targets = state.venues.filter((venue) => venue.id !== voucher.venueId);
+      openForm({ eyebrow: "Ressarcimento e realocação", title: voucher.code, description: "Simula o ressarcimento do parceiro original ao Tâmo On e a disponibilização do crédito em outra quadra.", fields: [{ name: "targetVenueId", label: "Novo parceiro", type: "select", options: targets.map((venue) => ({ value: venue.id, label: venue.name })), required: true }, { name: "reimbursementReference", label: "Referência do ressarcimento", value: `RESS-${voucher.id}`, required: true }], submitLabel: "Ressarcir e realocar", onSubmit: (data) => { const target = state.venues.find((venue) => venue.id === data.targetVenueId); if (!target) return; const formerVenue = voucher.venue; voucher.reassignedFrom = formerVenue; voucher.originalVenueId = voucher.venueId; voucher.venueId = target.id; voucher.venue = target.name; voucher.partnerReimbursed = true; voucher.reimbursementReference = data.reimbursementReference; voucher.reassignmentStatus = `Realocado de ${formerVenue} para ${target.name}`; state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "partner_reimbursement", voucherId: voucher.id, venueId: voucher.originalVenueId, venue: formerVenue, amount: voucher.value, fiscalAmount: 0, accountingMonth: accountingMonth(), description: `Ressarcimento para realocação em ${target.name}` }); saveState(); render(); showToast("Voucher ressarcido e realocado para outro parceiro."); } });
     } else if (action === "reset-local-data") {
       askConfirm({title:"Restaurar dados iniciais",message:"Todas as alterações feitas nesta Preview serão apagadas do navegador.",confirmLabel:"Restaurar",onConfirm:resetState});
     }
@@ -1100,6 +1346,8 @@
   groupSelect.addEventListener("change", updateReservationEventOptions);
   eventSelect.addEventListener("change", updateNewEventPanel);
   newEventTitle.addEventListener("input", updateReservationSubmitState);
+  voucherSelect.addEventListener("change", updateVoucherPaymentPreview);
+  reservationPolicyAcknowledge.addEventListener("change", updateReservationSubmitState);
 
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}
@@ -1158,6 +1406,10 @@
       groupPermissionNote.classList.add("permission-denied");
       return;
     }
+    if (!reservationPolicyAcknowledge.checked) {
+      showToast("Confirme o aceite da política de cancelamento, voucher e reembolso.");
+      return;
+    }
     const createsNewEvent = eventSelect.value === "__new__";
     const existingEvent = createsNewEvent ? null : state.groupEvents.find((item) => item.id === eventSelect.value && item.groupId === group.id);
     if (!createsNewEvent && !existingEvent) {
@@ -1169,15 +1421,26 @@
       newEventTitle.focus();
       return;
     }
+    const selectedCancellationVoucher = cancellationVoucherByValue(voucherSelect.value);
+    if (selectedCancellationVoucher) {
+      const validVoucher = ["active", "active_extended"].includes(selectedCancellationVoucher.status) && selectedCancellationVoucher.user === state.userProfile.name && selectedCancellationVoucher.venueId === selectedReservation.venue.id && Number(selectedReservation.value) >= Number(selectedCancellationVoucher.value);
+      if (!validVoucher) {
+        showToast("O voucher não é válido para este parceiro ou valor de reserva.");
+        populateVoucherOptions();
+        return;
+      }
+    }
     const id=nextId("R-",state.reservations);
-    const voucher=voucherSelect.value || state.appliedVouchers[0] || "";
+    const promoVoucher = String(voucherSelect.value || "").startsWith("PROMO:") ? String(voucherSelect.value).slice(6) : "";
+    const voucherAppliedValue = Number(selectedCancellationVoucher?.value || 0);
+    const paymentDue = Math.max(0, Number(selectedReservation.value) - voucherAppliedValue);
     let eventId = existingEvent?.id || "";
     let eventPublicationStatus = "linked_existing";
     let pushStatus = "Não aplicável";
     if (createsNewEvent) {
       eventId = nextId("EV-", state.groupEvents);
-      eventPublicationStatus = "standby_payment";
-      pushStatus = "Aguardando pagamento";
+      eventPublicationStatus = paymentDue === 0 && selectedCancellationVoucher ? "standby_voucher" : "standby_payment";
+      pushStatus = paymentDue === 0 && selectedCancellationVoucher ? "Aguardando resgate do voucher" : "Aguardando pagamento";
       state.groupEvents.unshift({
         id: eventId,
         groupId: group.id,
@@ -1186,16 +1449,61 @@
         time: selectedReservation.time,
         venue: selectedReservation.venue.name,
         statusKey: "standby_payment",
-        status: "Aguardando pagamento",
+        status: paymentDue === 0 && selectedCancellationVoucher ? "Aguardando resgate do voucher" : "Aguardando pagamento",
         published: false,
         source: "reservation",
         sourceReservationId: id,
-        publicationEndpoint: "waiting.payment.confirmed",
+        publicationEndpoint: selectedCancellationVoucher ? "waiting.voucher_or_complement" : "waiting.payment.confirmed",
         pushStatus: "Aguardando publicação"
       });
     }
-    state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:selectedReservation.day.date,shortDate:selectedReservation.day.shortDate,time:selectedReservation.time,value:selectedReservation.value,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",groupId:group.id,groupName:group.name,groupRole:group.role,eventId,event:title,eventMode:createsNewEvent?"new":"existing",eventPublicationStatus,pushStatus,voucher});
-    saveState();reservationDialog.close();render();showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
+    const fullyCovered = Boolean(selectedCancellationVoucher && paymentDue === 0);
+    const newReservation = {
+      id,
+      venueId:selectedReservation.venue.id,
+      venue:selectedReservation.venue.name,
+      user:state.userProfile.name,
+      date:selectedReservation.day.date,
+      shortDate:selectedReservation.day.shortDate,
+      time:selectedReservation.time,
+      value:selectedReservation.value,
+      statusKey: fullyCovered ? "confirmed" : "pending",
+      status: fullyCovered ? "Confirmada com voucher" : selectedCancellationVoucher ? "Reserva pendente — complemento" : "Reserva pendente",
+      endpoint: fullyCovered ? "voucher.redeemed" : selectedCancellationVoucher ? "payment.complement.pending" : "reservation.created",
+      paymentStatus: fullyCovered ? "Pago com voucher" : selectedCancellationVoucher ? "Complemento pendente" : "Pagamento pendente",
+      paymentDue,
+      voucherAppliedValue,
+      cancellationVoucherId:selectedCancellationVoucher?.id || "",
+      voucher:selectedCancellationVoucher?.code || promoVoucher,
+      groupId:group.id,
+      groupName:group.name,
+      groupRole:group.role,
+      eventId,
+      event:title,
+      eventMode:createsNewEvent?"new":"existing",
+      eventPublicationStatus,
+      pushStatus,
+      cancellationPolicyAccepted:true,
+      cancellationPolicyAcceptedAt:new Date().toLocaleString("pt-BR"),
+      cancellationPolicyVersion:"voucher-responsibility-availability-v2",
+      accountingRecognizedValue:0,
+      fiscalObligationValue:0,
+      accountingOriginMonth:selectedCancellationVoucher?.accountingOriginMonth || ""
+    };
+    state.reservations.unshift(newReservation);
+    if (selectedCancellationVoucher) {
+      if (fullyCovered) {
+        Object.assign(selectedCancellationVoucher, { status:"used", usedAt:new Date().toLocaleString("pt-BR"), usedReservationId:id, consumedValue:selectedCancellationVoucher.value });
+        state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type:"voucher_redeemed", reservationId:id, voucherId:selectedCancellationVoucher.id, venueId:newReservation.venueId, venue:newReservation.venue, amount:selectedCancellationVoucher.value, fiscalAmount:0, accountingMonth:accountingMonth(), description:"Voucher consumido integralmente sem nova obrigação" });
+        publishStandbyEventForReservation(newReservation, "event.publish_after_voucher");
+      } else {
+        Object.assign(selectedCancellationVoucher, { status:"reserved", reservedAt:new Date().toLocaleString("pt-BR"), reservedReservationId:id });
+      }
+    }
+    saveState();reservationDialog.close();render();
+    if (fullyCovered) showToast(`Reserva ${id} confirmada com voucher; evento publicado automaticamente.`);
+    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} de complemento.`);
+    else showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
   });
 
   if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});

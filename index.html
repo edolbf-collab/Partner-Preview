@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.9</title>
+  <title>Tâmo On — Partners Preview 0.1.11</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.9</div>
+          <div class="brand-subtitle">Partners Preview 0.1.11</div>
         </div>
       </div>
       <div class="header-actions">
@@ -69,13 +69,21 @@
         </label>
       </div>
       <label class="field">
-        <span>Voucher</span>
+        <span>Voucher ou promoção</span>
         <select id="voucherSelect">
           <option value="">Sem voucher</option>
-          <option value="BEMVINDO10">BEMVINDO10 · 10% de desconto</option>
-          <option value="FORADEPICO">FORADEPICO · R$ 15,00</option>
         </select>
+        <small class="field-help">Vouchers de cancelamento aparecem somente quando forem válidos para o mesmo parceiro e para uma reserva de valor igual ou superior.</small>
       </label>
+      <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
+      <div class="cancellation-policy-acceptance" role="note">
+        <strong>Política de cancelamento e voucher</strong>
+        <p id="reservationPolicyText">Cancelamento realizado pelo usuário até 24 horas antes do uso gera voucher de uso único. Cancelamentos realizados pelo parceiro ou pelo Tâmo On geram reembolso integral, com taxas suportadas pelo responsável. Fora do prazo, não há voucher ou reembolso automático. O prazo do voucher só expira normalmente quando houver disponibilidade compatível com o período e a proximidade do horário original.</p>
+        <label class="cancellation-acknowledge">
+          <input id="reservationPolicyAcknowledge" type="checkbox" required>
+          <span>Li e aceito a política de cancelamento, voucher, reembolso e disponibilidade compatível antes do pagamento.</span>
+        </label>
+      </div>
       <div class="automation-preview" id="reservationAutomationPreview">
         <div class="automation-step active"><b>1</b><span><strong>Reserva pendente</strong><small>Horário bloqueado temporariamente</small></span></div>
         <div class="automation-step"><b>2</b><span><strong>Pagamento Asaas</strong><small>Aguardando endpoint de confirmação</small></span></div>
@@ -101,7 +109,7 @@
       <div class="summary-card" id="cancellationSummary"></div>
       <div class="cancellation-warning" role="note">
         <strong>Antes de continuar</strong>
-        <p>Esta ação aciona uma sequência de cancelamento e estorno. Na Preview, os endpoints são simulados localmente.</p>
+        <p id="cancellationWarningText">Esta ação seguirá a regra aplicável ao responsável pelo cancelamento. Na Preview, todas as operações são simuladas localmente.</p>
         <ul id="cancellationImpactList"></ul>
       </div>
       <label class="field full">
@@ -111,11 +119,11 @@
       </label>
       <label class="cancellation-acknowledge">
         <input id="cancellationAcknowledge" type="checkbox" required>
-        <span>Estou ciente de que a reserva, o pagamento e o evento vinculado serão afetados.</span>
+        <span id="cancellationAcknowledgeText">Estou ciente das consequências financeiras e operacionais desta ação.</span>
       </label>
       <div class="dialog-actions">
         <button class="button ghost" value="cancel">Voltar</button>
-        <button class="button danger" id="cancellationSubmit" value="default">Cancelar e solicitar estorno</button>
+        <button class="button danger" id="cancellationSubmit" value="default">Cancelar e gerar voucher</button>
       </div>
     </form>
   </dialog>
@@ -176,7 +184,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.9</h2>
+          <h2>Partners Preview 0.1.11</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
@@ -187,7 +195,7 @@
         <li>Busca do usuário com cards compactos, fachada ilustrativa, agenda interna e preços por horário.</li>
         <li>Reservas, agenda, espaços, equipe, clientes, promoções e controles administrativos funcionais.</li>
         <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
-        <li>Cancelamento pós-pagamento com estorno, liberação do horário, cancelamento do evento e avisos simulados.</li>
+        <li>Cancelamento pós-pagamento conforme o responsável: voucher para o usuário elegível, reembolso integral para cancelamento do parceiro ou Tâmo On e ausência de crédito automático fora do prazo.</li>
         <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
       </ul>
       <button class="button primary full" value="cancel">Entendi</button>
