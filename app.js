@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.8";
-  const STORAGE_KEY = "tamo_on_partners_preview_018";
+  const VERSION = "0.1.9";
+  const STORAGE_KEY = "tamo_on_partners_preview_019";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -34,6 +34,16 @@
   const confirmMessage = document.getElementById("confirmMessage");
   const confirmSubmit = document.getElementById("confirmSubmit");
   const infoDialog = document.getElementById("infoDialog");
+  const cancellationDialog = document.getElementById("cancellationDialog");
+  const cancellationForm = document.getElementById("cancellationForm");
+  const cancellationEyebrow = document.getElementById("cancellationEyebrow");
+  const cancellationTitle = document.getElementById("cancellationTitle");
+  const cancellationSummary = document.getElementById("cancellationSummary");
+  const cancellationImpactList = document.getElementById("cancellationImpactList");
+  const cancellationReasonLabel = document.getElementById("cancellationReasonLabel");
+  const cancellationReason = document.getElementById("cancellationReason");
+  const cancellationAcknowledge = document.getElementById("cancellationAcknowledge");
+  const cancellationSubmit = document.getElementById("cancellationSubmit");
 
   let formHandler = null;
   let confirmHandler = null;
@@ -41,6 +51,7 @@
   let selectedVenueSchedule = null;
   let detailReturnContext = null;
   let reservationReturnContext = null;
+  let selectedCancellation = null;
 
   const menus = {
     user: [
@@ -93,9 +104,11 @@
       groupEvents: [
         { id: "EV-0101", groupId: "G-001", title: "Pelada de quinta-feira", date: "13/08/2026", time: "20:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
         { id: "EV-0102", groupId: "G-002", title: "Amistoso de sábado", date: "15/08/2026", time: "16:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
-        { id: "EV-0201", groupId: "G-001", title: "Arena Central · 06/08 às 20:00", date: "06/08/2026", time: "20:00", venue: "Arena Central", statusKey: "standby_payment", status: "Aguardando pagamento", published: false, source: "reservation", sourceReservationId: "R-0007", publicationEndpoint: "waiting.payment.confirmed", pushStatus: "Aguardando publicação" }
+        { id: "EV-0201", groupId: "G-001", title: "Arena Central · 06/08 às 20:00", date: "06/08/2026", time: "20:00", venue: "Arena Central", statusKey: "standby_payment", status: "Aguardando pagamento", published: false, source: "reservation", sourceReservationId: "R-0007", publicationEndpoint: "waiting.payment.confirmed", pushStatus: "Aguardando publicação" },
+        { id: "EV-0202", groupId: "G-002", title: "Arena Central · 07/08 às 18:00", date: "07/08/2026", time: "18:00", venue: "Arena Central", statusKey: "published", status: "Publicado", published: true, source: "reservation", sourceReservationId: "R-0008", publicationEndpoint: "event.publish_after_payment", pushStatus: "Enviado", pushEndpoint: "push.group_members" }
       ],
       pushLog: [],
+      cancellationLog: [],
       favorites: ["arena-central"],
       appliedVouchers: [],
       ui: {},
@@ -142,6 +155,7 @@
       ],
       reservations: [
         { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
+        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "payment.confirmed", paymentStatus: "Pago", paymentProvider: "Asaas", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
         { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
         { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", groupId: "G-020", groupName: "Grupo do Paulo", eventId: "", event: "", eventMode: "none", eventPublicationStatus: "cancelled", pushStatus: "Não enviado", voucher: "" }
       ],
@@ -159,7 +173,7 @@
       partnerReservations: [
         { id: "RP-101", client: "Grupo Quinta sem Falta", date: "06/08/2026", time: "18:00", space: "Quadra Society 1", value: 120, status: "Confirmada", payment: "Externo" },
         { id: "RP-102", client: "Amigos do Bairro", date: "06/08/2026", time: "19:00", space: "Quadra Society 1", value: 120, status: "Pendente", payment: "Não iniciado" },
-        { id: "RP-103", client: "Pelada dos Amigos", date: "06/08/2026", time: "20:00", space: "Quadra Futsal", value: 95, status: "Confirmada", payment: "Externo" },
+        { id: "RP-103", client: "Amigos do Bairro", date: "07/08/2026", time: "18:00", space: "Quadra Society 1", value: 130, status: "Confirmada", payment: "Pago via Asaas", userReservationId: "R-0008", groupName: "Amigos do Bairro", eventId: "EV-0202" },
         { id: "RP-104", client: "Turma do Sábado", date: "08/08/2026", time: "16:00", space: "Quadra Society 1", value: 120, status: "Cancelada", payment: "Estornado externamente" }
       ],
       partnerClients: [
@@ -401,6 +415,105 @@
     return true;
   }
 
+  function cancellationImpacts(source) {
+    return source === "partner" ? [
+      "O valor pago será estornado ao usuário pela rotina simulada do Asaas.",
+      "O horário será liberado imediatamente para uma nova reserva.",
+      "O evento criado ou vinculado será cancelado e retirado do grupo.",
+      "O usuário e os membros do grupo receberão uma comunicação de cancelamento.",
+      "A justificativa ficará registrada no histórico administrativo do parceiro."
+    ] : [
+      "O valor pago será enviado para a rotina simulada de estorno do Asaas.",
+      "O horário da quadra será liberado para outra reserva.",
+      "O evento criado ou vinculado será cancelado no grupo selecionado.",
+      "O parceiro e os demais membros do grupo serão comunicados.",
+      "A operação ficará registrada no histórico da reserva."
+    ];
+  }
+
+  function openPaidCancellation(source, reservationId, partnerReservationId = "") {
+    const reservation = reservationId ? state.reservations.find((item) => item.id === reservationId) : null;
+    const partnerReservation = partnerReservationId ? state.partnerReservations.find((item) => item.id === partnerReservationId) : state.partnerReservations.find((item) => item.userReservationId === reservationId);
+    if (!reservation && !partnerReservation) return;
+    const effectiveReservation = reservation || state.reservations.find((item) => item.id === partnerReservation?.userReservationId);
+    selectedCancellation = { source, reservationId: effectiveReservation?.id || "", partnerReservationId: partnerReservation?.id || partnerReservationId };
+    cancellationEyebrow.textContent = source === "partner" ? "Cancelamento pelo parceiro" : "Cancelamento pelo usuário";
+    cancellationTitle.textContent = source === "partner" ? "Cancelar reserva paga" : "Cancelar e solicitar estorno";
+    cancellationSummary.innerHTML = `<strong>${esc(effectiveReservation?.venue || partnerReservation?.space || "Reserva")}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(effectiveReservation?.date || partnerReservation?.date || "")}</span><span>${esc(effectiveReservation?.time || partnerReservation?.time || "")}</span><span>${money(effectiveReservation?.value || partnerReservation?.value || 0)}</span></div>`;
+    cancellationImpactList.innerHTML = cancellationImpacts(source).map((item) => `<li>${esc(item)}</li>`).join("");
+    cancellationReasonLabel.textContent = source === "partner" ? "Justificativa obrigatória ao usuário" : "Motivo do cancelamento";
+    cancellationReason.placeholder = source === "partner" ? "Explique por que o parceiro precisa cancelar este horário já reservado e pago." : "Informe brevemente o motivo do cancelamento.";
+    cancellationReason.value = "";
+    cancellationAcknowledge.checked = false;
+    cancellationSubmit.textContent = source === "partner" ? "Cancelar, estornar e comunicar" : "Cancelar e solicitar estorno";
+    cancellationDialog.showModal();
+    focusDialog(cancellationDialog);
+  }
+
+  function completePaidCancellation({ source, reservationId, partnerReservationId, reason }) {
+    const reservation = reservationId ? state.reservations.find((item) => item.id === reservationId) : null;
+    const partnerReservation = partnerReservationId ? state.partnerReservations.find((item) => item.id === partnerReservationId) : state.partnerReservations.find((item) => item.userReservationId === reservationId);
+    const linkedEvent = reservation?.eventId ? state.groupEvents.find((event) => event.id === reservation.eventId) : null;
+    const now = new Date().toLocaleString("pt-BR");
+    const refundId = nextId("REF-", state.cancellationLog);
+    if (reservation) {
+      Object.assign(reservation, {
+        statusKey: "cancelled",
+        status: "Cancelada e estornada",
+        endpoint: source === "partner" ? "partner.reservation.cancelled_after_payment" : "user.reservation.cancelled_after_payment",
+        paymentStatus: "Estornado",
+        refundStatus: "Estorno confirmado",
+        refundEndpoint: "refund.confirmed",
+        refundId,
+        cancellationSource: source,
+        cancellationReason: reason,
+        cancelledAt: now,
+        slotReleased: true,
+        pushStatus: "Cancelamento comunicado",
+        eventPublicationStatus: "cancelled"
+      });
+    }
+    if (partnerReservation) {
+      Object.assign(partnerReservation, {
+        status: "Cancelada",
+        payment: "Estornado via Asaas",
+        cancellationSource: source,
+        cancellationReason: reason,
+        refundStatus: "Estorno confirmado",
+        refundEndpoint: "refund.confirmed",
+        refundId,
+        cancelledAt: now
+      });
+    }
+    if (linkedEvent) {
+      Object.assign(linkedEvent, {
+        statusKey: "cancelled",
+        status: "Cancelado",
+        published: false,
+        publicationEndpoint: source === "partner" ? "partner.reservation.cancelled" : "user.reservation.cancelled",
+        pushStatus: "Cancelamento comunicado"
+      });
+    }
+    const group = reservation ? userGroup(reservation.groupId) : null;
+    if (reservation?.groupId) {
+      state.pushLog.unshift({
+        id: nextId("PUSH-", state.pushLog),
+        groupId: reservation.groupId,
+        groupName: reservation.groupName,
+        eventId: reservation.eventId,
+        eventTitle: reservation.event,
+        recipients: Math.max(0, Number(group?.memberCount || 1) - 1),
+        endpoint: "push.group_cancellation",
+        status: "Enviado",
+        createdAt: now
+      });
+    }
+    state.cancellationLog.unshift({ id: refundId, source, reservationId: reservation?.id || "", partnerReservationId: partnerReservation?.id || "", reason, refundEndpoint: "refund.confirmed", slotReleased: true, eventId: reservation?.eventId || partnerReservation?.eventId || "", createdAt: now });
+    saveState();
+    render();
+    showToast(source === "partner" ? "Reserva cancelada pelo parceiro, estorno registrado e comunicações simuladas." : "Reserva cancelada, estorno registrado e horário liberado.");
+  }
+
   function focusDialog(dialog) {
     requestAnimationFrame(() => dialog?.focus({ preventScroll: true }));
   }
@@ -556,7 +669,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? `<button class="button danger small" data-action="cancel-paid-user-reservation" data-id="${esc(reservation.id)}">Cancelar e solicitar estorno</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -610,7 +723,7 @@
     const items = state.partnerReservations.filter((item) => filter === "Todos" || item.status === filter);
     return `${pageHeader("Portal do parceiro", "Reservas", "Aceite solicitações, registre reservas manuais e acompanhe os pagamentos externos.", `<button class="button primary" data-action="new-partner-reservation">Nova reserva manual</button>`)}
       <div class="toolbar"><select class="filter-select" id="partnerReservationFilter"><option>Todos</option><option>Pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-partner-reservations">Exportar CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
+      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar reserva paga</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   function partnerSpaces() {
@@ -831,8 +944,10 @@
       if (reservation) {
         const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
         const latestPush = state.pushLog.find((push) => push.eventId === reservation.eventId);
-        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div><div class="detail-line"><span>Valor</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div></div>` });
+        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div><div class="detail-line"><span>Valor</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento e estorno</h3><div class="detail-list"><div class="detail-line"><span>Origem</span><strong>${reservation.cancellationSource === "partner" ? "Parceiro" : "Usuário"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Estorno</span><strong>${esc(reservation.refundStatus || "Pendente")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.refundEndpoint || "refund.requested")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
       }
+    } else if (action === "cancel-paid-user-reservation") {
+      openPaidCancellation("user", id);
     } else if (action === "reservation-status") {
       const label = button.dataset.status === "confirmed" ? "confirmar pelo pagamento" : "cancelar";
       askConfirm({ title: "Alterar reserva", message: `Deseja ${label} a reserva ${id}?`, confirmLabel: "Aplicar endpoint", onConfirm: () => applyUserReservationStatus(id, button.dataset.status) });
@@ -868,7 +983,10 @@
       const item=state.partnerAgenda.find((entry)=>entry.id===id); if(!item)return;
       openForm({eyebrow:"Agenda",title:"Editar compromisso",fields:[{name:"day",label:"Dia",type:"number",value:item.day,min:3,max:9},{name:"time",label:"Horário",type:"time",value:item.time},{name:"title",label:"Título",value:item.title},{name:"space",label:"Espaço",type:"select",value:item.space,options:state.partnerSpaces.map((s)=>s.name)},{name:"type",label:"Tipo",type:"select",value:item.type,options:[{value:"confirmed",label:"Confirmado"},{value:"pending",label:"Pendente"},{value:"blocked",label:"Bloqueio"}]},{name:"detail",label:"Observação",type:"textarea",value:item.detail,full:true}],onSubmit:(data)=>{Object.assign(item,data,{day:Number(data.day)});saveState();render();showToast("Agenda atualizada.");}});
     } else if (action === "partner-reservation-details") {
-      const item=state.partnerReservations.find((r)=>r.id===id); if(item)openDetail({eyebrow:"Reserva do parceiro",title:item.id,body:`<div class="details-grid"><div class="detail-group"><h3>Reserva</h3><div class="detail-list"><div class="detail-line"><span>Cliente</span><strong>${esc(item.client)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(item.date)} · ${esc(item.time)}</strong></div><div class="detail-line"><span>Espaço</span><strong>${esc(item.space)}</strong></div></div></div><div class="detail-group"><h3>Financeiro</h3><div class="detail-list"><div class="detail-line"><span>Valor</span><strong>${money(item.value)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(item.status)}</strong></div><div class="detail-line"><span>Pagamento</span><strong>${esc(item.payment)}</strong></div></div></div></div>`});
+      const item=state.partnerReservations.find((r)=>r.id===id); if(item)openDetail({eyebrow:"Reserva do parceiro",title:item.id,body:`<div class="details-grid"><div class="detail-group"><h3>Reserva</h3><div class="detail-list"><div class="detail-line"><span>Cliente</span><strong>${esc(item.client)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(item.date)} · ${esc(item.time)}</strong></div><div class="detail-line"><span>Espaço</span><strong>${esc(item.space)}</strong></div></div></div><div class="detail-group"><h3>Financeiro</h3><div class="detail-list"><div class="detail-line"><span>Valor</span><strong>${money(item.value)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(item.status)}</strong></div><div class="detail-line"><span>Pagamento</span><strong>${esc(item.payment)}</strong></div><div class="detail-line"><span>Estorno</span><strong>${esc(item.refundStatus || "Não iniciado")}</strong></div></div></div>${item.cancellationSource ? `<div class="detail-group"><h3>Justificativa do cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Origem</span><strong>${item.cancellationSource === "partner" ? "Parceiro" : "Usuário"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(item.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(item.refundEndpoint || "refund.requested")}</strong></div></div></div>` : ""}</div>`});
+    } else if (action === "cancel-paid-partner-reservation") {
+      const item = state.partnerReservations.find((r) => r.id === id);
+      if (item) openPaidCancellation("partner", item.userReservationId || "", item.id);
     } else if (action === "partner-reservation-status") {
       const item=state.partnerReservations.find((r)=>r.id===id); if(item){item.status=button.dataset.status;saveState();render();showToast(`${id}: ${item.status}.`);}
     } else if (action === "export-partner-reservations") {
@@ -1012,6 +1130,22 @@
     if(event.submitter?.value==="cancel")return;
     event.preventDefault();
     const handler=confirmHandler;confirmDialog.close();confirmHandler=null;handler?.();
+  });
+
+  cancellationForm.addEventListener("submit", (event) => {
+    if (event.submitter?.value === "cancel") return;
+    event.preventDefault();
+    if (!selectedCancellation || !cancellationForm.reportValidity()) return;
+    const payload = { ...selectedCancellation, reason: cancellationReason.value.trim() };
+    cancellationDialog.close();
+    selectedCancellation = null;
+    completePaidCancellation(payload);
+  });
+
+  cancellationDialog.addEventListener("close", () => {
+    selectedCancellation = null;
+    cancellationReason.value = "";
+    cancellationAcknowledge.checked = false;
   });
 
   reservationForm.addEventListener("submit",(event)=>{

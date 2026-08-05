@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.8</title>
+  <title>Tâmo On — Partners Preview 0.1.9</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.8</div>
+          <div class="brand-subtitle">Partners Preview 0.1.9</div>
         </div>
       </div>
       <div class="header-actions">
@@ -88,6 +88,38 @@
     </form>
   </dialog>
 
+
+  <dialog id="cancellationDialog" class="dialog cancellation-dialog" tabindex="-1">
+    <form method="dialog" id="cancellationForm">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow" id="cancellationEyebrow">Cancelamento</span>
+          <h2 id="cancellationTitle">Cancelar reserva paga</h2>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <div class="summary-card" id="cancellationSummary"></div>
+      <div class="cancellation-warning" role="note">
+        <strong>Antes de continuar</strong>
+        <p>Esta ação aciona uma sequência de cancelamento e estorno. Na Preview, os endpoints são simulados localmente.</p>
+        <ul id="cancellationImpactList"></ul>
+      </div>
+      <label class="field full">
+        <span id="cancellationReasonLabel">Motivo do cancelamento</span>
+        <textarea id="cancellationReason" minlength="10" maxlength="500" required></textarea>
+        <small class="field-help">O motivo ficará registrado no histórico da reserva.</small>
+      </label>
+      <label class="cancellation-acknowledge">
+        <input id="cancellationAcknowledge" type="checkbox" required>
+        <span>Estou ciente de que a reserva, o pagamento e o evento vinculado serão afetados.</span>
+      </label>
+      <div class="dialog-actions">
+        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button danger" id="cancellationSubmit" value="default">Cancelar e solicitar estorno</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="formDialog" class="dialog form-dialog" tabindex="-1">
     <form method="dialog" id="dynamicForm">
       <div class="dialog-header">
@@ -144,7 +176,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.8</h2>
+          <h2>Partners Preview 0.1.9</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
@@ -155,6 +187,7 @@
         <li>Busca do usuário com cards compactos, fachada ilustrativa, agenda interna e preços por horário.</li>
         <li>Reservas, agenda, espaços, equipe, clientes, promoções e controles administrativos funcionais.</li>
         <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
+        <li>Cancelamento pós-pagamento com estorno, liberação do horário, cancelamento do evento e avisos simulados.</li>
         <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
       </ul>
       <button class="button primary full" value="cancel">Entendi</button>

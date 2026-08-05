@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.8
+# Tâmo On — Partners Preview 0.1.9
 
 Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 
@@ -78,3 +78,15 @@ Abra `http://localhost:8080`.
 ## Segurança
 
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
+
+
+## Atualização 0.1.9
+
+- cancelamento de reserva confirmada e paga pelo usuário;
+- cancelamento de reserva paga pelo parceiro com justificativa obrigatória;
+- aviso prévio das implicações da ação;
+- simulação de estorno pelo endpoint `refund.confirmed`;
+- liberação automática do horário;
+- cancelamento do evento criado ou vinculado;
+- registro de comunicação ao usuário, parceiro e membros do grupo;
+- histórico local de cancelamento e estorno.

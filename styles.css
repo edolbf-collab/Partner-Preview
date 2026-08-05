@@ -986,3 +986,32 @@ tr:last-child td { border-bottom: 0; }
   .automation-step { grid-template-columns: 22px minmax(0,1fr); padding: 9px; }
   .reservation-card-meta { align-items: flex-start; }
 }
+
+
+/* Partners Preview 0.1.9 — cancelamento pós-pagamento */
+.cancellation-dialog { width: min(620px, calc(100% - 24px)); }
+.cancellation-warning {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid rgba(244,184,74,.34);
+  border-radius: 15px;
+  background: rgba(244,184,74,.08);
+}
+.cancellation-warning > strong { color: var(--amber); font-size: 12px; }
+.cancellation-warning p { margin: 5px 0 9px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.cancellation-warning ul { margin: 0; padding-left: 18px; color: var(--text); font-size: 10px; line-height: 1.55; }
+.cancellation-acknowledge {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.cancellation-acknowledge input { flex: 0 0 auto; margin-top: 2px; accent-color: var(--amber); }
+@media (max-width: 700px) {
+  .cancellation-dialog { width: calc(100% - 18px); max-width: calc(100vw - 18px); }
+  .cancellation-dialog form { padding: 16px; }
+  .cancellation-warning { padding: 12px; }
+}

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,10 +9,9 @@
   "real_money": false,
   "released_at": "2026-08-05",
   "notes": [
-    "Reserva obrigatoriamente vinculada a um grupo pertencente ao usuário.",
-    "Validação local dos privilégios de criação e alteração de eventos.",
-    "Opção de vincular evento existente ou criar evento em espera com os dados da reserva.",
-    "Confirmação simulada do pagamento publica o evento e registra o push aos membros do grupo.",
+    "Cancelamento pós-pagamento disponível para o usuário com aviso das implicações.",
+    "Cancelamento pelo parceiro exige justificativa e comunica o usuário.",
+    "Estorno, liberação do horário, cancelamento do evento e push são simulados localmente.",
     "Asaas, Supabase, banco, webhooks e envio real de push permanecem desativados."
   ]
 }
