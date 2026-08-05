@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.11
+# Tâmo On — Partners Preview 0.1.12
 
 Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 
@@ -117,7 +117,7 @@ Abra `http://localhost:8080`.
 
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
 
-## Atualização 0.1.11
+## Atualização 0.1.12
 
 - responsabilidade do cancelamento definida pelo autor da ação;
 - voucher somente para cancelamento do usuário dentro do prazo;
@@ -129,3 +129,12 @@ A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productio
 - mínimo inicial de quatro datas compatíveis;
 - prorrogação automática de sete dias quando a oferta for insuficiente;
 - controles administrativos para alterar essas regras.
+
+
+## Perfil único e formulários mobile — 0.1.12
+
+- A área do marketplace não solicita novo cadastro pessoal.
+- Nome e e-mail vêm da conta Google já vinculada.
+- Telefone, cidade e preferências vêm do perfil principal do Tâmo On.
+- Funções de administrador e organizador são lidas das permissões dos grupos.
+- Campos de texto, seleção, data e horário usam 16 px no mobile e não recebem foco automático ao abrir formulários, evitando o zoom involuntário do iPhone.

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,10 +9,10 @@
   "real_money": false,
   "released_at": "2026-08-05",
   "notes": [
-    "Cancelamento pelo usuário dentro do prazo gera voucher; fora do prazo não gera reembolso ou voucher automático.",
-    "Cancelamentos realizados pelo parceiro ou pelo Tâmo On geram reembolso integral, com taxas e custos suportados pelo responsável.",
-    "Situações excepcionais fora do prazo podem ser submetidas à análise conjunta do Tâmo On e do parceiro.",
-    "A validade do voucher considera disponibilidade compatível com o período e proximidade do horário original, com prorrogação automática quando insuficiente.",
+    "Marketplace passa a consumir o perfil principal do Tâmo On, sem solicitar novo preenchimento dos dados pessoais.",
+    "Nome e e-mail têm origem na conta Google; dados complementares e preferências são mantidos no perfil central.",
+    "Permissões de administrador e organizador continuam herdadas dos grupos para criação e alteração de eventos.",
+    "Campos de formulário usam tamanho de fonte mobile compatível e deixam de receber foco automático em telas de toque, evitando zoom involuntário.",
     "Asaas, Supabase, banco, emissão fiscal, webhooks e envio real de push permanecem desativados."
   ]
 }

@@ -1041,3 +1041,72 @@ tr:last-child td { border-bottom: 0; }
   .voucher-payment-preview,
   .cancellation-policy-acceptance { padding: 11px; }
 }
+
+
+/* Partners Preview 0.1.12 — perfil único e formulários mobile sem zoom */
+.profile-sync-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid rgba(30,209,122,.25);
+  border-radius: 17px;
+  background: rgba(30,209,122,.07);
+}
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #052016;
+  background: var(--green);
+  font-size: 15px;
+  font-weight: 950;
+}
+.profile-sync-banner h2 { margin: 3px 0; font-size: 18px; }
+.profile-sync-banner p { margin: 0; color: var(--muted); font-size: 10px; }
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255,255,255,.025);
+  font-size: 8px;
+  font-weight: 900;
+}
+.profile-permissions { margin-top: 14px; }
+.profile-sync-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 9px;
+}
+.profile-central-explanation { display: grid; gap: 13px; }
+.profile-central-explanation > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+@media (max-width: 700px) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 1.25;
+  }
+  .search input,
+  .discover-search input { font-size: 16px; }
+  .profile-sync-banner { grid-template-columns: auto minmax(0,1fr); padding: 13px; }
+  .profile-sync-banner > .status { grid-column: 1 / -1; justify-self: start; }
+  .profile-sync-footer { display: grid; }
+}

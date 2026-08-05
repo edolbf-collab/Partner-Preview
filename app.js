@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.11";
-  const STORAGE_KEY = "tamo_on_partners_preview_0111";
+  const VERSION = "0.1.12";
+  const STORAGE_KEY = "tamo_on_partners_preview_0112";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -57,6 +57,7 @@
   let detailReturnContext = null;
   let reservationReturnContext = null;
   let selectedCancellation = null;
+  const allowAutomaticFieldFocus = window.matchMedia("(min-width: 701px) and (pointer: fine)").matches;
 
   const menus = {
     user: [
@@ -64,7 +65,7 @@
       ["reservations", "▣", "Minhas reservas"],
       ["favorites", "♡", "Favoritos"],
       ["promotions", "%", "Promoções"],
-      ["profile", "○", "Perfil"]
+      ["profile", "○", "Conta Tâmo On"]
     ],
     partner: [
       ["overview", "⌂", "Visão geral"],
@@ -99,7 +100,13 @@
         phone: "(41) 99988-7766",
         city: "Curitiba",
         notification: "Ativadas",
-        preferredTime: "Noite"
+        preferredTime: "Noite",
+        accountProvider: "Google",
+        accountSource: "Conta Google vinculada ao Tâmo On",
+        complementarySource: "Perfil principal do Tâmo On",
+        lastSync: "05/08/2026 às 15:54",
+        centralProfileStatus: "Completo",
+        marketplaceEditable: false
       },
       userGroups: [
         { id: "G-001", name: "Quinta sem Falta", role: "Administrador", memberCount: 18, canCreateEvents: true, canEditEvents: true },
@@ -700,6 +707,7 @@
   }
 
   function focusDialog(dialog) {
+    if (!allowAutomaticFieldFocus) return;
     requestAnimationFrame(() => dialog?.focus({ preventScroll: true }));
   }
 
@@ -731,7 +739,7 @@
     formFields.innerHTML = fields.map(fieldMarkup).join("");
     formHandler = onSubmit;
     formDialog.showModal();
-    setTimeout(() => formFields.querySelector("input,select,textarea")?.focus(), 30);
+    if (allowAutomaticFieldFocus) setTimeout(() => formFields.querySelector("input,select,textarea")?.focus({ preventScroll: true }), 30);
   }
 
   function openDetail({ eyebrow = "Detalhes", title, body }) {
@@ -873,11 +881,18 @@
 
   function userProfile() {
     const profile = state.userProfile;
-    return `${pageHeader("Área do usuário", "Perfil", "Dados fictícios salvos localmente para testar edição e preferências.", `<button class="button primary" data-action="edit-user-profile">Editar perfil</button>`)}
+    const permittedGroups = state.userGroups.filter((group) => group.canCreateEvents && group.canEditEvents);
+    return `${pageHeader("Área do usuário", "Conta Tâmo On", "O marketplace reutiliza o perfil principal do aplicativo. Nenhum dado pessoal precisa ser preenchido novamente nesta área.", `<button class="button secondary" data-action="sync-main-profile">Sincronizar agora</button><button class="button ghost" data-action="manage-main-profile">Gerenciar no Tâmo On</button>`)}
+      <section class="profile-sync-banner" role="status">
+        <div class="profile-avatar" aria-hidden="true">${initials(profile.name)}</div>
+        <div><span class="eyebrow">Perfil único</span><h2>${esc(profile.name)}</h2><p>Dados centrais compartilhados entre Grupos, Marketplace e demais áreas autorizadas.</p></div>
+        <span class="status status-ok">${esc(profile.centralProfileStatus)}</span>
+      </section>
       <section class="details-grid">
-        <article class="detail-group"><h3>Dados pessoais</h3><div class="detail-list"><div class="detail-line"><span>Nome</span><strong>${esc(profile.name)}</strong></div><div class="detail-line"><span>E-mail</span><strong>${esc(profile.email)}</strong></div><div class="detail-line"><span>Telefone</span><strong>${esc(profile.phone)}</strong></div></div></article>
-        <article class="detail-group"><h3>Preferências</h3><div class="detail-list"><div class="detail-line"><span>Cidade</span><strong>${esc(profile.city)}</strong></div><div class="detail-line"><span>Notificações</span><strong>${esc(profile.notification)}</strong></div><div class="detail-line"><span>Horário preferido</span><strong>${esc(profile.preferredTime)}</strong></div></div></article>
-      </section>`;
+        <article class="detail-group"><div class="section-heading"><div><h3>Conta Google</h3><p>Identidade fornecida pelo login vinculado.</p></div><span class="source-badge">Google</span></div><div class="detail-list"><div class="detail-line"><span>Nome</span><strong>${esc(profile.name)}</strong></div><div class="detail-line"><span>E-mail</span><strong>${esc(profile.email)}</strong></div><div class="detail-line"><span>Origem</span><strong>${esc(profile.accountSource)}</strong></div></div></article>
+        <article class="detail-group"><div class="section-heading"><div><h3>Dados complementares</h3><p>Preenchidos uma única vez no perfil principal.</p></div><span class="source-badge">Tâmo On</span></div><div class="detail-list"><div class="detail-line"><span>Telefone</span><strong>${esc(profile.phone)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(profile.city)}</strong></div><div class="detail-line"><span>Notificações</span><strong>${esc(profile.notification)}</strong></div><div class="detail-line"><span>Horário preferido</span><strong>${esc(profile.preferredTime)}</strong></div></div></article>
+      </section>
+      <section class="card profile-permissions"><div class="section-heading"><div><h2>Permissões utilizadas pelo marketplace</h2><p>Reservas com eventos usam as permissões já existentes em cada grupo.</p></div></div><div class="list">${state.userGroups.map((group) => `<div class="list-item compact"><div class="avatar">${initials(group.name)}</div><div class="list-item-main"><strong>${esc(group.name)}</strong><small>${esc(group.role)} · ${esc(group.memberCount)} membros</small></div><span class="status ${group.canCreateEvents && group.canEditEvents ? "status-ok" : "status-neutral"}">${group.canCreateEvents && group.canEditEvents ? "Pode criar eventos" : "Sem permissão"}</span></div>`).join("")}</div><div class="profile-sync-footer"><span>Última sincronização: <strong>${esc(profile.lastSync)}</strong></span><span>${permittedGroups.length} grupo(s) habilitado(s) para reservas com eventos</span></div></section>`;
   }
 
   function userView() {
@@ -1178,14 +1193,11 @@
       const code = button.dataset.code;
       if (!state.appliedVouchers.includes(code)) state.appliedVouchers.push(code);
       saveState(); render(); showToast(`Voucher ${code} aplicado à próxima reserva.`);
-    } else if (action === "edit-user-profile") {
-      const p = state.userProfile;
-      openForm({ eyebrow: "Perfil do usuário", title: "Editar perfil", fields: [
-        { name:"name",label:"Nome",value:p.name,required:true },{ name:"email",label:"E-mail",type:"email",value:p.email,required:true },
-        { name:"phone",label:"Telefone",value:p.phone },{ name:"city",label:"Cidade",value:p.city },
-        { name:"notification",label:"Notificações",type:"select",value:p.notification,options:["Ativadas","Desativadas"] },
-        { name:"preferredTime",label:"Horário preferido",type:"select",value:p.preferredTime,options:["Manhã","Tarde","Noite"] }
-      ], onSubmit: (data) => { Object.assign(state.userProfile,data); saveState(); render(); showToast("Perfil atualizado."); } });
+    } else if (action === "sync-main-profile") {
+      state.userProfile.lastSync = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+      saveState(); render(); showToast("Perfil principal sincronizado com o marketplace.");
+    } else if (action === "manage-main-profile") {
+      openDetail({ eyebrow: "Perfil principal", title: "Gerenciar dados no Tâmo On", body: `<div class="profile-central-explanation"><p>Nome e e-mail são fornecidos pela conta Google. Telefone, cidade e preferências são preenchidos uma única vez no perfil principal do Tâmo On.</p><div class="detail-list"><div class="detail-line"><span>Marketplace</span><strong>Somente leitura</strong></div><div class="detail-line"><span>Grupos</span><strong>Usa o mesmo perfil</strong></div><div class="detail-line"><span>Administração e organização</span><strong>Permissões herdadas dos grupos</strong></div></div><p class="dialog-description">Na aplicação integrada, este botão abrirá o perfil principal. A Preview não cria outro cadastro nem duplica os campos pessoais.</p></div>` });
     } else if (action === "partner-day") {
       state.partnerDay = Number(button.dataset.day); saveState(); render();
     } else if (action === "new-block") {
@@ -1418,7 +1430,7 @@
     }
     const title = createsNewEvent ? newEventTitle.value.trim() : existingEvent.title;
     if (!title) {
-      newEventTitle.focus();
+      if (allowAutomaticFieldFocus) newEventTitle.focus({ preventScroll: true });
       return;
     }
     const selectedCancellationVoucher = cancellationVoucherByValue(voucherSelect.value);
