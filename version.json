@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,12 +9,12 @@
   "real_money": false,
   "released_at": "2026-08-04",
   "notes": [
-    "Busca por quadras posicionada imediatamente após o submenu da área do usuário.",
-    "Cards compactos exibem somente nome, cidade, bairro, distância, nota dos usuários e tipos de espaço.",
-    "Imagem de fachada passou a ser usada como fundo do card por meio do campo facadeImage, preparado para origem no cadastro do parceiro.",
-    "Ver espaço abre a agenda cadastrada pelo parceiro com dias, horários, estados e valores específicos.",
-    "Reserva cancelada deixa de bloquear o horário e permanece apenas no histórico de Minhas reservas.",
-    "Promoções foram recolhidas em um botão que abre o submenu próprio.",
+    "Cards de parceiros refinados para mobile, com nota ao lado do nome e botão Ver espaço compacto.",
+    "Foto enviada pelo usuário carregada por elemento de imagem no primeiro card e no detalhe da Arena Central.",
+    "Agenda do parceiro voltou a exibir todos os dias em uma única faixa horizontal rolável.",
+    "Fechar detalhes de horário ou voltar da reserva mantém o usuário na agenda e no dia selecionado.",
+    "Minhas reservas recebeu resumo compacto, filtro por status e cartões mais leves.",
+    "Foco visual indevido no botão de fechar e no contêiner principal foi corrigido.",
     "Banco, Supabase, Asaas, webhooks, emissão fiscal e dinheiro real permanecem desativados."
   ]
 }

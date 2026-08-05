@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.5
+# Tâmo On — Partners Preview 0.1.6
 
 Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 
@@ -14,9 +14,9 @@ Protótipo operacional isolado da futura área de parceiros, preparado para vali
 
 A busca geral permanece limitada ao nome da quadra ou à cidade e aparece imediatamente após o submenu. Futsal, society e campo são apresentados apenas como tipos identificados pelo parceiro. A compatibilidade esportiva será aplicada futuramente a partir do esporte escolhido no grupo.
 
-Os cards da busca foram reduzidos e usam a imagem de fachada do campo `facadeImage` como plano de fundo. Na Preview, as imagens são locais e demonstrativas; na implementação com banco, esse campo deverá receber a imagem enviada pelo parceiro durante o cadastro.
+Os cards da busca foram reduzidos e carregam a imagem de fachada indicada no campo `facadeImage` em uma área própria do cartão. Na Preview, as imagens são locais e demonstrativas; na implementação com banco, esse campo deverá receber a imagem enviada pelo parceiro durante o cadastro.
 
-O botão **Ver espaço** abre a agenda criada pelo parceiro, com os dias disponíveis, horários, estados e valores específicos de cada faixa. A nota pública exibida é calculada a partir das avaliações dos usuários. A administração poderá moderar avaliações, mas não atribuir diretamente a nota pública.
+O botão **Ver espaço** abre a agenda criada pelo parceiro, com os dias em uma faixa horizontal rolável, horários, estados e valores específicos de cada faixa. A nota pública exibida é calculada a partir das avaliações dos usuários. A administração poderá moderar avaliações, mas não atribuir diretamente a nota pública.
 
 ### Parceiro
 

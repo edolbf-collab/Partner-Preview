@@ -1,0 +1,4 @@
+Ao aplicar este incremental sobre a versão 0.1.5, o arquivo abaixo pode ser excluído:
+assets/venues/arena-central-fachada-teste.png
+
+A exclusão não é obrigatória para o funcionamento da Preview 0.1.6.

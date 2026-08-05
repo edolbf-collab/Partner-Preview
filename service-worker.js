@@ -1,4 +1,4 @@
-const CACHE = "tamo-on-partners-preview-0.1.5";
+const CACHE = "tamo-on-partners-preview-0.1.6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./assets/preview-icon.svg",
   "./assets/venues/arena-central.svg",
+  "./assets/venues/arena-central-fachada.png",
   "./assets/venues/cancha-horizonte.svg",
   "./assets/venues/vale-verde.svg"
 ];
