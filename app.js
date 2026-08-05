@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.6";
-  const STORAGE_KEY = "tamo_on_partners_preview_016";
+  const VERSION = "0.1.7";
+  const STORAGE_KEY = "tamo_on_partners_preview_017";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");

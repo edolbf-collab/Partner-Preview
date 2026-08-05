@@ -818,3 +818,98 @@ tr:last-child td { border-bottom: 0; }
   .reservation-card-meta { flex-direction: column; gap: 3px; }
   .reservation-card-actions .button { width: auto; }
 }
+
+
+/* Partners Preview 0.1.7 — contenção horizontal do detalhe da agenda */
+.dialog.detail-dialog {
+  inline-size: min(780px, calc(100dvw - 24px));
+  max-inline-size: calc(100dvw - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.dialog.detail-dialog > form,
+.detail-body,
+.detail-body > *,
+.schedule-section,
+.venue-detail-cover,
+.venue-detail-summary,
+.schedule-slots,
+.slot-legend {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.dialog.detail-dialog > form,
+.detail-body,
+.schedule-section {
+  overflow-x: hidden;
+}
+.venue-detail-cover {
+  position: relative;
+  contain: inline-size;
+}
+.venue-detail-image {
+  max-inline-size: 100%;
+}
+.schedule-days {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-inline: contain;
+}
+.schedule-days > .schedule-day {
+  flex: 0 0 78px;
+  min-inline-size: 78px;
+  max-inline-size: 78px;
+}
+.schedule-slots > *,
+.venue-detail-summary > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+@media (max-width: 700px) {
+  .dialog.detail-dialog {
+    inline-size: calc(100dvw - 16px);
+    max-inline-size: calc(100dvw - 16px);
+    margin-inline: auto;
+    border-radius: 18px;
+  }
+  .dialog.detail-dialog > form {
+    padding: 14px;
+  }
+  .dialog.detail-dialog .dialog-header {
+    min-inline-size: 0;
+  }
+  .dialog.detail-dialog .dialog-header > div {
+    min-inline-size: 0;
+  }
+  .dialog.detail-dialog .dialog-header h2 {
+    overflow-wrap: anywhere;
+  }
+  .venue-detail-cover {
+    min-height: 148px;
+    aspect-ratio: 16 / 8.5;
+  }
+  .venue-detail-summary {
+    grid-template-columns: 1fr;
+  }
+  .schedule-days {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+  .schedule-slots {
+    grid-template-columns: 1fr;
+  }
+  .schedule-slot {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+  .schedule-legend {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}

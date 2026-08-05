@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,12 +9,10 @@
   "real_money": false,
   "released_at": "2026-08-04",
   "notes": [
-    "Cards de parceiros refinados para mobile, com nota ao lado do nome e botão Ver espaço compacto.",
-    "Foto enviada pelo usuário carregada por elemento de imagem no primeiro card e no detalhe da Arena Central.",
-    "Agenda do parceiro voltou a exibir todos os dias em uma única faixa horizontal rolável.",
-    "Fechar detalhes de horário ou voltar da reserva mantém o usuário na agenda e no dia selecionado.",
-    "Minhas reservas recebeu resumo compacto, filtro por status e cartões mais leves.",
-    "Foco visual indevido no botão de fechar e no contêiner principal foi corrigido.",
+    "Card da agenda limitado à largura útil da tela do celular.",
+    "Foto e demais blocos do detalhe do parceiro não ampliam mais o modal horizontalmente.",
+    "Somente a faixa de dias possui rolagem horizontal.",
+    "Horários, valores, resumo, legenda e botões permanecem enquadrados na largura do aparelho.",
     "Banco, Supabase, Asaas, webhooks, emissão fiscal e dinheiro real permanecem desativados."
   ]
 }
