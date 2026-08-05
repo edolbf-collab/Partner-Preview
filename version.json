@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",

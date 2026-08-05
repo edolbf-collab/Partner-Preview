@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.4
+# Tâmo On — Partners Preview 0.1.5
 
 Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 

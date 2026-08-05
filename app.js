@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.4";
-  const STORAGE_KEY = "tamo_on_partners_preview_014";
+  const VERSION = "0.1.5";
+  const STORAGE_KEY = "tamo_on_partners_preview_015";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -34,6 +34,8 @@
   let confirmHandler = null;
   let selectedReservation = null;
   let selectedVenueSchedule = null;
+  let detailReturnContext = null;
+  let reservationReturnContext = null;
 
   const menus = {
     user: [
@@ -80,11 +82,12 @@
       },
       favorites: ["arena-central"],
       appliedVouchers: [],
+      ui: { venueCalendarOpen: {} },
       venues: [
         {
           id: "arena-central", name: "Arena Central", city: "Curitiba", neighborhood: "Água Verde", distance: "2,4 km",
           rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250",
-          facadeImage: "assets/venues/arena-central.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"],
+          facadeImage: "assets/venues/arena-central-fachada-teste.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"],
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 120 }, { time: "19:00", price: 120, blocked: true }, { time: "20:00", price: 120 }, { time: "21:00", price: 130 }] },
             { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "18:00", price: 130 }, { time: "19:00", price: 140 }, { time: "20:00", price: 140 }, { time: "21:00", price: 140 }] },
@@ -383,13 +386,20 @@
 
   function venueCard(venue) {
     const favorite = state.favorites.includes(venue.id);
-    return `<article class="venue-card compact-venue-card" style="--venue-image:url('${esc(venue.facadeImage)}')">
-      <div class="venue-card-shade"></div>
-      <div class="venue-card-top"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>usuários</small></span><button type="button" class="favorite-button ${favorite ? "active" : ""}" data-action="toggle-favorite" data-id="${esc(venue.id)}" aria-label="${favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorite ? "♥" : "♡"}</button></div>
-      <div class="venue-card-content">
-        <h2>${esc(venue.name)}</h2>
-        <div class="venue-location"><span>${esc(venue.city)} · ${esc(venue.neighborhood)}</span><strong>${esc(venue.distance)}</strong></div>
-        <div class="venue-card-footer"><span class="venue-types-note">${esc(venue.types.join(" · "))}</span><button type="button" class="button primary small" data-action="venue-details" data-id="${esc(venue.id)}">Ver espaço</button></div>
+    return `<article class="venue-card compact-venue-card">
+      <div class="venue-card-media" style="--venue-image:url('${esc(venue.facadeImage)}')">
+        <div class="venue-card-shade"></div>
+        <div class="venue-card-top">
+          <div class="venue-card-top-text">
+            <h2>${esc(venue.name)}</h2>
+            <div class="venue-location"><span>${esc(venue.city)}</span><span>${esc(venue.neighborhood)}</span><strong>${esc(venue.distance)}</strong></div>
+          </div>
+          <button type="button" class="favorite-button ${favorite ? "active" : ""}" data-action="toggle-favorite" data-id="${esc(venue.id)}" aria-label="${favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorite ? "♥" : "♡"}</button>
+        </div>
+      </div>
+      <div class="venue-card-base">
+        <div class="venue-card-meta"><span class="rating-badge compact-rating" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} av.</small></span><span class="venue-types-note">${esc(venue.types.join(" · "))}</span></div>
+        <div class="venue-card-footer"><button type="button" class="button primary small full-mobile" data-action="venue-details" data-id="${esc(venue.id)}">Ver espaço</button></div>
       </div>
     </article>`;
   }
@@ -398,7 +408,7 @@
     const filtered = state.venues.filter((venue) => `${venue.name} ${venue.city}`.toLowerCase().includes(state.search.venue.toLowerCase()));
     const activePromotions = state.promotions.filter((item) => item.active).length;
     return `<div class="discover-toolbar"><label class="search discover-search"><span>⌕</span><input id="venueSearch" value="${esc(state.search.venue)}" placeholder="Buscar por quadra ou cidade" aria-label="Buscar por quadra ou cidade"></label><button class="promo-menu-button" data-nav="promotions"><span class="promo-menu-icon">%</span><span><strong>Promoções</strong><small>${activePromotions} ofertas disponíveis</small></span><b>›</b></button></div>
-      ${pageHeader("Área do usuário", "Buscar quadras", "Selecione um local para consultar os dias, horários e valores cadastrados pelo parceiro.", `<button class="button ghost" data-nav="reservations">Minhas reservas</button>`)}
+      ${pageHeader("Área do usuário", "Buscar quadras", "Selecione um local para consultar a agenda, os horários e os valores cadastrados pelo parceiro.")}
       <section class="grid venue-grid">${filtered.map(venueCard).join("") || emptyState("⌕", "Nenhuma quadra encontrada para essa busca.")}</section>`;
   }
 
@@ -581,9 +591,12 @@
   function venueScheduleBody(venue, selectedDate) {
     const day = venue.schedule.find((item) => item.shortDate === selectedDate) || venue.schedule[0];
     selectedVenueSchedule = { venueId: venue.id, shortDate: day.shortDate };
+    const calendarOpen = state.ui?.venueCalendarOpen?.[venue.id] ?? true;
     return `<div class="venue-detail-cover" style="--venue-image:url('${esc(venue.facadeImage)}')"><div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood)}</strong><small>${esc(venue.address)} · ${esc(venue.distance)}</small></div></div></div>
       <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc(venue.types.join(" · "))}</span><span><b>Estrutura</b>${esc(venue.amenities.join(" · "))}</span></div>
-      <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Escolha o dia para consultar os horários e valores.</p></div></div><div class="schedule-days">${venue.schedule.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>
+      <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Consulte os dias cadastrados, os horários disponíveis e os valores do local.</p></div><button type="button" class="button ghost small" data-action="toggle-venue-calendar" data-id="${esc(venue.id)}">${calendarOpen ? "Ocultar calendário" : "Abrir calendário"}</button></div>
+      <div class="selected-day-chip"><span>Dia selecionado</span><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong></div>
+      ${calendarOpen ? `<div class="schedule-days">${venue.schedule.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>` : ""}
       <div class="schedule-slots">${day.slots.map((slot) => {
         const reservation = findReservationForSlot(venue.id, slot.time, day.shortDate);
         const visual = reservation ? reservationStatus(reservation.statusKey) : null;
@@ -611,14 +624,17 @@
     const existing = findReservationForSlot(venueId, time, day.shortDate);
     if (existing) {
       const visual = reservationStatus(existing.statusKey);
+      detailReturnContext = { venueId: venue.id, shortDate: day.shortDate };
       openDetail({ eyebrow: "Status do horário", title: `${venue.name} · ${time}`, body: `<div class="summary-card"><strong>${visual.label}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(existing.id)}</span><span>Endpoint: ${esc(existing.endpoint)}</span></div></div><p class="dialog-description">Horários cancelados deixam de bloquear a agenda e permanecem apenas no histórico de reservas.</p>` });
       return;
     }
     if (slot.blocked) {
+      detailReturnContext = { venueId: venue.id, shortDate: day.shortDate };
       openDetail({ eyebrow: "Horário indisponível", title: `${venue.name} · ${time}`, body: `<p class="dialog-description">Este horário foi bloqueado pelo parceiro e não pode ser reservado.</p>` });
       return;
     }
     selectedReservation = { venue, time, day, value: slot.price };
+    reservationReturnContext = { venueId: venue.id, shortDate: day.shortDate };
     reservationTitle.textContent = `${venue.name} · ${time}`;
     reservationSummary.innerHTML = `<strong>${esc(venue.name)}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(day.date)}</span><span>${esc(time)}</span><span>${money(slot.price)}</span></div>`;
     eventSelect.value = "";
@@ -660,6 +676,10 @@
       openVenueSchedule(id);
     } else if (action === "venue-schedule-day") {
       openVenueSchedule(id, button.dataset.date);
+    } else if (action === "toggle-venue-calendar") {
+      state.ui.venueCalendarOpen[id] = !(state.ui.venueCalendarOpen[id] ?? true);
+      saveState();
+      openVenueSchedule(id, selectedVenueSchedule?.shortDate || state.venues.find((item) => item.id === id)?.schedule?.[0]?.shortDate);
     } else if (action === "reservation-details") {
       const reservation = state.reservations.find((item) => item.id === id);
       if (reservation) openDetail({ eyebrow: "Reserva", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div></div></div><div class="detail-group"><h3>Status</h3><div class="detail-list"><div class="detail-line"><span>Estado</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div></div>` });
@@ -791,6 +811,24 @@
     if (actionButton) handleAction(actionButton);
   });
 
+  detailDialog.addEventListener("close", () => {
+    if (!detailReturnContext) return;
+    const context = detailReturnContext;
+    detailReturnContext = null;
+    setTimeout(() => openVenueSchedule(context.venueId, context.shortDate), 10);
+  });
+
+  reservationDialog.addEventListener("close", () => {
+    if (!reservationReturnContext) {
+      selectedReservation = null;
+      return;
+    }
+    const context = reservationReturnContext;
+    reservationReturnContext = null;
+    selectedReservation = null;
+    setTimeout(() => openVenueSchedule(context.venueId, context.shortDate), 10);
+  });
+
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}
     if(event.target.id==="adminPartnerSearch"){state.search.adminPartner=event.target.value;saveState();render();const input=document.getElementById("adminPartnerSearch");input?.focus();input?.setSelectionRange(state.search.adminPartner.length,state.search.adminPartner.length);}
@@ -828,7 +866,7 @@
     const id=nextId("R-",state.reservations);
     const voucher=voucherSelect.value || state.appliedVouchers[0] || "";
     state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:selectedReservation.day.date,shortDate:selectedReservation.day.shortDate,time:selectedReservation.time,value:selectedReservation.value,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",event:eventSelect.options[eventSelect.selectedIndex]?.text || "",voucher});
-    saveState();reservationDialog.close();selectedReservation=null;state.activePage.user="reservations";render();showToast(`Reserva ${id} criada como pendente.`);
+    saveState();reservationDialog.close();render();showToast(`Reserva ${id} criada como pendente.`);
   });
 
   if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});
