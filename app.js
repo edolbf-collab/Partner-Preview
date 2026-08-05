@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.3";
-  const STORAGE_KEY = "tamo_on_partners_preview_013";
+  const VERSION = "0.1.4";
+  const STORAGE_KEY = "tamo_on_partners_preview_014";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -33,6 +33,7 @@
   let formHandler = null;
   let confirmHandler = null;
   let selectedReservation = null;
+  let selectedVenueSchedule = null;
 
   const menus = {
     user: [
@@ -82,18 +83,33 @@
       venues: [
         {
           id: "arena-central", name: "Arena Central", city: "Curitiba", neighborhood: "Água Verde", distance: "2,4 km",
-          rating: 4.8, reviews: 126, types: ["Futsal", "Society"], price: 120, color: "", address: "Rua das Palmeiras, 250",
-          amenities: ["Vestiário", "Estacionamento", "Churrasqueira"], slots: ["18:00", "19:00", "20:00", "21:00"], unavailable: ["19:00"]
+          rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250",
+          facadeImage: "assets/venues/arena-central.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"],
+          schedule: [
+            { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 120 }, { time: "19:00", price: 120, blocked: true }, { time: "20:00", price: 120 }, { time: "21:00", price: 130 }] },
+            { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "18:00", price: 130 }, { time: "19:00", price: 140 }, { time: "20:00", price: 140 }, { time: "21:00", price: 140 }] },
+            { date: "08/08/2026", shortDate: "08/08", weekday: "Sáb", dayLabel: "8 ago", slots: [{ time: "14:00", price: 150 }, { time: "16:00", price: 150 }, { time: "18:00", price: 160 }, { time: "20:00", price: 160 }] }
+          ]
         },
         {
           id: "cancha-horizonte", name: "Cancha Horizonte", city: "São José dos Pinhais", neighborhood: "Centro", distance: "8,1 km",
-          rating: 4.6, reviews: 74, types: ["Society"], price: 105, color: "alt", address: "Avenida Central, 840",
-          amenities: ["Estacionamento", "Lanchonete"], slots: ["17:30", "19:00", "20:30", "22:00"], unavailable: ["20:30"]
+          rating: 4.6, reviews: 74, ratingSource: "users", types: ["Society"], price: 105, address: "Avenida Central, 840",
+          facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"],
+          schedule: [
+            { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "17:30", price: 105 }, { time: "19:00", price: 105 }, { time: "20:30", price: 115, blocked: true }, { time: "22:00", price: 105 }] },
+            { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "17:30", price: 110 }, { time: "19:00", price: 120 }, { time: "20:30", price: 120 }, { time: "22:00", price: 110 }] },
+            { date: "09/08/2026", shortDate: "09/08", weekday: "Dom", dayLabel: "9 ago", slots: [{ time: "10:00", price: 120 }, { time: "12:00", price: 120 }, { time: "16:00", price: 130 }, { time: "18:00", price: 130 }] }
+          ]
         },
         {
           id: "vale-verde", name: "Complexo Vale Verde", city: "Colombo", neighborhood: "Roça Grande", distance: "11,7 km",
-          rating: 4.7, reviews: 91, types: ["Futsal", "Campo"], price: 95, color: "warm", address: "Estrada do Vale, 41",
-          amenities: ["Vestiário", "Arquibancada", "Iluminação"], slots: ["18:00", "19:30", "21:00"], unavailable: []
+          rating: 4.7, reviews: 91, ratingSource: "users", types: ["Futsal", "Campo"], price: 95, address: "Estrada do Vale, 41",
+          facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"],
+          schedule: [
+            { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 95 }, { time: "19:30", price: 105 }, { time: "21:00", price: 105 }] },
+            { date: "08/08/2026", shortDate: "08/08", weekday: "Sáb", dayLabel: "8 ago", slots: [{ time: "09:00", price: 120 }, { time: "11:00", price: 120 }, { time: "15:00", price: 140 }, { time: "17:00", price: 140 }] },
+            { date: "09/08/2026", shortDate: "09/08", weekday: "Dom", dayLabel: "9 ago", slots: [{ time: "09:00", price: 130 }, { time: "11:00", price: 130 }, { time: "15:00", price: 150 }, { time: "17:00", price: 150 }] }
+          ]
         }
       ],
       promotions: [
@@ -296,7 +312,7 @@
     detailEyebrow.textContent = eyebrow;
     detailTitle.textContent = title;
     detailBody.innerHTML = body;
-    detailDialog.showModal();
+    if (!detailDialog.open) detailDialog.showModal();
   }
 
   function askConfirm({ title, message, confirmLabel = "Confirmar", onConfirm }) {
@@ -361,42 +377,29 @@
     return `<div class="empty-state"><div class="empty-icon">${icon}</div>${esc(text)}</div>`;
   }
 
-  function findReservationForSlot(venueId, time) {
-    return state.reservations.find((reservation) => reservation.venueId === venueId && reservation.time === time && reservation.shortDate === "06/08");
+  function findReservationForSlot(venueId, time, shortDate) {
+    return state.reservations.find((reservation) => reservation.venueId === venueId && reservation.time === time && reservation.shortDate === shortDate && reservation.statusKey !== "cancelled");
   }
 
   function venueCard(venue) {
     const favorite = state.favorites.includes(venue.id);
-    return `<article class="card venue-card">
-      <div class="venue-cover ${esc(venue.color)}">
-        <div class="venue-top"><span class="badge">★ ${esc(venue.rating)}</span><button type="button" class="favorite-button ${favorite ? "active" : ""}" data-action="toggle-favorite" data-id="${esc(venue.id)}" aria-label="${favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorite ? "♥" : "♡"}</button></div>
-        <div><div class="venue-name">${esc(venue.name)}</div><div class="meta-row"><span>${esc(venue.city)} · ${esc(venue.neighborhood)}</span><span>${esc(venue.distance)}</span></div></div>
-      </div>
-      <div class="venue-body">
-        <div class="meta-row"><span>${esc(venue.types.join(" · "))}</span><span>${esc(venue.reviews)} avaliações</span></div>
-        <div class="slot-row">${venue.slots.map((slot) => {
-          const reservation = findReservationForSlot(venue.id, slot);
-          const unavailable = venue.unavailable.includes(slot);
-          const visual = reservation ? reservationStatus(reservation.statusKey) : null;
-          const cls = unavailable ? "unavailable" : visual?.slot || "";
-          return `<button type="button" class="slot ${cls}" data-action="reserve-slot" data-venue="${esc(venue.id)}" data-time="${esc(slot)}">${esc(slot)}</button>`;
-        }).join("")}</div>
-        <div class="slot-legend"><span><i class="legend-dot"></i>Livre</span><span><i class="legend-dot pending"></i>Pendente</span><span><i class="legend-dot confirmed"></i>Confirmado</span><span><i class="legend-dot cancelled"></i>Cancelado</span></div>
-        <div class="price-row"><div class="price"><small>A partir de</small>${money(venue.price)}</div><button type="button" class="button secondary small" data-action="venue-details" data-id="${esc(venue.id)}">Ver espaço</button></div>
+    return `<article class="venue-card compact-venue-card" style="--venue-image:url('${esc(venue.facadeImage)}')">
+      <div class="venue-card-shade"></div>
+      <div class="venue-card-top"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>usuários</small></span><button type="button" class="favorite-button ${favorite ? "active" : ""}" data-action="toggle-favorite" data-id="${esc(venue.id)}" aria-label="${favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}">${favorite ? "♥" : "♡"}</button></div>
+      <div class="venue-card-content">
+        <h2>${esc(venue.name)}</h2>
+        <div class="venue-location"><span>${esc(venue.city)} · ${esc(venue.neighborhood)}</span><strong>${esc(venue.distance)}</strong></div>
+        <div class="venue-card-footer"><span class="venue-types-note">${esc(venue.types.join(" · "))}</span><button type="button" class="button primary small" data-action="venue-details" data-id="${esc(venue.id)}">Ver espaço</button></div>
       </div>
     </article>`;
   }
 
   function userDiscover() {
     const filtered = state.venues.filter((venue) => `${venue.name} ${venue.city}`.toLowerCase().includes(state.search.venue.toLowerCase()));
-    const activePromo = state.promotions.find((item) => item.active);
-    return `${pageHeader("Área do usuário", "Buscar quadras", "Encontre por nome ou cidade. Futsal, society e campo aparecem apenas como identificação cadastrada pelo parceiro.", `<button class="button ghost" data-nav="reservations">Minhas reservas</button>`)}
-      <section class="hero-compact">
-        <article class="hero-panel"><span class="eyebrow">Reserva simples</span><h2>Escolha o local, o horário e acompanhe o status.</h2><p>A reserva fica pendente até a confirmação por pagamento ou até o cancelamento pelo endpoint correspondente.</p></article>
-        <article class="hero-panel promo-panel"><div><span class="eyebrow">Promoções</span><h2>${esc(activePromo?.title || "Ofertas dos parceiros")}</h2><p>${esc(activePromo?.benefit || "Nenhuma promoção ativa")}</p></div><div class="promo-code"><strong>${esc(activePromo?.code || "EM BREVE")}</strong><button class="button ghost small" data-nav="promotions">Ver todas</button></div></article>
-      </section>
-      <div class="toolbar"><label class="search"><span>⌕</span><input id="venueSearch" value="${esc(state.search.venue)}" placeholder="Buscar por quadra ou cidade" aria-label="Buscar por quadra ou cidade"></label></div>
-      <section class="grid">${filtered.map(venueCard).join("") || emptyState("⌕", "Nenhuma quadra encontrada para essa busca.")}</section>`;
+    const activePromotions = state.promotions.filter((item) => item.active).length;
+    return `<div class="discover-toolbar"><label class="search discover-search"><span>⌕</span><input id="venueSearch" value="${esc(state.search.venue)}" placeholder="Buscar por quadra ou cidade" aria-label="Buscar por quadra ou cidade"></label><button class="promo-menu-button" data-nav="promotions"><span class="promo-menu-icon">%</span><span><strong>Promoções</strong><small>${activePromotions} ofertas disponíveis</small></span><b>›</b></button></div>
+      ${pageHeader("Área do usuário", "Buscar quadras", "Selecione um local para consultar os dias, horários e valores cadastrados pelo parceiro.", `<button class="button ghost" data-nav="reservations">Minhas reservas</button>`)}
+      <section class="grid venue-grid">${filtered.map(venueCard).join("") || emptyState("⌕", "Nenhuma quadra encontrada para essa busca.")}</section>`;
   }
 
   function userReservations() {
@@ -575,24 +578,52 @@
     if (adminReservationFilter) adminReservationFilter.value = state.filters.adminReservationStatus;
   }
 
-  function openReservation(venueId, time) {
+  function venueScheduleBody(venue, selectedDate) {
+    const day = venue.schedule.find((item) => item.shortDate === selectedDate) || venue.schedule[0];
+    selectedVenueSchedule = { venueId: venue.id, shortDate: day.shortDate };
+    return `<div class="venue-detail-cover" style="--venue-image:url('${esc(venue.facadeImage)}')"><div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood)}</strong><small>${esc(venue.address)} · ${esc(venue.distance)}</small></div></div></div>
+      <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc(venue.types.join(" · "))}</span><span><b>Estrutura</b>${esc(venue.amenities.join(" · "))}</span></div>
+      <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Escolha o dia para consultar os horários e valores.</p></div></div><div class="schedule-days">${venue.schedule.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>
+      <div class="schedule-slots">${day.slots.map((slot) => {
+        const reservation = findReservationForSlot(venue.id, slot.time, day.shortDate);
+        const visual = reservation ? reservationStatus(reservation.statusKey) : null;
+        const cls = slot.blocked ? "unavailable" : visual?.slot || "available";
+        const label = slot.blocked ? "Indisponível" : reservation ? visual.label : "Disponível";
+        return `<button type="button" class="schedule-slot ${cls}" data-action="reserve-slot" data-venue="${esc(venue.id)}" data-time="${esc(slot.time)}" data-date="${esc(day.shortDate)}"><span><strong>${esc(slot.time)}</strong><small>${esc(label)}</small></span><b>${money(slot.price)}</b></button>`;
+      }).join("")}</div><div class="slot-legend schedule-legend"><span><i class="legend-dot"></i>Disponível</span><span><i class="legend-dot pending"></i>Pendente</span><span><i class="legend-dot confirmed"></i>Confirmado</span></div></section>`;
+  }
+
+  function openVenueSchedule(venueId, shortDate) {
     const venue = state.venues.find((item) => item.id === venueId);
     if (!venue) return;
-    const existing = findReservationForSlot(venueId, time);
+    detailEyebrow.textContent = "Espaço parceiro";
+    detailTitle.textContent = venue.name;
+    detailBody.innerHTML = venueScheduleBody(venue, shortDate || venue.schedule[0].shortDate);
+    if (!detailDialog.open) detailDialog.showModal();
+  }
+
+  function openReservation(venueId, time, shortDate) {
+    const venue = state.venues.find((item) => item.id === venueId);
+    if (!venue) return;
+    const day = venue.schedule.find((item) => item.shortDate === shortDate) || venue.schedule[0];
+    const slot = day.slots.find((item) => item.time === time);
+    if (!slot) return;
+    const existing = findReservationForSlot(venueId, time, day.shortDate);
     if (existing) {
       const visual = reservationStatus(existing.statusKey);
-      openDetail({ eyebrow: "Status do horário", title: `${venue.name} · ${time}`, body: `<div class="summary-card"><strong>${visual.label}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(existing.id)}</span><span>Endpoint: ${esc(existing.endpoint)}</span></div></div><p class="dialog-description">A cor acompanha o estado da reserva no armazenamento local.</p>` });
+      openDetail({ eyebrow: "Status do horário", title: `${venue.name} · ${time}`, body: `<div class="summary-card"><strong>${visual.label}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(existing.id)}</span><span>Endpoint: ${esc(existing.endpoint)}</span></div></div><p class="dialog-description">Horários cancelados deixam de bloquear a agenda e permanecem apenas no histórico de reservas.</p>` });
       return;
     }
-    if (venue.unavailable.includes(time)) {
-      openDetail({ eyebrow: "Horário indisponível", title: `${venue.name} · ${time}`, body: `<p class="dialog-description">Este horário está ocupado no conjunto de dados fictícios. A lista de espera será adicionada em outro ciclo.</p>` });
+    if (slot.blocked) {
+      openDetail({ eyebrow: "Horário indisponível", title: `${venue.name} · ${time}`, body: `<p class="dialog-description">Este horário foi bloqueado pelo parceiro e não pode ser reservado.</p>` });
       return;
     }
-    selectedReservation = { venue, time };
+    selectedReservation = { venue, time, day, value: slot.price };
     reservationTitle.textContent = `${venue.name} · ${time}`;
-    reservationSummary.innerHTML = `<strong>${esc(venue.name)}</strong><div class="meta-row" style="margin-top:7px"><span>06/08/2026</span><span>${esc(time)} às ${String((Number.parseInt(time,10)+1)%24).padStart(2,"0")}:00</span><span>${money(venue.price)}</span></div>`;
+    reservationSummary.innerHTML = `<strong>${esc(venue.name)}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(day.date)}</span><span>${esc(time)}</span><span>${money(slot.price)}</span></div>`;
     eventSelect.value = "";
     voucherSelect.value = "";
+    if (detailDialog.open) detailDialog.close();
     reservationDialog.showModal();
   }
 
@@ -624,10 +655,11 @@
       state.favorites = state.favorites.includes(id) ? state.favorites.filter((item) => item !== id) : [...state.favorites,id];
       saveState(); render(); showToast(state.favorites.includes(id) ? "Quadra adicionada aos favoritos." : "Quadra removida dos favoritos.");
     } else if (action === "reserve-slot") {
-      openReservation(button.dataset.venue, button.dataset.time);
+      openReservation(button.dataset.venue, button.dataset.time, button.dataset.date);
     } else if (action === "venue-details") {
-      const venue = state.venues.find((item) => item.id === id);
-      if (venue) openDetail({ eyebrow: "Espaço parceiro", title: venue.name, body: `<div class="details-grid"><div class="detail-group"><h3>Localização</h3><div class="detail-list"><div class="detail-line"><span>Endereço</span><strong>${esc(venue.address)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(venue.city)} · ${esc(venue.neighborhood)}</strong></div><div class="detail-line"><span>Distância</span><strong>${esc(venue.distance)}</strong></div></div></div><div class="detail-group"><h3>Estrutura</h3><div class="detail-list"><div class="detail-line"><span>Tipos</span><strong>${esc(venue.types.join(" · "))}</strong></div><div class="detail-line"><span>Comodidades</span><strong>${esc(venue.amenities.join(" · "))}</strong></div><div class="detail-line"><span>Preço-base</span><strong>${money(venue.price)}</strong></div></div></div></div>` });
+      openVenueSchedule(id);
+    } else if (action === "venue-schedule-day") {
+      openVenueSchedule(id, button.dataset.date);
     } else if (action === "reservation-details") {
       const reservation = state.reservations.find((item) => item.id === id);
       if (reservation) openDetail({ eyebrow: "Reserva", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div></div></div><div class="detail-group"><h3>Status</h3><div class="detail-list"><div class="detail-line"><span>Estado</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div></div>` });
@@ -754,6 +786,11 @@
     if(actionButton)handleAction(actionButton);
   });
 
+  detailDialog.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-action]");
+    if (actionButton) handleAction(actionButton);
+  });
+
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}
     if(event.target.id==="adminPartnerSearch"){state.search.adminPartner=event.target.value;saveState();render();const input=document.getElementById("adminPartnerSearch");input?.focus();input?.setSelectionRange(state.search.adminPartner.length,state.search.adminPartner.length);}
@@ -790,7 +827,7 @@
     if(!selectedReservation)return;
     const id=nextId("R-",state.reservations);
     const voucher=voucherSelect.value || state.appliedVouchers[0] || "";
-    state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:"06/08/2026",shortDate:"06/08",time:selectedReservation.time,value:selectedReservation.venue.price,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",event:eventSelect.options[eventSelect.selectedIndex]?.text || "",voucher});
+    state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:selectedReservation.day.date,shortDate:selectedReservation.day.shortDate,time:selectedReservation.time,value:selectedReservation.value,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",event:eventSelect.options[eventSelect.selectedIndex]?.text || "",voucher});
     saveState();reservationDialog.close();selectedReservation=null;state.activePage.user="reservations";render();showToast(`Reserva ${id} criada como pendente.`);
   });
 

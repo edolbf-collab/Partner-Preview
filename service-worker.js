@@ -1,4 +1,4 @@
-const CACHE = "tamo-on-partners-preview-0.1.3";
+const CACHE = "tamo-on-partners-preview-0.1.4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,7 +7,10 @@ const ASSETS = [
   "./config.preview.js",
   "./asaas-sandbox.js",
   "./manifest.webmanifest",
-  "./assets/preview-icon.svg"
+  "./assets/preview-icon.svg",
+  "./assets/venues/arena-central.svg",
+  "./assets/venues/cancha-horizonte.svg",
+  "./assets/venues/vale-verde.svg"
 ];
 
 self.addEventListener("install", (event) => {

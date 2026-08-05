@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,11 +9,12 @@
   "real_money": false,
   "released_at": "2026-08-04",
   "notes": [
-    "Todos os submenus das áreas do usuário, parceiro e administração estão navegáveis.",
-    "Dados fictícios podem ser cadastrados, editados, ativados, bloqueados e exportados localmente.",
-    "Cadastro do parceiro reúne dados empresariais, responsável, endereço, contratos, LGPD, emissão fiscal, comissão, dados bancários e documentos.",
-    "Navegação reorganizada por tarefas, com menu lateral compacto no desktop e navegação horizontal no celular.",
-    "Busca do usuário permanece limitada a nome da quadra ou cidade; futsal, society e campo são características cadastradas pelo parceiro.",
+    "Busca por quadras posicionada imediatamente após o submenu da área do usuário.",
+    "Cards compactos exibem somente nome, cidade, bairro, distância, nota dos usuários e tipos de espaço.",
+    "Imagem de fachada passou a ser usada como fundo do card por meio do campo facadeImage, preparado para origem no cadastro do parceiro.",
+    "Ver espaço abre a agenda cadastrada pelo parceiro com dias, horários, estados e valores específicos.",
+    "Reserva cancelada deixa de bloquear o horário e permanece apenas no histórico de Minhas reservas.",
+    "Promoções foram recolhidas em um botão que abre o submenu próprio.",
     "Banco, Supabase, Asaas, webhooks, emissão fiscal e dinheiro real permanecem desativados."
   ]
 }
