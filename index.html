@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.7</title>
+  <title>Tâmo On — Partners Preview 0.1.8</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.7</div>
+          <div class="brand-subtitle">Partners Preview 0.1.8</div>
         </div>
       </div>
       <div class="header-actions">
@@ -49,14 +49,25 @@
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
       <div class="summary-card" id="reservationSummary"></div>
-      <label class="field">
-        <span>Vincular a um evento</span>
-        <select id="eventSelect">
-          <option value="">Não vincular agora</option>
-          <option value="pelada-quinta">Pelada de quinta-feira</option>
-          <option value="amistoso-sabado">Amistoso de sábado</option>
-        </select>
-      </label>
+      <div class="reservation-link-grid">
+        <label class="field">
+          <span>Grupo responsável pela reserva</span>
+          <select id="groupSelect" required aria-describedby="groupPermissionNote"></select>
+          <small class="field-help" id="groupPermissionNote">Selecione um grupo em que você possa criar e alterar eventos.</small>
+        </label>
+        <label class="field">
+          <span>Evento do grupo</span>
+          <select id="eventSelect" required disabled></select>
+          <small class="field-help">Você pode vincular um evento já existente ou criar outro com os dados da reserva.</small>
+        </label>
+      </div>
+      <div class="new-event-panel" id="newEventPanel" hidden>
+        <label class="field">
+          <span>Nome do novo evento</span>
+          <input id="newEventTitle" maxlength="80" autocomplete="off">
+          <small class="field-help">O evento será criado em espera e só ficará visível no grupo depois da confirmação do pagamento.</small>
+        </label>
+      </div>
       <label class="field">
         <span>Voucher</span>
         <select id="voucherSelect">
@@ -65,12 +76,10 @@
           <option value="FORADEPICO">FORADEPICO · R$ 15,00</option>
         </select>
       </label>
-      <div class="payment-preview">
-        <div>
-          <strong>Pagamento</strong>
-          <p>O status ficará pendente até a simulação de um endpoint.</p>
-        </div>
-        <span class="status status-neutral">Sandbox desativado</span>
+      <div class="automation-preview" id="reservationAutomationPreview">
+        <div class="automation-step active"><b>1</b><span><strong>Reserva pendente</strong><small>Horário bloqueado temporariamente</small></span></div>
+        <div class="automation-step"><b>2</b><span><strong>Pagamento Asaas</strong><small>Aguardando endpoint de confirmação</small></span></div>
+        <div class="automation-step"><b>3</b><span><strong>Publicação e push</strong><small>Automáticos após o pagamento</small></span></div>
       </div>
       <div class="dialog-actions">
         <button class="button ghost" value="cancel">Voltar</button>
@@ -135,7 +144,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.7</h2>
+          <h2>Partners Preview 0.1.8</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
@@ -145,6 +154,7 @@
         <li>Cadastro de parceiros com blocos cadastral, operacional, contratual, fiscal e financeiro.</li>
         <li>Busca do usuário com cards compactos, fachada ilustrativa, agenda interna e preços por horário.</li>
         <li>Reservas, agenda, espaços, equipe, clientes, promoções e controles administrativos funcionais.</li>
+        <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
         <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
       </ul>
       <button class="button primary full" value="cancel">Entendi</button>

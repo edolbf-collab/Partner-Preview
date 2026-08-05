@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.7";
-  const STORAGE_KEY = "tamo_on_partners_preview_017";
+  const VERSION = "0.1.8";
+  const STORAGE_KEY = "tamo_on_partners_preview_018";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
   const toast = document.getElementById("toast");
@@ -10,7 +10,12 @@
   const reservationForm = document.getElementById("reservationForm");
   const reservationTitle = document.getElementById("reservationTitle");
   const reservationSummary = document.getElementById("reservationSummary");
+  const groupSelect = document.getElementById("groupSelect");
+  const groupPermissionNote = document.getElementById("groupPermissionNote");
   const eventSelect = document.getElementById("eventSelect");
+  const newEventPanel = document.getElementById("newEventPanel");
+  const newEventTitle = document.getElementById("newEventTitle");
+  const reservationAutomationPreview = document.getElementById("reservationAutomationPreview");
   const voucherSelect = document.getElementById("voucherSelect");
   const formDialog = document.getElementById("formDialog");
   const dynamicForm = document.getElementById("dynamicForm");
@@ -80,6 +85,17 @@
         notification: "Ativadas",
         preferredTime: "Noite"
       },
+      userGroups: [
+        { id: "G-001", name: "Quinta sem Falta", role: "Administrador", memberCount: 18, canCreateEvents: true, canEditEvents: true },
+        { id: "G-002", name: "Amigos do Bairro", role: "Organizador", memberCount: 14, canCreateEvents: true, canEditEvents: true },
+        { id: "G-003", name: "Família FC", role: "Membro", memberCount: 22, canCreateEvents: false, canEditEvents: false }
+      ],
+      groupEvents: [
+        { id: "EV-0101", groupId: "G-001", title: "Pelada de quinta-feira", date: "13/08/2026", time: "20:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
+        { id: "EV-0102", groupId: "G-002", title: "Amistoso de sábado", date: "15/08/2026", time: "16:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
+        { id: "EV-0201", groupId: "G-001", title: "Arena Central · 06/08 às 20:00", date: "06/08/2026", time: "20:00", venue: "Arena Central", statusKey: "standby_payment", status: "Aguardando pagamento", published: false, source: "reservation", sourceReservationId: "R-0007", publicationEndpoint: "waiting.payment.confirmed", pushStatus: "Aguardando publicação" }
+      ],
+      pushLog: [],
       favorites: ["arena-central"],
       appliedVouchers: [],
       ui: {},
@@ -125,9 +141,9 @@
         { id: "P-03", title: "Grupo recorrente", code: "GRUPO4X", benefit: "4ª reserva com 20%", venue: "Arena Central", validUntil: "30/09/2026", active: true }
       ],
       reservations: [
-        { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", event: "Pelada de quinta-feira", voucher: "" },
-        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", event: "Amistoso do bairro", voucher: "FORADEPICO" },
-        { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", event: "", voucher: "" }
+        { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
+        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
+        { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", groupId: "G-020", groupName: "Grupo do Paulo", eventId: "", event: "", eventMode: "none", eventPublicationStatus: "cancelled", pushStatus: "Não enviado", voucher: "" }
       ],
       partnerAgenda: [
         { id: "A-01", day: 6, time: "18:00", title: "Grupo Quinta sem Falta", space: "Quadra Society 1", type: "confirmed", detail: "Reserva R-0010 · 1 hora" },
@@ -290,6 +306,101 @@
     return { day, month: months[month] || month };
   }
 
+  function eventPublicationLabel(statusKey) {
+    const map = {
+      standby_payment: { label: "Evento em espera", className: "status-warning" },
+      published: { label: "Evento publicado", className: "status-ok" },
+      linked_existing: { label: "Evento existente", className: "status-neutral" },
+      cancelled: { label: "Evento cancelado", className: "status-danger" }
+    };
+    return map[statusKey] || map.linked_existing;
+  }
+
+  function userGroup(groupId) {
+    return state.userGroups.find((group) => group.id === groupId);
+  }
+
+  function canManageGroupEvents(group) {
+    return Boolean(group?.canCreateEvents && group?.canEditEvents);
+  }
+
+  function defaultEventTitle(reservation) {
+    return `${reservation.venue.name} · ${reservation.day.shortDate} às ${reservation.time}`;
+  }
+
+  function populateReservationGroups() {
+    groupSelect.innerHTML = `<option value="">Selecione um grupo</option>${state.userGroups.map((group) => `<option value="${esc(group.id)}" ${canManageGroupEvents(group) ? "" : "disabled"}>${esc(group.name)} · ${esc(group.role)}${canManageGroupEvents(group) ? "" : " · sem permissão"}</option>`).join("")}`;
+    const firstAllowed = state.userGroups.find(canManageGroupEvents);
+    groupSelect.value = firstAllowed?.id || "";
+    updateReservationEventOptions();
+  }
+
+  function updateReservationEventOptions() {
+    const group = userGroup(groupSelect.value);
+    const allowed = canManageGroupEvents(group);
+    groupPermissionNote.textContent = !group ? "Selecione um grupo pertencente ao usuário." : allowed ? `${group.role}: autorizado a criar e alterar eventos neste grupo.` : `${group.role}: sem privilégio para criar ou alterar eventos.`;
+    groupPermissionNote.classList.toggle("permission-denied", Boolean(group && !allowed));
+    eventSelect.disabled = !allowed;
+    if (!allowed) {
+      eventSelect.innerHTML = `<option value="">Grupo sem permissão</option>`;
+      newEventPanel.hidden = true;
+      updateReservationSubmitState();
+      return;
+    }
+    const events = state.groupEvents.filter((event) => event.groupId === group.id && event.published);
+    eventSelect.innerHTML = `<option value="__new__">Criar novo evento com esta reserva</option>${events.map((event) => `<option value="${esc(event.id)}">${esc(event.title)} · ${esc(event.date)} ${esc(event.time)}</option>`).join("")}`;
+    eventSelect.value = "__new__";
+    newEventTitle.value = selectedReservation ? defaultEventTitle(selectedReservation) : "";
+    updateNewEventPanel();
+  }
+
+  function updateNewEventPanel() {
+    const createsNew = eventSelect.value === "__new__";
+    newEventPanel.hidden = !createsNew;
+    if (createsNew && !newEventTitle.value && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation);
+    reservationAutomationPreview.classList.toggle("existing-event", !createsNew);
+    const lastStep = reservationAutomationPreview.querySelector(".automation-step:last-child small");
+    if (lastStep) lastStep.textContent = createsNew ? "Evento publicado e push enviado automaticamente" : "Reserva vinculada ao evento já publicado";
+    updateReservationSubmitState();
+  }
+
+  function updateReservationSubmitState() {
+    const group = userGroup(groupSelect.value);
+    const validGroup = canManageGroupEvents(group);
+    const validEvent = Boolean(eventSelect.value) && (eventSelect.value !== "__new__" || newEventTitle.value.trim());
+    const submit = document.getElementById("confirmReservation");
+    if (submit) submit.disabled = !(validGroup && validEvent);
+  }
+
+  function publishStandbyEventForReservation(reservation) {
+    if (reservation.eventMode !== "new" || !reservation.eventId) return false;
+    const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
+    if (!linkedEvent || linkedEvent.statusKey !== "standby_payment") return false;
+    const group = userGroup(reservation.groupId);
+    linkedEvent.statusKey = "published";
+    linkedEvent.status = "Publicado";
+    linkedEvent.published = true;
+    linkedEvent.publishedAt = new Date().toLocaleString("pt-BR");
+    linkedEvent.publicationEndpoint = "event.publish_after_payment";
+    linkedEvent.pushStatus = "Enviado";
+    linkedEvent.pushEndpoint = "push.group_members";
+    reservation.eventPublicationStatus = "published";
+    reservation.pushStatus = "Enviado";
+    reservation.automationEndpoint = "event.publish_after_payment";
+    state.pushLog.unshift({
+      id: nextId("PUSH-", state.pushLog),
+      groupId: reservation.groupId,
+      groupName: reservation.groupName,
+      eventId: reservation.eventId,
+      eventTitle: reservation.event,
+      recipients: Math.max(0, Number(group?.memberCount || 1) - 1),
+      endpoint: "push.group_members",
+      status: "Enviado",
+      createdAt: linkedEvent.publishedAt
+    });
+    return true;
+  }
+
   function focusDialog(dialog) {
     requestAnimationFrame(() => dialog?.focus({ preventScroll: true }));
   }
@@ -444,7 +555,8 @@
       <section class="reservation-list">${visibleReservations.map((reservation) => {
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Sem evento vinculado")}</span><span>${esc(reservation.id)}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : ""}</div></div></article>`;
+        const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(reservation.time)} · ${money(reservation.value)}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -664,8 +776,8 @@
     reservationReturnContext = { venueId: venue.id, shortDate: day.shortDate };
     reservationTitle.textContent = `${venue.name} · ${time}`;
     reservationSummary.innerHTML = `<strong>${esc(venue.name)}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(day.date)}</span><span>${esc(time)}</span><span>${money(slot.price)}</span></div>`;
-    eventSelect.value = "";
     voucherSelect.value = "";
+    populateReservationGroups();
     if (detailDialog.open) detailDialog.close();
     reservationDialog.showModal();
     focusDialog(reservationDialog);
@@ -674,12 +786,22 @@
   function applyUserReservationStatus(id, statusKey) {
     const reservation = state.reservations.find((item) => item.id === id);
     if (!reservation) return;
-    const map = {
-      confirmed: { statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed" },
-      cancelled: { statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled" }
-    };
-    Object.assign(reservation, map[statusKey]);
-    saveState(); render(); showToast(`${id}: ${reservation.status}.`);
+    if (statusKey === "confirmed") {
+      Object.assign(reservation, { statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed" });
+      const published = publishStandbyEventForReservation(reservation);
+      saveState(); render();
+      showToast(published ? `${id}: pagamento confirmado, evento publicado e push registrado.` : `${id}: pagamento confirmado.`);
+      return;
+    }
+    Object.assign(reservation, { statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", pushStatus: "Não enviado" });
+    if (reservation.eventMode === "new" && reservation.eventId) {
+      const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
+      if (linkedEvent && linkedEvent.statusKey === "standby_payment") {
+        Object.assign(linkedEvent, { statusKey: "cancelled", status: "Cancelado", published: false, publicationEndpoint: "reservation.cancelled", pushStatus: "Não enviado" });
+        reservation.eventPublicationStatus = "cancelled";
+      }
+    }
+    saveState(); render(); showToast(`${id}: reserva cancelada; o evento em espera não foi publicado.`);
   }
 
   function partnerDetailsBody(partner) {
@@ -706,7 +828,11 @@
       openVenueSchedule(id, button.dataset.date);
     } else if (action === "reservation-details") {
       const reservation = state.reservations.find((item) => item.id === id);
-      if (reservation) openDetail({ eyebrow: "Reserva", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div></div></div><div class="detail-group"><h3>Status</h3><div class="detail-list"><div class="detail-line"><span>Estado</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div></div>` });
+      if (reservation) {
+        const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
+        const latestPush = state.pushLog.find((push) => push.eventId === reservation.eventId);
+        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Hora</span><strong>${esc(reservation.time)}</strong></div><div class="detail-line"><span>Valor</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div></div></div></div>` });
+      }
     } else if (action === "reservation-status") {
       const label = button.dataset.status === "confirmed" ? "confirmar pelo pagamento" : "cancelar";
       askConfirm({ title: "Alterar reserva", message: `Deseja ${label} a reserva ${id}?`, confirmLabel: "Aplicar endpoint", onConfirm: () => applyUserReservationStatus(id, button.dataset.status) });
@@ -853,6 +979,10 @@
     setTimeout(() => openVenueSchedule(context.venueId, context.shortDate), 10);
   });
 
+  groupSelect.addEventListener("change", updateReservationEventOptions);
+  eventSelect.addEventListener("change", updateNewEventPanel);
+  newEventTitle.addEventListener("input", updateReservationSubmitState);
+
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}
     if(event.target.id==="adminPartnerSearch"){state.search.adminPartner=event.target.value;saveState();render();const input=document.getElementById("adminPartnerSearch");input?.focus();input?.setSelectionRange(state.search.adminPartner.length,state.search.adminPartner.length);}
@@ -888,10 +1018,50 @@
     if(event.submitter?.value==="cancel")return;
     event.preventDefault();
     if(!selectedReservation)return;
+    const group = userGroup(groupSelect.value);
+    if (!group || !canManageGroupEvents(group)) {
+      groupPermissionNote.textContent = "A reserva exige um grupo do usuário e privilégio para criar e alterar eventos.";
+      groupPermissionNote.classList.add("permission-denied");
+      return;
+    }
+    const createsNewEvent = eventSelect.value === "__new__";
+    const existingEvent = createsNewEvent ? null : state.groupEvents.find((item) => item.id === eventSelect.value && item.groupId === group.id);
+    if (!createsNewEvent && !existingEvent) {
+      showToast("Selecione um evento válido do grupo.");
+      return;
+    }
+    const title = createsNewEvent ? newEventTitle.value.trim() : existingEvent.title;
+    if (!title) {
+      newEventTitle.focus();
+      return;
+    }
     const id=nextId("R-",state.reservations);
     const voucher=voucherSelect.value || state.appliedVouchers[0] || "";
-    state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:selectedReservation.day.date,shortDate:selectedReservation.day.shortDate,time:selectedReservation.time,value:selectedReservation.value,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",event:eventSelect.options[eventSelect.selectedIndex]?.text || "",voucher});
-    saveState();reservationDialog.close();render();showToast(`Reserva ${id} criada como pendente.`);
+    let eventId = existingEvent?.id || "";
+    let eventPublicationStatus = "linked_existing";
+    let pushStatus = "Não aplicável";
+    if (createsNewEvent) {
+      eventId = nextId("EV-", state.groupEvents);
+      eventPublicationStatus = "standby_payment";
+      pushStatus = "Aguardando pagamento";
+      state.groupEvents.unshift({
+        id: eventId,
+        groupId: group.id,
+        title,
+        date: selectedReservation.day.date,
+        time: selectedReservation.time,
+        venue: selectedReservation.venue.name,
+        statusKey: "standby_payment",
+        status: "Aguardando pagamento",
+        published: false,
+        source: "reservation",
+        sourceReservationId: id,
+        publicationEndpoint: "waiting.payment.confirmed",
+        pushStatus: "Aguardando publicação"
+      });
+    }
+    state.reservations.unshift({id,venueId:selectedReservation.venue.id,venue:selectedReservation.venue.name,user:state.userProfile.name,date:selectedReservation.day.date,shortDate:selectedReservation.day.shortDate,time:selectedReservation.time,value:selectedReservation.value,statusKey:"pending",status:"Reserva pendente",endpoint:"reservation.created",groupId:group.id,groupName:group.name,groupRole:group.role,eventId,event:title,eventMode:createsNewEvent?"new":"existing",eventPublicationStatus,pushStatus,voucher});
+    saveState();reservationDialog.close();render();showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
   });
 
   if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});

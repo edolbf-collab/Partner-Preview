@@ -1,18 +1,18 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
   "persistence": "browser-local-storage",
   "asaas": "sandbox-planned-disabled",
   "real_money": false,
-  "released_at": "2026-08-04",
+  "released_at": "2026-08-05",
   "notes": [
-    "Card da agenda limitado à largura útil da tela do celular.",
-    "Foto e demais blocos do detalhe do parceiro não ampliam mais o modal horizontalmente.",
-    "Somente a faixa de dias possui rolagem horizontal.",
-    "Horários, valores, resumo, legenda e botões permanecem enquadrados na largura do aparelho.",
-    "Banco, Supabase, Asaas, webhooks, emissão fiscal e dinheiro real permanecem desativados."
+    "Reserva obrigatoriamente vinculada a um grupo pertencente ao usuário.",
+    "Validação local dos privilégios de criação e alteração de eventos.",
+    "Opção de vincular evento existente ou criar evento em espera com os dados da reserva.",
+    "Confirmação simulada do pagamento publica o evento e registra o push aos membros do grupo.",
+    "Asaas, Supabase, banco, webhooks e envio real de push permanecem desativados."
   ]
 }

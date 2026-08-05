@@ -913,3 +913,76 @@ tr:last-child td { border-bottom: 0; }
     flex-wrap: wrap;
   }
 }
+
+
+/* Partners Preview 0.1.8 — grupo obrigatório e evento automatizado */
+.reservation-link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.new-event-panel {
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(244,184,74,.25);
+  border-radius: 14px;
+  background: rgba(244,184,74,.055);
+}
+.new-event-panel[hidden] { display: none; }
+.permission-denied { color: #ff9ba5; }
+.automation-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.automation-step {
+  display: grid;
+  grid-template-columns: 24px minmax(0,1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255,255,255,.025);
+}
+.automation-step b {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+  background: rgba(255,255,255,.06);
+  font-size: 9px;
+}
+.automation-step.active { border-color: rgba(244,184,74,.28); background: rgba(244,184,74,.055); }
+.automation-step.active b { color: #38290b; background: var(--amber); }
+.automation-step span { min-width: 0; display: grid; gap: 3px; }
+.automation-step strong { font-size: 9px; }
+.automation-step small { color: var(--muted); font-size: 8px; line-height: 1.35; }
+.reservation-group-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+.reservation-group-line strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 9px;
+}
+.reservation-group-line span { flex: 0 0 auto; }
+.reservation-card-meta .status { flex: 0 0 auto; }
+#confirmReservation:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 700px) {
+  .reservation-link-grid { grid-template-columns: 1fr; gap: 10px; }
+  .automation-preview { grid-template-columns: 1fr; }
+  .automation-step { grid-template-columns: 22px minmax(0,1fr); padding: 9px; }
+  .reservation-card-meta { align-items: flex-start; }
+}

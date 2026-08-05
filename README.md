@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.7
+# Tâmo On — Partners Preview 0.1.8
 
 Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
 
@@ -46,11 +46,19 @@ A homologação dos parceiros permite cadastrar, editar, consultar o dossiê, ap
 
 As alterações são gravadas no `localStorage` do navegador. O botão de restauração no cabeçalho recupera os dados fictícios iniciais. Não há sincronização com a linha Beta 1.0.
 
+## Reserva, grupo e evento automatizado
+
+Toda reserva feita pelo usuário deve estar vinculada a um grupo do qual ele participa. O formulário valida se sua função no grupo permite criar e alterar eventos. Grupos sem esse privilégio aparecem bloqueados.
+
+O usuário pode escolher um evento já publicado do grupo ou criar um novo evento usando local, data, horário e demais dados da reserva. O novo evento permanece em `standby_payment` e não aparece para os demais membros antes da confirmação.
+
+Na simulação local, `payment.confirmed` confirma a reserva, publica o evento por `event.publish_after_payment` e registra o disparo `push.group_members`. O cancelamento antes do pagamento encerra o evento em espera sem publicação ou push.
+
 ## Estados demonstrativos da reserva
 
 - `reservation.created` → pendente;
-- `payment.confirmed` → confirmada;
-- `reservation.cancelled` → cancelada no histórico e horário liberado novamente na agenda.
+- `payment.confirmed` → confirmada, com publicação automática do evento em espera;
+- `reservation.cancelled` → cancelada no histórico, evento em espera encerrado e horário liberado novamente na agenda.
 
 ## Estrutura fiscal e financeira simulada
 
