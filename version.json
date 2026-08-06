@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,12 +9,10 @@
   "real_money": false,
   "released_at": "2026-08-06",
   "notes": [
-    "Modais e formulários permanecem enquadrados no celular e rolam apenas verticalmente.",
-    "Botões Fechar, Voltar e Cancelar ignoram validação; campos obrigatórios são verificados somente na confirmação.",
-    "Checkboxes e painéis de aceite foram compactados e receberam a frase de aceite solicitada.",
-    "Ações Editar e Excluir da agenda não se sobrepõem no mobile.",
-    "Indicadores do parceiro usam grade 2 por 2 no celular.",
-    "Financeiro do parceiro e da administração exibem bruto, comissão Asaas simulada, comissão Tâmo On e líquido estimado.",
+    "Campos de data e horário usam um contêiner responsivo próprio e permanecem dentro da largura do celular.",
+    "Ações Editar e Excluir da agenda pública ficam na lateral, uma acima da outra, em telas móveis.",
+    "Cards da agenda foram compactados para reduzir altura sem ocultar informações.",
+    "Descrições, textos auxiliares, rótulos e informações secundárias foram ampliados em todo o app; títulos foram preservados.",
     "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
   ]
 }

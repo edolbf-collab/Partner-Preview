@@ -1314,3 +1314,138 @@ tr:last-child td { border-bottom: 0; }
   .automation-preview { gap: 6px; }
   .automation-step { min-height: 0; }
 }
+
+
+/* Partners Preview 0.1.16 — campos temporais mobile, agenda compacta e descrições legíveis */
+.temporal-control {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: rgba(255,255,255,.035);
+}
+.temporal-control:focus-within {
+  border-color: rgba(30,209,122,.65);
+  box-shadow: 0 0 0 3px rgba(30,209,122,.09);
+}
+.temporal-control input,
+.temporal-control input:focus {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Aumenta textos de apoio sem alterar a escala dos títulos. */
+body { font-size: 14px; }
+.page-header p,
+.hero-panel p { font-size: 14px; }
+.section-heading p,
+.dialog-description,
+.plain-list,
+.agenda-batch-guide span,
+.profile-central-explanation > p { font-size: 13px; line-height: 1.6; }
+.field { font-size: 12px; }
+.field-help { font-size: 11px; line-height: 1.5; }
+.list-item-main strong { font-size: 13px; }
+.list-item-main small,
+.meta-row,
+.finance-secondary-strip,
+.profile-sync-footer { font-size: 11px; line-height: 1.5; }
+.detail-line span { font-size: 11px; }
+.detail-line strong { font-size: 12px; }
+.public-agenda-row strong,
+.timeline-event strong { font-size: 12px; }
+.public-agenda-row small { font-size: 11px; line-height: 1.45; }
+.stat span,
+.kpi-note { font-size: 11px; }
+.badge,
+.status { font-size: 10px; }
+.button { font-size: 12px; }
+.button.small { font-size: 11px; }
+.subnav-title { font-size: 11px; }
+.subnav-button { font-size: 13px; }
+.role-chip { font-size: 13px; }
+
+@media (max-width: 700px) {
+  .field,
+  .field.full,
+  .temporal-control {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .temporal-control { padding: 10px 11px; }
+  .temporal-control input[type="date"],
+  .temporal-control input[type="time"],
+  .temporal-control input[type="datetime-local"],
+  .temporal-control input[type="month"],
+  .temporal-control input[type="week"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    inline-size: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 16px;
+  }
+  .temporal-control input::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+  .public-agenda-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 76px;
+    grid-template-areas:
+      "primary actions"
+      "secondary actions";
+    align-items: center;
+    gap: 5px 9px;
+    padding: 9px 10px;
+  }
+  .public-agenda-row > div:nth-child(1) { grid-area: primary; }
+  .public-agenda-row > div:nth-child(2) { grid-area: secondary; }
+  .public-agenda-row > .item-actions {
+    grid-area: actions;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    width: 76px;
+    padding: 0 0 0 8px;
+    border-left: 1px solid var(--line);
+  }
+  .public-agenda-row > .item-actions .button {
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 7px;
+  }
+  .public-agenda-list { gap: 7px; }
+  .page-header p { font-size: 14px; }
+  .section-heading p,
+  .dialog-description,
+  .agenda-batch-guide span { font-size: 13px; }
+  .list-item-main small,
+  .meta-row,
+  .public-agenda-row small { font-size: 12px; }
+  .field { font-size: 13px; }
+  .field-help { font-size: 12px; }
+}

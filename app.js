@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.15";
+  const VERSION = "0.1.16";
   const STORAGE_KEY = "tamo_on_partners_preview_0115";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
@@ -882,7 +882,9 @@
     } else if (field.type === "textarea") {
       control = `<textarea name="${esc(field.name)}" ${required}>${esc(field.value ?? "")}</textarea>`;
     } else {
-      control = `<input type="${esc(field.type || "text")}" name="${esc(field.name)}" value="${esc(field.value ?? "")}" ${field.min !== undefined ? `min="${esc(field.min)}"` : ""} ${field.max !== undefined ? `max="${esc(field.max)}"` : ""} ${field.step !== undefined ? `step="${esc(field.step)}"` : ""} ${required}>`;
+      const input = `<input type="${esc(field.type || "text")}" name="${esc(field.name)}" value="${esc(field.value ?? "")}" ${field.min !== undefined ? `min="${esc(field.min)}"` : ""} ${field.max !== undefined ? `max="${esc(field.max)}"` : ""} ${field.step !== undefined ? `step="${esc(field.step)}"` : ""} ${required}>`;
+      const temporalTypes = ["date", "time", "datetime-local", "month", "week"];
+      control = temporalTypes.includes(field.type) ? `<span class="temporal-control">${input}</span>` : input;
     }
     return `<label class="field${full}"><span>${esc(field.label)}</span>${control}${help}</label>`;
   }
