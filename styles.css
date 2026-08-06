@@ -1110,3 +1110,52 @@ tr:last-child td { border-bottom: 0; }
   .profile-sync-banner > .status { grid-column: 1 / -1; justify-self: start; }
   .profile-sync-footer { display: grid; }
 }
+
+
+/* Partners Preview 0.1.13 — vouchers, agenda flexível e mensalistas */
+.cancellation-policy-acceptance strong,
+.cancellation-warning > strong { font-size: 14px; }
+.cancellation-policy-acceptance p,
+.cancellation-warning p,
+.cancellation-warning ul,
+.cancellation-acknowledge span { font-size: 12px; line-height: 1.6; }
+.voucher-payment-preview { border-color: rgba(30,209,122,.34); background: rgba(30,209,122,.07); }
+.voucher-payment-preview strong { font-size: 13px; }
+.voucher-payment-preview p,
+.voucher-calculation span { font-size: 11px; }
+.payment-summary-title { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.payment-summary-title > div { display:grid; gap:4px; }
+.payment-summary-title small { color:var(--muted); font-size:10px; }
+.payment-breakdown.prominent { display:grid; gap:7px; margin-top:13px; padding-top:12px; border-top:1px solid var(--line); }
+.payment-breakdown.prominent span { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:11px; }
+.payment-breakdown.prominent b { color:var(--text); }
+.payment-breakdown.prominent .voucher-total { color:var(--text); font-weight:900; }
+.monthly-reservation-panel { margin:12px 0; padding:13px; border:1px solid rgba(30,209,122,.28); border-radius:15px; background:rgba(30,209,122,.06); }
+.monthly-toggle-row { margin:0; }
+.monthly-toggle-row span { display:grid; gap:3px; }
+.monthly-toggle-row small { color:var(--muted); font-size:11px; font-weight:500; }
+.monthly-reservation-preview { display:grid; gap:4px; margin:10px 0 0 30px; color:var(--muted); font-size:11px; line-height:1.5; }
+.monthly-reservation-preview strong { color:var(--green); font-size:16px; }
+.schedule-slot small { line-height:1.35; }
+.public-agenda-list { display:grid; gap:8px; }
+.public-agenda-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.025); }
+.public-agenda-row > div { display:grid; gap:3px; min-width:0; }
+.public-agenda-row strong { font-size:11px; }
+.public-agenda-row small { color:var(--muted); font-size:9px; }
+.timeline-time { min-width:84px; font-size:9px; }
+@media (max-width:700px) {
+  .cancellation-policy-acceptance strong,
+  .cancellation-warning > strong { font-size:15px; }
+  .cancellation-policy-acceptance p,
+  .cancellation-warning p,
+  .cancellation-warning ul,
+  .cancellation-acknowledge span { font-size:13px; }
+  .voucher-payment-preview p,
+  .voucher-calculation span,
+  .payment-breakdown.prominent span { font-size:12px; }
+  .payment-summary-title { align-items:stretch; flex-direction:column; }
+  .public-agenda-row { grid-template-columns:1fr auto; }
+  .public-agenda-row > div:nth-child(2) { grid-column:1; }
+  .public-agenda-row .button { grid-column:2; grid-row:1 / span 2; }
+  .timeline-row { grid-template-columns:78px minmax(0,1fr); }
+}

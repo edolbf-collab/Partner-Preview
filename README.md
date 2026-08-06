@@ -1,22 +1,18 @@
-# Tâmo On — Partners Preview 0.1.12
+# Tâmo On — Partners Preview 0.1.13
 
-Protótipo operacional isolado da futura área de parceiros, preparado para validação de navegação, dados cadastrais e fluxos funcionais sem banco de dados ou pagamentos reais.
+Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
-## Áreas e submenus ativos
+## Áreas disponíveis
 
 ### Usuário
 
 - Buscar quadras;
 - Minhas reservas;
 - Favoritos;
-- Promoções;
-- Perfil.
+- Voucher;
+- Conta Tâmo On.
 
-A busca geral permanece limitada ao nome da quadra ou à cidade e aparece imediatamente após o submenu. Futsal, society e campo são apresentados apenas como tipos identificados pelo parceiro. A compatibilidade esportiva será aplicada futuramente a partir do esporte escolhido no grupo.
-
-Os cards da busca foram reduzidos e carregam a imagem de fachada indicada no campo `facadeImage` em uma área própria do cartão. Na Preview, as imagens são locais e demonstrativas; na implementação com banco, esse campo deverá receber a imagem enviada pelo parceiro durante o cadastro.
-
-O botão **Ver espaço** abre a agenda criada pelo parceiro, com os dias em uma faixa horizontal rolável, horários, estados e valores específicos de cada faixa. A nota pública exibida é calculada a partir das avaliações dos usuários. A administração poderá moderar avaliações, mas não atribuir diretamente a nota pública.
+A busca é feita por nome da quadra ou cidade. O detalhe do parceiro exibe a agenda publicada, horários flexíveis, valores avulsos e, quando oferecido pelo parceiro, o plano mensalista.
 
 ### Parceiro
 
@@ -29,7 +25,7 @@ O botão **Ver espaço** abre a agenda criada pelo parceiro, com os dias em uma 
 - Financeiro;
 - Cadastro.
 
-O cadastro inclui dados empresariais, responsável, endereço, documentos, contrato, termos, LGPD, política de cancelamento, emissão fiscal, comissão, dados bancários e futura subconta.
+O parceiro pode publicar agenda com início e término livres, inclusive horários parciais ou superiores a uma hora, definir o preço avulso, o valor mensalista e repetir a disponibilidade nas demais semanas do mês.
 
 ### Administração
 
@@ -40,70 +36,61 @@ O cadastro inclui dados empresariais, responsável, endereço, documentos, contr
 - Financeiro;
 - Configurações.
 
-A homologação dos parceiros permite cadastrar, editar, consultar o dossiê, aprovar, suspender e exportar dados fictícios.
+## Pagamento com voucher
 
-## Persistência local
+Quando um voucher de cancelamento é selecionado, a tela de pagamento mostra separadamente:
 
-As alterações são gravadas no `localStorage` do navegador. O botão de restauração no cabeçalho recupera os dados fictícios iniciais. Não há sincronização com a linha Beta 1.0.
+- valor total da reserva;
+- valor integral do voucher utilizado;
+- diferença a pagar pelo Asaas.
 
-## Reserva, grupo e evento automatizado
+O voucher é consumido integralmente. Somente a diferença paga gera nova obrigação fiscal e contábil. A Preview inclui um voucher fictício de R$ 120,00 para permitir a validação do fluxo.
 
-Toda reserva feita pelo usuário deve estar vinculada a um grupo do qual ele participa. O formulário valida se sua função no grupo permite criar e alterar eventos. Grupos sem esse privilégio aparecem bloqueados.
+## Reserva mensalista
 
-O usuário pode escolher um evento já publicado do grupo ou criar um novo evento usando local, data, horário e demais dados da reserva. O novo evento permanece em `standby_payment` e não aparece para os demais membros antes da confirmação.
+A modalidade mensalista somente aparece quando o parceiro a habilita para o horário. O usuário vê antes do pagamento:
 
-Na simulação local, `payment.confirmed` confirma a reserva, publica o evento por `event.publish_after_payment` e registra o disparo `push.group_members`. O cancelamento antes do pagamento encerra o evento em espera sem publicação ou push.
+- valor total do pacote mensal;
+- dias e períodos incluídos;
+- quantidade de ocorrências;
+- eventual voucher aplicado;
+- diferença a pagar.
 
-## Estados demonstrativos da reserva
+A reserva mensalista ocupa o mesmo dia da semana e o mesmo período nas demais datas disponíveis do mês, a partir da data escolhida. O registro guarda todas as ocorrências e impede que os horários sejam tratados como livres enquanto a reserva estiver ativa.
 
-- `reservation.created` → pendente;
-- `payment.confirmed` → confirmada, com publicação automática do evento em espera;
-- `reservation.cancelled` → cancelada antes do pagamento, com encerramento do evento em espera e liberação do horário;
-- `reservation.cancelled_with_voucher` → reserva paga cancelada dentro da política, com emissão de voucher e liberação do horário;
-- `voucher.redeemed` → nova reserva integralmente coberta e confirmada sem nova cobrança;
-- `payment.complement.pending` → voucher reservado e complemento aguardando pagamento;
-- `payment.complement.confirmed` → complemento pago, reserva confirmada e voucher consumido.
+O parceiro também pode registrar uma reserva manual como mensalista. Nesse caso, a Preview gera as ocorrências semanais até o fim do mês e mostra o pacote na área de reservas.
 
-## Política de cancelamento por responsável
+## Agenda flexível do parceiro
 
-A política fica visível e exige aceite antes da criação da reserva e do pagamento. A consequência depende de quem realiza o cancelamento:
+Em **Parceiro → Agenda**, o botão **Criar agenda** permite informar:
 
-- **usuário, dentro do prazo:** gera voucher integral de uso único;
-- **usuário, fora do prazo:** não gera reembolso nem voucher automático;
-- **parceiro:** gera reembolso integral ao usuário, com taxas e custos suportados pelo parceiro;
-- **Tâmo On:** gera reembolso integral ao usuário, com taxas e custos suportados pelo Tâmo On.
+- data inicial;
+- horário de início;
+- horário de término;
+- espaço;
+- valor avulso;
+- disponibilidade para mensalista;
+- valor total do pacote mensal;
+- repetição semanal até o fim do mês.
 
-Em todos os casos, o horário é liberado, o evento criado ou vinculado é cancelado e os membros do grupo são comunicados. Cancelamentos fora do prazo podem ser submetidos a análise excepcional conjunta do Tâmo On e do parceiro, sem concessão automática.
+São aceitos, por exemplo, os períodos 18:30 às 19:30 e 18:00 às 19:30.
 
-## Voucher e disponibilidade compatível
+## Reserva, grupo e evento
 
-O voucher do cancelamento feito pelo usuário dentro do prazo:
+Toda reserva deve estar vinculada a um grupo pertencente ao usuário. O usuário precisa possuir privilégios para criar e alterar eventos. Quando não houver evento existente, a Preview cria um evento em espera e o publica após a confirmação simulada do pagamento ou do complemento.
 
-- tem uso único e prazo nominal de 30 dias;
-- permanece vinculado ao parceiro da reserva original;
-- pode ser usado em qualquer novo dia ou horário disponível, em reserva de valor igual ou superior;
-- é abatido integralmente, sem saldo residual;
-- exige pagamento apenas da diferença quando a nova reserva tiver valor maior.
+## Cancelamento e voucher
 
-O prazo não pode expirar apenas porque o parceiro oferece horários muito distantes do original. A Preview considera como disponibilidade compatível:
+- cancelamento pelo usuário dentro do prazo: voucher integral;
+- cancelamento pelo usuário fora do prazo: sem crédito automático;
+- cancelamento pelo parceiro: reembolso integral e custos suportados pelo parceiro;
+- cancelamento pelo Tâmo On: reembolso integral e custos suportados pelo Tâmo On.
 
-- o mesmo período do dia da reserva original;
-- horário dentro de uma tolerância configurável de duas horas antes ou depois;
-- no mínimo quatro datas distintas durante a validade nominal.
+A validade do voucher considera disponibilidade compatível com o período e a proximidade do horário original. Horários muito distantes não encerram automaticamente o crédito.
 
-Assim, um voucher originado de uma reserva às 20h considera inicialmente a faixa das 18h às 22h, no período noturno. Horários somente pela manhã ou à tarde não contam para encerrar esse voucher. Quando o mínimo de datas compatíveis não é atingido, a validade é prorrogada automaticamente em blocos de sete dias. A tolerância, o mínimo de datas e o período de prorrogação podem ser alterados na Administração.
+## Perfil centralizado
 
-O pagamento original permanece reconhecido no exercício mensal em que ocorreu. A emissão e a utilização integral do voucher não geram nova obrigação fiscal ou contábil. Quando houver complemento, somente o valor adicional é reconhecido como nova operação.
-
-O parceiro responde pelos vouchers vinculados às suas quadras. O encerramento é bloqueado enquanto houver vouchers ativos ou reservados. Na simulação administrativa, o parceiro pode ressarcir o Tâmo On para que o crédito seja realocado a outro espaço.
-
-## Estrutura fiscal e financeira simulada
-
-- o parceiro presta o serviço esportivo e emite o documento fiscal ao usuário;
-- o Tâmo On atua como plataforma/intermediador e emite NFS-e da comissão ao parceiro;
-- valores originais, complementos, comissão e passivo de vouchers aparecem segregados nos demonstrativos;
-- split, subconta, conciliação, reembolso e absorção de taxas permanecem apenas simulados;
-- não há transação, estorno, emissão fiscal ou lançamento contábil real nesta Preview.
+O marketplace reutiliza o perfil principal do Tâmo On. Nome e e-mail vêm da conta Google; telefone, cidade e preferências vêm do perfil central. As permissões são herdadas dos grupos.
 
 ## Execução local
 
@@ -116,25 +103,3 @@ Abra `http://localhost:8080`.
 ## Segurança
 
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
-
-## Atualização 0.1.12
-
-- responsabilidade do cancelamento definida pelo autor da ação;
-- voucher somente para cancelamento do usuário dentro do prazo;
-- cancelamento do parceiro ou Tâmo On com reembolso integral e custos suportados pelo responsável;
-- cancelamento do usuário fora do prazo sem crédito automático;
-- solicitação de análise excepcional conjunta;
-- validade de voucher condicionada à disponibilidade compatível;
-- faixa inicial de ±2 horas no mesmo período do dia;
-- mínimo inicial de quatro datas compatíveis;
-- prorrogação automática de sete dias quando a oferta for insuficiente;
-- controles administrativos para alterar essas regras.
-
-
-## Perfil único e formulários mobile — 0.1.12
-
-- A área do marketplace não solicita novo cadastro pessoal.
-- Nome e e-mail vêm da conta Google já vinculada.
-- Telefone, cidade e preferências vêm do perfil principal do Tâmo On.
-- Funções de administrador e organizador são lidas das permissões dos grupos.
-- Campos de texto, seleção, data e horário usam 16 px no mobile e não recebem foco automático ao abrir formulários, evitando o zoom involuntário do iPhone.

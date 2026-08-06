@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.12</title>
+  <title>Tâmo On — Partners Preview 0.1.13</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.12</div>
+          <div class="brand-subtitle">Partners Preview 0.1.13</div>
         </div>
       </div>
       <div class="header-actions">
@@ -49,6 +49,13 @@
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
       <div class="summary-card" id="reservationSummary"></div>
+      <div class="monthly-reservation-panel" id="monthlyReservationPanel" hidden>
+        <label class="cancellation-acknowledge monthly-toggle-row">
+          <input id="monthlyReservationToggle" type="checkbox">
+          <span><strong>Reservar como mensalista</strong><small>Reserva o mesmo dia e período nas demais semanas disponíveis do mês, pelo valor definido pelo parceiro.</small></span>
+        </label>
+        <div class="monthly-reservation-preview" id="monthlyReservationPreview"></div>
+      </div>
       <div class="reservation-link-grid">
         <label class="field">
           <span>Grupo responsável pela reserva</span>
@@ -69,11 +76,11 @@
         </label>
       </div>
       <label class="field">
-        <span>Voucher ou promoção</span>
+        <span>Voucher</span>
         <select id="voucherSelect">
-          <option value="">Sem voucher</option>
+          <option value="">Não utilizar voucher</option>
         </select>
-        <small class="field-help">Vouchers de cancelamento aparecem somente quando forem válidos para o mesmo parceiro e para uma reserva de valor igual ou superior.</small>
+        <small class="field-help">Os vouchers elegíveis aparecem quando forem válidos para o parceiro e para uma reserva de valor igual ou superior. A diferença fica explícita antes do pagamento.</small>
       </label>
       <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
       <div class="cancellation-policy-acceptance" role="note">
@@ -184,7 +191,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.12</h2>
+          <h2>Partners Preview 0.1.13</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>
@@ -195,7 +202,7 @@
         <li>Campos mobile com tamanho compatível para evitar zoom automático durante o preenchimento.</li>
         <li>Cadastro de parceiros com blocos cadastral, operacional, contratual, fiscal e financeiro.</li>
         <li>Busca do usuário com cards compactos, fachada ilustrativa, agenda interna e preços por horário.</li>
-        <li>Reservas, agenda, espaços, equipe, clientes, promoções e controles administrativos funcionais.</li>
+        <li>Reservas, agenda, espaços, equipe, clientes, vouchers e controles administrativos funcionais.</li>
         <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
         <li>Cancelamento pós-pagamento conforme o responsável: voucher para o usuário elegível, reembolso integral para cancelamento do parceiro ou Tâmo On e ausência de crédito automático fora do prazo.</li>
         <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,10 +9,11 @@
   "real_money": false,
   "released_at": "2026-08-05",
   "notes": [
-    "Marketplace passa a consumir o perfil principal do Tâmo On, sem solicitar novo preenchimento dos dados pessoais.",
-    "Nome e e-mail têm origem na conta Google; dados complementares e preferências são mantidos no perfil central.",
-    "Permissões de administrador e organizador continuam herdadas dos grupos para criação e alteração de eventos.",
-    "Campos de formulário usam tamanho de fonte mobile compatível e deixam de receber foco automático em telas de toque, evitando zoom involuntário.",
-    "Asaas, Supabase, banco, emissão fiscal, webhooks e envio real de push permanecem desativados."
+    "Pagamento com voucher exibe valor total, crédito aplicado e diferença a pagar.",
+    "Promoções foi renomeado para Voucher na área do usuário.",
+    "Parceiros podem criar agenda com início e término flexíveis, valores avulsos e mensalistas.",
+    "Reservas mensalistas ocupam o mesmo dia e período nas demais datas disponíveis do mês.",
+    "Textos das políticas de reserva, cancelamento, voucher e reembolso foram ampliados.",
+    "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
   ]
 }
