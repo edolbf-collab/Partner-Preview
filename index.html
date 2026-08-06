@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.14</title>
+  <title>Tâmo On — Partners Preview 0.1.15</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.14</div>
+          <div class="brand-subtitle">Partners Preview 0.1.15</div>
         </div>
       </div>
       <div class="header-actions">
@@ -46,7 +46,7 @@
           <span class="eyebrow">Reserva de teste</span>
           <h2 id="reservationTitle">Confirmar horário</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <div class="summary-card" id="reservationSummary"></div>
       <div class="monthly-reservation-panel" id="monthlyReservationPanel" hidden>
@@ -88,7 +88,7 @@
         <p id="reservationPolicyText">Reservas avulsas canceladas pelo usuário dentro do prazo geram voucher. Pacotes mensalistas só podem ser cancelados até 24 horas antes da primeira ocorrência; o voucher integral gerado será exclusivo para outra reserva mensalista de valor igual ou superior. Depois desse prazo, o usuário não poderá cancelar o pacote. Cancelamentos pelo parceiro ou pelo Tâmo On seguem a regra de reembolso integral atribuída ao responsável.</p>
         <label class="cancellation-acknowledge">
           <input id="reservationPolicyAcknowledge" type="checkbox">
-          <span><strong>Aceito os termos da reserva.</strong> Estou ciente das regras de cancelamento, voucher, reembolso, mensalista e disponibilidade antes do pagamento.</span>
+          <span><strong>Aceito os termos de reserva e cancelamentos.</strong> Estou ciente das regras de cancelamento, voucher, reembolso, mensalista e disponibilidade antes do pagamento.</span>
         </label>
       </div>
       <div class="automation-preview" id="reservationAutomationPreview">
@@ -97,7 +97,7 @@
         <div class="automation-step"><b>3</b><span><strong>Publicação e push</strong><small>Automáticos após o pagamento</small></span></div>
       </div>
       <div class="dialog-actions">
-        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button ghost" value="cancel" formnovalidate>Voltar</button>
         <button class="button primary" id="confirmReservation" value="default">Criar reserva pendente</button>
       </div>
     </form>
@@ -111,7 +111,7 @@
           <span class="eyebrow" id="cancellationEyebrow">Cancelamento</span>
           <h2 id="cancellationTitle">Cancelar reserva paga</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <div class="summary-card" id="cancellationSummary"></div>
       <div class="cancellation-warning" role="note">
@@ -129,7 +129,7 @@
         <span id="cancellationAcknowledgeText">Estou ciente das consequências financeiras e operacionais desta ação.</span>
       </label>
       <div class="dialog-actions">
-        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button ghost" value="cancel" formnovalidate>Voltar</button>
         <button class="button danger" id="cancellationSubmit" value="default">Cancelar e gerar voucher</button>
       </div>
     </form>
@@ -143,11 +143,11 @@
           <h2 id="formTitle">Formulário</h2>
           <p class="dialog-description" id="formDescription"></p>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <div id="formFields" class="form-grid"></div>
       <div class="dialog-actions">
-        <button class="button ghost" value="cancel">Cancelar</button>
+        <button class="button ghost" value="cancel" formnovalidate>Cancelar</button>
         <button class="button primary" id="formSubmit" value="default">Salvar</button>
       </div>
     </form>
@@ -160,11 +160,11 @@
           <span class="eyebrow" id="detailEyebrow">Detalhes</span>
           <h2 id="detailTitle">Informações</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <div id="detailBody" class="detail-body"></div>
       <div class="dialog-actions">
-        <button class="button primary" value="cancel">Fechar</button>
+        <button class="button primary" value="cancel" formnovalidate>Fechar</button>
       </div>
     </form>
   </dialog>
@@ -176,11 +176,11 @@
           <span class="eyebrow">Confirmar ação</span>
           <h2 id="confirmTitle">Tem certeza?</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <p id="confirmMessage" class="dialog-description"></p>
       <div class="dialog-actions">
-        <button class="button ghost" value="cancel">Voltar</button>
+        <button class="button ghost" value="cancel" formnovalidate>Voltar</button>
         <button class="button danger" id="confirmSubmit" value="default">Confirmar</button>
       </div>
     </form>
@@ -191,9 +191,9 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.14</h2>
+          <h2>Partners Preview 0.1.15</h2>
         </div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro e administração. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
       <ul class="plain-list">
@@ -207,7 +207,7 @@
         <li>Cancelamento pós-pagamento conforme o responsável: voucher para o usuário elegível, reembolso integral para cancelamento do parceiro ou Tâmo On e ausência de crédito automático fora do prazo.</li>
         <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
       </ul>
-      <button class="button primary full" value="cancel">Entendi</button>
+      <button class="button primary full" value="cancel" formnovalidate>Entendi</button>
     </form>
   </dialog>
 

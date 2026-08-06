@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.14
+# Tâmo On — Partners Preview 0.1.15
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 

@@ -1,20 +1,20 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
   "persistence": "browser-local-storage",
   "asaas": "sandbox-planned-disabled",
   "real_money": false,
-  "released_at": "2026-08-05",
+  "released_at": "2026-08-06",
   "notes": [
-    "Mensalistas só podem ser cancelados pelo usuário até 24 horas antes da primeira ocorrência.",
-    "Voucher originado de mensalista é restrito a nova reserva mensalista de valor igual ou superior.",
-    "Agenda do parceiro pode ser criada em lote por período, dias da semana e grade diária automática.",
-    "Sobreposições no mesmo espaço são bloqueadas antes da publicação.",
-    "Horários livres podem ser excluídos; horários com reserva ativa permanecem protegidos.",
-    "O aceite dos termos habilita a confirmação, mas não impede fechar a tela.",
+    "Modais e formulários permanecem enquadrados no celular e rolam apenas verticalmente.",
+    "Botões Fechar, Voltar e Cancelar ignoram validação; campos obrigatórios são verificados somente na confirmação.",
+    "Checkboxes e painéis de aceite foram compactados e receberam a frase de aceite solicitada.",
+    "Ações Editar e Excluir da agenda não se sobrepõem no mobile.",
+    "Indicadores do parceiro usam grade 2 por 2 no celular.",
+    "Financeiro do parceiro e da administração exibem bruto, comissão Asaas simulada, comissão Tâmo On e líquido estimado.",
     "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
   ]
 }

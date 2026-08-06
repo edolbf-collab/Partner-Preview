@@ -1174,3 +1174,143 @@ tr:last-child td { border-bottom: 0; }
   .public-agenda-row > .item-actions { width:100%; justify-content:flex-start; }
   .agenda-batch-guide span, .monthly-reservation-preview small { font-size:12px; }
 }
+
+
+/* Partners Preview 0.1.15 — responsividade de agenda, formulários e transparência financeira */
+*, *::before, *::after { box-sizing: border-box; }
+.form-grid,
+.form-grid > *,
+.field,
+.dialog form,
+.dialog-header > div { min-width: 0; }
+.cancellation-acknowledge input[type="checkbox"],
+.monthly-toggle-row input[type="checkbox"] {
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px;
+  padding: 0 !important;
+  margin: 2px 0 0;
+}
+.cancellation-policy-acceptance {
+  margin-top: 9px;
+  padding: 11px 12px;
+}
+.cancellation-policy-acceptance .cancellation-acknowledge { margin-top: 8px; }
+.monthly-reservation-panel { padding: 11px 12px; }
+.monthly-reservation-preview { margin: 7px 0 0 27px; }
+.automation-preview { margin-top: 10px; }
+.compact-kpi-grid .stat { min-width: 0; }
+.financial-kpi-grid .stat strong { font-size: 20px; }
+.finance-secondary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -4px 0 15px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--muted);
+  background: rgba(255,255,255,.022);
+  font-size: 10px;
+}
+.finance-secondary-strip b { color: var(--text); }
+
+@media (max-width: 700px) {
+  .dialog,
+  .dialog.compact,
+  .dialog.form-dialog,
+  .dialog.detail-dialog,
+  .dialog.cancellation-dialog {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    left: 8px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    margin: 0;
+    overflow: hidden;
+    border-radius: 17px;
+  }
+  .dialog > form {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 14px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dialog-header { margin-bottom: 12px; }
+  .dialog-header h2 { font-size: 20px; }
+  .form-grid { width: 100%; grid-template-columns: minmax(0,1fr); gap: 10px; }
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    inline-size: 100%;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; }
+  .public-agenda-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+  }
+  .public-agenda-row > div { width: 100%; min-width: 0; }
+  .public-agenda-row > .item-actions {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 7px;
+    width: 100%;
+    padding-left: 0;
+  }
+  .public-agenda-row > .item-actions .button {
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+  }
+  .timeline-row {
+    grid-template-columns: 70px minmax(0,1fr);
+    align-items: start;
+  }
+  .timeline-row > .item-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding-left: 0;
+    justify-content: flex-start;
+  }
+  .compact-kpi-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    gap: 8px;
+  }
+  .compact-kpi-grid .stat { padding: 11px; border-radius: 13px; }
+  .compact-kpi-grid .stat strong { font-size: 18px; }
+  .compact-kpi-grid .stat span { font-size: 9px; line-height: 1.3; }
+  .compact-kpi-grid .kpi-note { margin-top: 5px; font-size: 8px; }
+  .finance-secondary-strip { display: grid; gap: 5px; margin-bottom: 12px; }
+  .cancellation-policy-acceptance,
+  .monthly-reservation-panel { padding: 9px 10px; border-radius: 12px; }
+  .cancellation-policy-acceptance strong { font-size: 13px; }
+  .cancellation-policy-acceptance p,
+  .cancellation-acknowledge span,
+  .monthly-toggle-row small { font-size: 12px; line-height: 1.45; }
+  .monthly-reservation-preview { margin-left: 25px; font-size: 10px; }
+  .automation-preview { gap: 6px; }
+  .automation-step { min-height: 0; }
+}
