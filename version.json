@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,10 +9,10 @@
   "real_money": false,
   "released_at": "2026-08-06",
   "notes": [
-    "Campos de data e horário usam um contêiner responsivo próprio e permanecem dentro da largura do celular.",
-    "Ações Editar e Excluir da agenda pública ficam na lateral, uma acima da outra, em telas móveis.",
-    "Cards da agenda foram compactados para reduzir altura sem ocultar informações.",
-    "Descrições, textos auxiliares, rótulos e informações secundárias foram ampliados em todo o app; títulos foram preservados.",
+    "Botão de alternância entre tema escuro e tema claro disponível no cabeçalho das três áreas.",
+    "Preferência de tema persistida localmente e aplicada somente ao Partners Preview/Marketplace.",
+    "Tema claro mantém o verde esmeralda, os estados de reserva e a identidade visual do Tâmo On.",
+    "Cards, formulários, tabelas, agendas e diálogos receberam contraste específico para fundo claro.",
     "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
   ]
 }

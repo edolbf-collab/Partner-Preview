@@ -1,10 +1,13 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.16";
+  const VERSION = "0.1.17";
   const STORAGE_KEY = "tamo_on_partners_preview_0115";
+  const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
+  const themeButton = document.getElementById("toggleMarketplaceTheme");
+  const marketplaceThemeColor = document.getElementById("marketplaceThemeColor");
   const toast = document.getElementById("toast");
   const reservationDialog = document.getElementById("reservationDialog");
   const reservationForm = document.getElementById("reservationForm");
@@ -281,6 +284,42 @@
         cancellationVoucherPolicy: true
       }
     };
+  }
+
+  function storedMarketplaceTheme() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
+    } catch (_error) {
+      return "dark";
+    }
+  }
+
+  function applyMarketplaceTheme(theme, persist = true) {
+    const normalized = theme === "light" ? "light" : "dark";
+    if (normalized === "light") document.documentElement.dataset.theme = "light";
+    else delete document.documentElement.dataset.theme;
+
+    if (marketplaceThemeColor) marketplaceThemeColor.content = normalized === "light" ? "#f4faf6" : "#0b1f17";
+    if (themeButton) {
+      const isLight = normalized === "light";
+      themeButton.setAttribute("aria-pressed", String(isLight));
+      themeButton.setAttribute("aria-label", isLight ? "Ativar tema escuro" : "Ativar tema claro");
+      themeButton.title = isLight ? "Ativar tema escuro" : "Ativar tema claro";
+      const icon = themeButton.querySelector(".theme-button-icon");
+      const label = themeButton.querySelector(".theme-button-label");
+      if (icon) icon.textContent = isLight ? "☾" : "☀";
+      if (label) label.textContent = isLight ? "Tema escuro" : "Tema claro";
+    }
+    if (persist) {
+      try { localStorage.setItem(THEME_STORAGE_KEY, normalized); } catch (_error) {}
+    }
+  }
+
+  function toggleMarketplaceTheme() {
+    const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    const next = current === "light" ? "dark" : "light";
+    applyMarketplaceTheme(next);
+    showToast(next === "light" ? "Tema claro ativado no Marketplace." : "Tema escuro ativado no Marketplace.");
   }
 
   function loadState() {
@@ -1650,6 +1689,7 @@
   });
 
   roleButtons.forEach((button)=>button.addEventListener("click",()=>setRole(button.dataset.role)));
+  themeButton?.addEventListener("click", toggleMarketplaceTheme);
   document.getElementById("openReleaseNotes").addEventListener("click",()=>{infoDialog.showModal();focusDialog(infoDialog);});
   document.getElementById("resetPreview").addEventListener("click",()=>askConfirm({title:"Restaurar Preview",message:"Apagar todas as alterações locais e recuperar os dados fictícios iniciais?",confirmLabel:"Restaurar",onConfirm:resetState}));
 
@@ -1808,6 +1848,7 @@
     else showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
   });
 
+  applyMarketplaceTheme(storedMarketplaceTheme(), false);
   if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});
   render();
 })();

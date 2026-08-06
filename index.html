@@ -3,11 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1f17">
+  <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.16</title>
+  <title>Tâmo On — Partners Preview 0.1.17</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem("tamo_on_marketplace_theme");
+        if (theme === "light") document.documentElement.dataset.theme = "light";
+      } catch (_error) {}
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -21,10 +29,14 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.16</div>
+          <div class="brand-subtitle">Partners Preview 0.1.17</div>
         </div>
       </div>
       <div class="header-actions">
+        <button class="theme-button" id="toggleMarketplaceTheme" type="button" aria-pressed="false" aria-label="Ativar tema claro" title="Ativar tema claro">
+          <span class="theme-button-icon" aria-hidden="true">☀</span>
+          <span class="theme-button-label">Tema claro</span>
+        </button>
         <button class="icon-button" id="resetPreview" aria-label="Restaurar dados fictícios" title="Restaurar dados fictícios">↺</button>
         <button class="icon-button" id="openReleaseNotes" aria-label="Informações da versão" title="Informações da versão">i</button>
       </div>
@@ -191,11 +203,11 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.16</h2>
+          <h2>Partners Preview 0.1.17</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
-      <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro e administração. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
+      <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro e administração, com tema claro opcional exclusivo do Marketplace. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
       <ul class="plain-list">
         <li>Dados persistidos apenas no armazenamento local do navegador.</li>
         <li>Perfil único do Tâmo On reutilizado pelo marketplace, sem recadastro de dados pessoais.</li>

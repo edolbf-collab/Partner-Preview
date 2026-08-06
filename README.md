@@ -106,3 +106,9 @@ Abra `http://localhost:8080`.
 ## Segurança
 
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
+
+
+## Atualização 0.1.17
+- Tema claro opcional exclusivo do Marketplace/Partners Preview.
+- Alternância disponível no cabeçalho para usuário, parceiro e administração.
+- Preferência persistida no navegador sem alterar o tema do aplicativo principal Tâmo On.

@@ -1,6 +1,6 @@
 window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
   appName: "Tâmo On Partners Preview",
-  version: "0.1.16",
+  version: "0.1.17",
   environment: "partners_preview",
   realMoney: false,
   asaas: {
@@ -45,6 +45,8 @@ window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
     compactMobileAgendaActions: true,
     temporalFieldViewportFix: true,
     increasedDescriptionReadability: true,
+    marketplaceLightTheme: true,
+    persistentMarketplaceTheme: true,
     asaasCheckout: false,
     split: false,
     productionWrites: false
