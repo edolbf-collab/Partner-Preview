@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.13</title>
+  <title>Tâmo On — Partners Preview 0.1.14</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.13</div>
+          <div class="brand-subtitle">Partners Preview 0.1.14</div>
         </div>
       </div>
       <div class="header-actions">
@@ -85,10 +85,10 @@
       <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
       <div class="cancellation-policy-acceptance" role="note">
         <strong>Política de cancelamento e voucher</strong>
-        <p id="reservationPolicyText">Cancelamento realizado pelo usuário até 24 horas antes do uso gera voucher de uso único. Cancelamentos realizados pelo parceiro ou pelo Tâmo On geram reembolso integral, com taxas suportadas pelo responsável. Fora do prazo, não há voucher ou reembolso automático. O prazo do voucher só expira normalmente quando houver disponibilidade compatível com o período e a proximidade do horário original.</p>
+        <p id="reservationPolicyText">Reservas avulsas canceladas pelo usuário dentro do prazo geram voucher. Pacotes mensalistas só podem ser cancelados até 24 horas antes da primeira ocorrência; o voucher integral gerado será exclusivo para outra reserva mensalista de valor igual ou superior. Depois desse prazo, o usuário não poderá cancelar o pacote. Cancelamentos pelo parceiro ou pelo Tâmo On seguem a regra de reembolso integral atribuída ao responsável.</p>
         <label class="cancellation-acknowledge">
-          <input id="reservationPolicyAcknowledge" type="checkbox" required>
-          <span>Li e aceito a política de cancelamento, voucher, reembolso e disponibilidade compatível antes do pagamento.</span>
+          <input id="reservationPolicyAcknowledge" type="checkbox">
+          <span><strong>Aceito os termos da reserva.</strong> Estou ciente das regras de cancelamento, voucher, reembolso, mensalista e disponibilidade antes do pagamento.</span>
         </label>
       </div>
       <div class="automation-preview" id="reservationAutomationPreview">
@@ -191,7 +191,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.13</h2>
+          <h2>Partners Preview 0.1.14</h2>
         </div>
         <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
       </div>

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,11 +9,12 @@
   "real_money": false,
   "released_at": "2026-08-05",
   "notes": [
-    "Pagamento com voucher exibe valor total, crédito aplicado e diferença a pagar.",
-    "Promoções foi renomeado para Voucher na área do usuário.",
-    "Parceiros podem criar agenda com início e término flexíveis, valores avulsos e mensalistas.",
-    "Reservas mensalistas ocupam o mesmo dia e período nas demais datas disponíveis do mês.",
-    "Textos das políticas de reserva, cancelamento, voucher e reembolso foram ampliados.",
+    "Mensalistas só podem ser cancelados pelo usuário até 24 horas antes da primeira ocorrência.",
+    "Voucher originado de mensalista é restrito a nova reserva mensalista de valor igual ou superior.",
+    "Agenda do parceiro pode ser criada em lote por período, dias da semana e grade diária automática.",
+    "Sobreposições no mesmo espaço são bloqueadas antes da publicação.",
+    "Horários livres podem ser excluídos; horários com reserva ativa permanecem protegidos.",
+    "O aceite dos termos habilita a confirmação, mas não impede fechar a tela.",
     "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
   ]
 }

@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.13
+# Tâmo On — Partners Preview 0.1.14
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
@@ -62,18 +62,18 @@ O parceiro também pode registrar uma reserva manual como mensalista. Nesse caso
 
 ## Agenda flexível do parceiro
 
-Em **Parceiro → Agenda**, o botão **Criar agenda** permite informar:
+Em **Parceiro → Agenda**, o botão **Criar agenda** abre uma criação em lote. O parceiro escolhe:
 
-- data inicial;
-- horário de início;
-- horário de término;
+- data inicial e final;
+- dias da semana;
 - espaço;
+- faixa de abertura e fechamento;
+- grade automática ou um horário recorrente;
+- duração de cada horário e intervalo entre eles;
 - valor avulso;
-- disponibilidade para mensalista;
-- valor total do pacote mensal;
-- repetição semanal até o fim do mês.
+- disponibilidade e valor para mensalista.
 
-São aceitos, por exemplo, os períodos 18:30 às 19:30 e 18:00 às 19:30.
+A grade pode publicar todo o mês de uma vez. São aceitos períodos parciais ou superiores a uma hora, como 18:30 às 19:30 e 18:00 às 19:30. O sistema bloqueia sobreposições no mesmo espaço. Horários livres podem ser editados ou excluídos; horários com reserva ativa não podem ser excluídos.
 
 ## Reserva, grupo e evento
 
@@ -81,6 +81,9 @@ Toda reserva deve estar vinculada a um grupo pertencente ao usuário. O usuário
 
 ## Cancelamento e voucher
 
+- pacote mensalista: cancelamento pelo usuário somente até 24 horas antes da primeira ocorrência;
+- após esse prazo, não é possível cancelar o pacote mensalista por iniciativa do usuário;
+- voucher originado de mensalista: uso exclusivo em nova reserva mensalista de valor igual ou superior;
 - cancelamento pelo usuário dentro do prazo: voucher integral;
 - cancelamento pelo usuário fora do prazo: sem crédito automático;
 - cancelamento pelo parceiro: reembolso integral e custos suportados pelo parceiro;
