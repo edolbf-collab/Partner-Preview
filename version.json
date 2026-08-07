@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -9,12 +9,12 @@
   "pix_direct_partner": "adapter-contract-ready-network-disabled",
   "asaas": "credit-card-hosted-checkout-contract-ready-sandbox-disabled",
   "real_money": false,
-  "released_at": "2026-08-06",
+  "released_at": "2026-08-07",
   "notes": [
-    "Camada de roteamento separa Pix direto ao parceiro e cartão de crédito via Asaas.",
-    "Adaptadores Pix preparados para Sicoob, Sicredi, Banco do Brasil e Inter, com fallback manual.",
-    "Asaas preparado para checkout hospedado, externalReference, split e normalização de webhook.",
-    "Credenciais bancárias, certificados e API keys permanecem exclusivamente previstos para backend seguro.",
-    "Nenhuma transação real ou escrita de produção ocorre nesta Preview."
+    "Pix direto ao parceiro agora pode ser rateado entre membros do grupo vinculado à reserva.",
+    "O rateio aceita divisão igual ou valores personalizados e exige soma exata do valor restante.",
+    "Cada cota gera uma pendência/intent Pix individual ligada a uma coleção única da reserva.",
+    "A Preview permite simular baixas individuais e quita a reserva apenas quando todas as cotas forem confirmadas.",
+    "Cartão via Asaas permanece como trilho separado; nenhuma transação real ocorre nesta Preview."
   ]
 }

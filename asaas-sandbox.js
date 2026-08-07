@@ -71,10 +71,10 @@
     createPreviewCardIntent,
     normalizeWebhook,
     async createCheckout() {
-      throw new Error("Chamadas reais ao Asaas estão desativadas na Partners Preview 0.1.18.");
+      throw new Error("Chamadas reais ao Asaas estão desativadas na Partners Preview 0.1.19.");
     },
     async getPaymentStatus() {
-      throw new Error("Consulta real ao Asaas está desativada na Partners Preview 0.1.18.");
+      throw new Error("Consulta real ao Asaas está desativada na Partners Preview 0.1.19.");
     }
   });
 })();

@@ -108,12 +108,12 @@ Abra `http://localhost:8080`.
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
 
 
-## Atualização 0.1.18
+## Atualização 0.1.19
 - Tema claro opcional exclusivo do Marketplace/Partners Preview.
 - Alternância disponível no cabeçalho para usuário, parceiro e administração.
 - Preferência persistida no navegador sem alterar o tema do aplicativo principal Tâmo On.
 
-## Atualização 0.1.18 — pagamentos multiprovedor
+## Atualização 0.1.19 — pagamentos multiprovedor
 
 A Preview passa a separar os meios de pagamento por uma camada interna de roteamento:
 

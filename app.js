@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.18";
-  const STORAGE_KEY = "tamo_on_partners_preview_0118";
+  const VERSION = "0.1.19";
+  const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
@@ -25,6 +25,12 @@
   const paymentMethodNote = document.getElementById("paymentMethodNote");
   const paymentProviderPreview = document.getElementById("paymentProviderPreview");
   const automationPaymentText = document.getElementById("automationPaymentText");
+  const pixSplitPanel = document.getElementById("pixSplitPanel");
+  const pixSplitToggle = document.getElementById("pixSplitToggle");
+  const pixSplitConfig = document.getElementById("pixSplitConfig");
+  const pixSplitMode = document.getElementById("pixSplitMode");
+  const pixSplitMembers = document.getElementById("pixSplitMembers");
+  const pixSplitSummary = document.getElementById("pixSplitSummary");
   const reservationPolicyAcknowledge = document.getElementById("reservationPolicyAcknowledge");
   const reservationPolicyText = document.getElementById("reservationPolicyText");
   const monthlyReservationToggle = document.getElementById("monthlyReservationToggle");
@@ -123,6 +129,19 @@
         { id: "G-002", name: "Amigos do Bairro", role: "Organizador", memberCount: 14, canCreateEvents: true, canEditEvents: true },
         { id: "G-003", name: "Família FC", role: "Membro", memberCount: 22, canCreateEvents: false, canEditEvents: false }
       ],
+      groupMembers: [
+        { id:"GM-001", groupId:"G-001", name:"Eduardo Batista", role:"Administrador" },
+        { id:"GM-002", groupId:"G-001", name:"Carlos Mendes", role:"Membro" },
+        { id:"GM-003", groupId:"G-001", name:"Rafael Souza", role:"Membro" },
+        { id:"GM-004", groupId:"G-001", name:"Marcos Lima", role:"Membro" },
+        { id:"GM-005", groupId:"G-001", name:"João Martins", role:"Membro" },
+        { id:"GM-006", groupId:"G-001", name:"Paulo Reis", role:"Membro" },
+        { id:"GM-101", groupId:"G-002", name:"Eduardo Batista", role:"Organizador" },
+        { id:"GM-102", groupId:"G-002", name:"Mariana Lopes", role:"Membro" },
+        { id:"GM-103", groupId:"G-002", name:"Ana Paula Costa", role:"Membro" },
+        { id:"GM-104", groupId:"G-002", name:"Lucas Ferreira", role:"Membro" },
+        { id:"GM-105", groupId:"G-002", name:"Bruno Alves", role:"Membro" }
+      ],
       groupEvents: [
         { id: "EV-0101", groupId: "G-001", title: "Pelada de quinta-feira", date: "13/08/2026", time: "20:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
         { id: "EV-0102", groupId: "G-002", title: "Amistoso de sábado", date: "15/08/2026", time: "16:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
@@ -139,6 +158,7 @@
         { id: "LED-0001", type: "service_payment", reservationId: "R-0008", venueId: "arena-central", venue: "Arena Central", amount: 130, accountingMonth: "08/2026", fiscalAmount: 130, description: "Pagamento original da reserva" },
         { id: "LED-0002", type: "service_payment", reservationId: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", amount: 105, accountingMonth: "08/2026", fiscalAmount: 105, description: "Pagamento original da reserva" }
       ],
+      pixCollections: [],
       paymentIntents: [
         { id:"PAY-0001", reservationId:"R-0008", method:"credit_card_asaas", provider:"ASAAS", status:"CONFIRMED", amount:130, route:"credit_card_asaas", externalReference:"R-0008", createdAt:"07/08/2026 18:01" },
         { id:"PAY-0002", reservationId:"R-0006", method:"pix_direct_partner", provider:"SICOOB", status:"CONFIRMED", amount:105, route:"pix_direct_partner_api", externalReference:"R-0006", txid:"R0006TOTAL", createdAt:"06/08/2026 18:55" }
@@ -624,6 +644,119 @@
     updateVoucherPaymentPreview();
   }
 
+  function groupMembers(groupId) {
+    return state.groupMembers.filter((member) => member.groupId === groupId);
+  }
+
+  function pixSplitEnabled() {
+    return selectedPaymentMethod() === "pix_direct_partner" && Boolean(pixSplitToggle?.checked);
+  }
+
+  function equalPixShares(total, members) {
+    const cents = Math.round(Number(total || 0) * 100);
+    const count = Math.max(1, members.length);
+    const base = Math.floor(cents / count);
+    let remainder = cents - base * count;
+    return members.map((member) => ({ member, amount: (base + (remainder-- > 0 ? 1 : 0)) / 100 }));
+  }
+
+  function selectedPixSplitShares() {
+    if (!pixSplitEnabled()) return [];
+    const members = groupMembers(groupSelect.value).filter((member) => pixSplitMembers?.querySelector(`[data-split-member="${member.id}"]`)?.checked);
+    if (pixSplitMode?.value !== "custom") return equalPixShares(currentPaymentDue(), members);
+    return members.map((member) => ({ member, amount: Number(pixSplitMembers?.querySelector(`[data-split-value="${member.id}"]`)?.value || 0) }));
+  }
+
+  function currentPaymentDue() {
+    const total = currentReservationValue();
+    const voucher = cancellationVoucherByValue(voucherSelect.value);
+    return Math.max(0, total - Number(voucher?.value || 0));
+  }
+
+  function updatePixSplitPanel() {
+    if (!pixSplitPanel || !selectedReservation) return;
+    const due = currentPaymentDue();
+    const isPix = selectedPaymentMethod() === "pix_direct_partner" && due > 0;
+    pixSplitPanel.hidden = !isPix;
+    if (!isPix) {
+      pixSplitToggle.checked = false;
+      pixSplitConfig.hidden = true;
+      return;
+    }
+    pixSplitConfig.hidden = !pixSplitToggle.checked;
+    if (!pixSplitToggle.checked) return;
+    const members = groupMembers(groupSelect.value);
+    const existingSelection = new Map([...pixSplitMembers.querySelectorAll('[data-split-member]')].map((input) => [input.dataset.splitMember, input.checked]));
+    const existingValues = new Map([...pixSplitMembers.querySelectorAll('[data-split-value]')].map((input) => [input.dataset.splitValue, input.value]));
+    const selectedMembers = members.filter((m) => existingSelection.has(m.id) ? existingSelection.get(m.id) : true);
+    const equal = equalPixShares(due, selectedMembers);
+    const equalMap = new Map(equal.map((item) => [item.member.id, item.amount]));
+    pixSplitMembers.innerHTML = members.map((member) => {
+      const checked = existingSelection.has(member.id) ? existingSelection.get(member.id) : true;
+      const amount = pixSplitMode.value === "custom" ? (existingValues.get(member.id) ?? (checked ? (equalMap.get(member.id) || 0).toFixed(2) : "0.00")) : (checked ? (equalMap.get(member.id) || 0).toFixed(2) : "0.00");
+      return `<div class="pix-split-member-row"><label><input type="checkbox" data-split-member="${esc(member.id)}" ${checked ? "checked" : ""}><span><strong>${esc(member.name)}</strong><small>${esc(member.role)}</small></span></label><div class="pix-split-value"><span>R$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-split-value="${esc(member.id)}" value="${esc(amount)}" ${pixSplitMode.value === "equal" ? "readonly" : ""}></div></div>`;
+    }).join("");
+    updatePixSplitSummary();
+  }
+
+  function updatePixSplitSummary() {
+    if (!pixSplitSummary || !pixSplitEnabled()) return;
+    const due = currentPaymentDue();
+    const shares = selectedPixSplitShares();
+    if (pixSplitMode.value === "equal") {
+      const equal = equalPixShares(due, shares.map((share)=>share.member));
+      const byId = new Map(equal.map((share)=>[share.member.id,share.amount]));
+      pixSplitMembers.querySelectorAll('[data-split-value]').forEach((input)=>{ input.value=(byId.get(input.dataset.splitValue)||0).toFixed(2); });
+    }
+    const finalShares = selectedPixSplitShares();
+    const total = finalShares.reduce((sum, share) => sum + Number(share.amount || 0), 0);
+    const diff = Math.round((due - total) * 100) / 100;
+    const valid = finalShares.length >= 2 && Math.abs(diff) < 0.01 && finalShares.every((share)=>share.amount > 0);
+    pixSplitSummary.innerHTML = `<div><span>Valor a arrecadar</span><strong>${money(due)}</strong></div><div><span>Membros selecionados</span><strong>${finalShares.length}</strong></div><div><span>Soma das cotas</span><strong>${money(total)}</strong></div><p class="${valid ? "split-ok" : "split-warning"}">${valid ? "Rateio pronto. Cada membro receberá uma pendência Pix própria." : finalShares.length < 2 ? "Selecione ao menos dois membros para usar o rateio." : `A soma das cotas precisa ser exatamente ${money(due)}. Diferença: ${money(Math.abs(diff))}.`}</p>`;
+    updateReservationSubmitState();
+  }
+
+  function validatePixSplit() {
+    if (!pixSplitEnabled()) return { valid:true, shares:[] };
+    const due = currentPaymentDue();
+    const shares = selectedPixSplitShares();
+    const total = shares.reduce((sum, share)=>sum + Number(share.amount||0),0);
+    const valid = shares.length >= 2 && shares.every((share)=>share.amount > 0) && Math.abs(total-due) < 0.01;
+    return { valid, shares, total, due };
+  }
+
+  function createPixSplitCollection(reservation, shares) {
+    const collectionId = nextId("COL-", state.pixCollections);
+    const collection = { id:collectionId, reservationId:reservation.id, groupId:reservation.groupId, groupName:reservation.groupName, venueId:reservation.venueId, venue:reservation.venue, amount:shares.reduce((sum,share)=>sum+share.amount,0), status:"PENDING", paidAmount:0, paidCount:0, memberCount:shares.length, createdAt:new Date().toLocaleString("pt-BR"), items:[] };
+    const venue = state.venues.find((item)=>item.id===reservation.venueId);
+    const partner = { venueId:reservation.venueId, tradeName:reservation.venue, bank:venue?.bankLabel||"Banco do parceiro", bankProviderId:venue?.bankProviderId||"GENERIC_MANUAL", pixKey:venue?.pixKey||"Chave Pix cadastrada", asaasWalletId:venue?.asaasWalletId||"" };
+    shares.forEach((share,index)=>{
+      const memberReservation = { ...reservation, id:`${reservation.id}-${share.member.id}`, externalReference:`${reservation.id}:${share.member.id}`, memberId:share.member.id, memberName:share.member.name };
+      const intent = window.TamoOnPaymentRouter?.createPreviewIntent({ method:"pix_direct_partner", reservation:memberReservation, partner, amount:share.amount, commissionRate:0 });
+      if (!intent) return;
+      const providerIntentId=intent.id;
+      intent.id=nextId("PAY-",state.paymentIntents);
+      intent.providerIntentId=providerIntentId;
+      intent.reservationId=reservation.id;
+      intent.collectionId=collectionId;
+      intent.memberId=share.member.id;
+      intent.memberName=share.member.name;
+      intent.method="pix_direct_partner";
+      intent.amount=share.amount;
+      intent.externalReference=`${reservation.id}:${share.member.id}`;
+      intent.createdAt=new Date().toLocaleString("pt-BR");
+      state.paymentIntents.unshift(intent);
+      collection.items.push({ memberId:share.member.id, memberName:share.member.name, amount:share.amount, status:"PENDING", paymentIntentId:intent.id, txid:intent.normalized?.txid||"" });
+    });
+    state.pixCollections.unshift(collection);
+    reservation.pixSplit=true;
+    reservation.pixCollectionId=collectionId;
+    reservation.paymentIntentIds=collection.items.map((item)=>item.paymentIntentId);
+    reservation.paymentRoute="pix_direct_partner_split";
+    reservation.paymentProvider=partner.bankProviderId;
+    return collection;
+  }
+
   function selectedPaymentMethod() {
     return paymentMethodSelect?.value || window.TamoOnPaymentRouter?.METHODS?.PIX_DIRECT_PARTNER || "pix_direct_partner";
   }
@@ -647,6 +780,7 @@
       paymentMethodNote.textContent = "O voucher cobre integralmente esta reserva; não haverá cobrança externa.";
       paymentProviderPreview.innerHTML = `<span class="status status-ok">Sem cobrança</span><p>O evento poderá ser publicado após o resgate integral do voucher.</p>`;
       if (automationPaymentText) automationPaymentText.textContent = "Reserva coberta integralmente por voucher";
+      if (pixSplitPanel) { pixSplitPanel.hidden = true; pixSplitToggle.checked = false; pixSplitConfig.hidden = true; }
       return;
     }
     paymentMethodSelect.disabled = false;
@@ -663,6 +797,7 @@
       paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status ${automatic ? "status-ok" : "status-warning"}">${automatic ? "Baixa automática preparada" : "Confirmação manual"}</span><strong>${esc(provider.label)}</strong></div><p>${money(due)} vai diretamente para a conta do parceiro. O Tâmo On apenas concilia a reserva pelo identificador da cobrança.</p>`;
       if (automationPaymentText) automationPaymentText.textContent = automatic ? `Aguardando confirmação Pix do ${provider.label}` : "Aguardando confirmação do parceiro";
     }
+    updatePixSplitPanel();
   }
 
   function createPaymentIntentForReservation(reservation, amount) {
@@ -822,6 +957,7 @@
     eventSelect.value = "__new__";
     newEventTitle.value = selectedReservation ? defaultEventTitle(selectedReservation) : "";
     updateNewEventPanel();
+    updatePixSplitPanel();
   }
 
   function updateNewEventPanel() {
@@ -839,8 +975,9 @@
     const validGroup = canManageGroupEvents(group);
     const validEvent = Boolean(eventSelect.value) && (eventSelect.value !== "__new__" || newEventTitle.value.trim());
     const validPolicy = Boolean(reservationPolicyAcknowledge?.checked);
+    const splitValidation = validatePixSplit();
     const submit = document.getElementById("confirmReservation");
-    if (submit) submit.disabled = !(validGroup && validEvent && validPolicy);
+    if (submit) submit.disabled = !(validGroup && validEvent && validPolicy && splitValidation.valid);
   }
 
   function publishStandbyEventForReservation(reservation, publicationEndpoint = "event.publish_after_payment") {
@@ -1151,6 +1288,56 @@
     return `<button class="button danger small" data-action="cancel-paid-user-reservation" data-id="${esc(reservation.id)}">Cancelar reserva</button>`;
   }
 
+  function pixCollectionForReservation(reservationId) {
+    return state.pixCollections.find((collection) => collection.reservationId === reservationId) || null;
+  }
+
+  function pixSplitDetailsBody(reservation) {
+    const collection = pixCollectionForReservation(reservation.id);
+    if (!collection) return `<p class="dialog-description">Nenhum rateio Pix foi encontrado para esta reserva.</p>`;
+    const paid = collection.items.filter((item)=>item.status === "PAID").length;
+    const paidAmount = collection.items.filter((item)=>item.status === "PAID").reduce((sum,item)=>sum+Number(item.amount||0),0);
+    return `<div class="pix-collection-overview"><div><span>Valor da arrecadação</span><strong>${money(collection.amount)}</strong></div><div><span>Recebido</span><strong>${money(paidAmount)}</strong></div><div><span>Pagamentos</span><strong>${paid} de ${collection.memberCount}</strong></div></div><div class="list pix-collection-list">${collection.items.map((item)=>`<div class="list-item compact"><div class="avatar">${initials(item.memberName)}</div><div class="list-item-main"><strong>${esc(item.memberName)}</strong><small>${money(item.amount)} · ${item.txid ? `txid ${esc(item.txid)}` : "confirmação manual"}</small></div><span class="status ${item.status === "PAID" ? "status-ok" : "status-warning"}">${item.status === "PAID" ? "Pago" : "Pendente"}</span>${item.status !== "PAID" ? `<button type="button" class="button secondary small" data-action="simulate-pix-share-paid" data-id="${esc(item.paymentIntentId)}">Simular baixa</button>` : ""}</div>`).join("")}</div><div class="callout"><strong>Fluxo real</strong><p>Cada membro recebe sua cobrança Pix individual diretamente para a conta do parceiro. O webhook do banco baixa a cota pelo identificador da cobrança. A reserva só é quitada quando a soma das cotas confirmadas atingir o valor total.</p></div>`;
+  }
+
+  function openPixSplitDetails(reservationId) {
+    const reservation = state.reservations.find((item)=>item.id===reservationId);
+    if (!reservation) return;
+    openDetail({ eyebrow:"Rateio Pix", title:`${reservation.id} · ${reservation.groupName || "Grupo"}`, body:pixSplitDetailsBody(reservation) });
+  }
+
+  function simulatePixSharePaid(paymentIntentId) {
+    const intent = state.paymentIntents.find((item)=>item.id===paymentIntentId);
+    if (!intent || !intent.collectionId || intent.status === "CONFIRMED") return;
+    const collection = state.pixCollections.find((item)=>item.id===intent.collectionId);
+    const reservation = state.reservations.find((item)=>item.id===intent.reservationId);
+    if (!collection || !reservation) return;
+    const share = collection.items.find((item)=>item.paymentIntentId===intent.id);
+    if (!share) return;
+    intent.status="CONFIRMED";
+    intent.confirmedAt=new Date().toLocaleString("pt-BR");
+    share.status="PAID";
+    share.paidAt=intent.confirmedAt;
+    collection.paidCount=collection.items.filter((item)=>item.status==="PAID").length;
+    collection.paidAmount=collection.items.filter((item)=>item.status==="PAID").reduce((sum,item)=>sum+Number(item.amount||0),0);
+    state.paymentWebhookLog.unshift({ id:nextId("WH-",state.paymentWebhookLog), provider:intent.provider||reservation.paymentProvider, event:"PIX_RECEIVED", reservationId:reservation.id, paymentIntentId:intent.id, memberId:intent.memberId, status:"Processado", createdAt:intent.confirmedAt });
+    if (collection.paidCount >= collection.memberCount && Math.abs(collection.paidAmount-collection.amount)<0.01) {
+      collection.status="SETTLED";
+      collection.settledAt=intent.confirmedAt;
+      Object.assign(reservation,{ statusKey:"confirmed", status:"Confirmada — rateio quitado", endpoint:"bank_pix.split.settled", paymentStatus:`Rateio Pix quitado · ${collection.paidCount} de ${collection.memberCount} cotas`, accountingRecognizedValue:collection.amount, fiscalObligationValue:collection.amount, accountingMonth:accountingMonth() });
+      state.accountingLedger.unshift({ id:nextId("LED-",state.accountingLedger), type:"service_payment", reservationId:reservation.id, venueId:reservation.venueId, venue:reservation.venue, amount:collection.amount, fiscalAmount:collection.amount, accountingMonth:reservation.accountingMonth, description:"Reserva quitada por rateio Pix direto ao parceiro" });
+      publishStandbyEventForReservation(reservation,"event.publish_after_pix_split");
+      showToast(`Rateio quitado: ${collection.paidCount} de ${collection.memberCount} cotas confirmadas.`);
+    } else {
+      reservation.paymentStatus=`Rateio Pix · ${collection.paidCount} de ${collection.memberCount} cotas pagas`;
+      showToast(`${share.memberName}: Pix confirmado. Faltam ${collection.memberCount-collection.paidCount} cota(s).`);
+    }
+    saveState(); render();
+    if (detailDialog.open) {
+      detailBody.innerHTML=pixSplitDetailsBody(reservation);
+    }
+  }
+
   function userReservations() {
     const allReservations = state.reservations.filter((item) => item.user === state.userProfile.name || item.id === "R-0007");
     const pending = allReservations.filter((item) => item.statusKey === "pending").length;
@@ -1166,7 +1353,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -1431,6 +1618,9 @@
     monthlyReservationToggle.checked = false;
     reservationPolicyAcknowledge.checked = false;
     if (paymentMethodSelect) paymentMethodSelect.value = window.TAMO_ON_PARTNERS_CONFIG?.payments?.defaultMethod || "pix_direct_partner";
+    if (pixSplitToggle) pixSplitToggle.checked = false;
+    if (pixSplitMode) pixSplitMode.value = "equal";
+    if (pixSplitConfig) pixSplitConfig.hidden = true;
     if (reservationPolicyText) reservationPolicyText.textContent = `Cancelamento pelo usuário até ${state.settings.cancellationHours} horas antes gera voucher de uso único. Cancelamento pelo parceiro ou pelo Tâmo On gera reembolso integral, com taxas suportadas pelo responsável. Fora do prazo não há crédito automático. O voucher tem prazo nominal de ${state.settings.voucherValidityDays} dias, mas só expira normalmente se houver ao menos ${state.settings.voucherMinimumCompatibleDates} datas em faixa compatível de ±${state.settings.voucherCompatibilityWindowHours} horas e no mesmo período do dia.`;
     populateVoucherOptions();
     updateMonthlyReservationPreview();
@@ -1501,7 +1691,11 @@
     const action = button.dataset.action;
     const id = button.dataset.id;
 
-    if (action === "toggle-favorite") {
+    if (action === "pix-split-details") {
+      openPixSplitDetails(id);
+    } else if (action === "simulate-pix-share-paid") {
+      simulatePixSharePaid(id);
+    } else if (action === "toggle-favorite") {
       state.favorites = state.favorites.includes(id) ? state.favorites.filter((item) => item !== id) : [...state.favorites,id];
       saveState(); render(); showToast(state.favorites.includes(id) ? "Quadra adicionada aos favoritos." : "Quadra removida dos favoritos.");
     } else if (action === "reserve-slot") {
@@ -1780,7 +1974,11 @@
   eventSelect.addEventListener("change", updateNewEventPanel);
   newEventTitle.addEventListener("input", updateReservationSubmitState);
   voucherSelect.addEventListener("change", updateVoucherPaymentPreview);
-  paymentMethodSelect?.addEventListener("change", () => { updateVoucherPaymentPreview(); updateReservationSubmitState(); });
+  paymentMethodSelect?.addEventListener("change", () => { updateVoucherPaymentPreview(); updatePixSplitPanel(); updateReservationSubmitState(); });
+  pixSplitToggle?.addEventListener("change", () => { updatePixSplitPanel(); updateReservationSubmitState(); });
+  pixSplitMode?.addEventListener("change", updatePixSplitPanel);
+  pixSplitMembers?.addEventListener("change", (event) => { if (event.target.matches('[data-split-member]')) updatePixSplitPanel(); });
+  pixSplitMembers?.addEventListener("input", (event) => { if (event.target.matches('[data-split-value]')) updatePixSplitSummary(); });
   monthlyReservationToggle.addEventListener("change", () => { if (eventSelect.value === "__new__" && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation); updateMonthlyReservationPreview(); populateVoucherOptions(); updateReservationSubmitState(); });
   reservationPolicyAcknowledge.addEventListener("change", updateReservationSubmitState);
 
@@ -1866,6 +2064,11 @@
         return;
       }
     }
+    const splitValidation = validatePixSplit();
+    if (!splitValidation.valid) {
+      showToast("Revise o rateio: selecione ao menos dois membros e faça a soma das cotas coincidir com o valor a pagar.");
+      return;
+    }
     const id=nextId("R-",state.reservations);
     const promoVoucher = String(voucherSelect.value || "").startsWith("PROMO:") ? String(voucherSelect.value).slice(6) : "";
     const voucherAppliedValue = Number(selectedCancellationVoucher?.value || 0);
@@ -1926,6 +2129,8 @@
       paymentMethod: paymentDue > 0 ? selectedPaymentMethod() : "voucher",
       paymentMethodLabel: paymentDue > 0 ? paymentMethodLabel() : "Voucher integral",
       paymentProvider: paymentDue > 0 ? paymentProviderForSelection() : "TAMO_ON",
+      pixSplit: paymentDue > 0 && pixSplitEnabled(),
+      pixSplitMemberCount: paymentDue > 0 && pixSplitEnabled() ? splitValidation.shares.length : 0,
       voucherAppliedValue,
       cancellationVoucherId:selectedCancellationVoucher?.id || "",
       voucher:selectedCancellationVoucher?.code || promoVoucher,
@@ -1945,8 +2150,12 @@
       accountingOriginMonth:selectedCancellationVoucher?.accountingOriginMonth || ""
     };
     state.reservations.unshift(newReservation);
-    const paymentIntent = paymentDue > 0 ? createPaymentIntentForReservation(newReservation, paymentDue) : null;
-    if (paymentIntent) {
+    const pixCollection = paymentDue > 0 && newReservation.paymentMethod === "pix_direct_partner" && pixSplitEnabled() ? createPixSplitCollection(newReservation, splitValidation.shares) : null;
+    const paymentIntent = paymentDue > 0 && !pixCollection ? createPaymentIntentForReservation(newReservation, paymentDue) : null;
+    if (pixCollection) {
+      newReservation.endpoint = "bank_pix.split.charges_created";
+      newReservation.paymentStatus = `Rateio Pix · 0 de ${pixCollection.memberCount} cotas pagas`;
+    } else if (paymentIntent) {
       if (newReservation.paymentMethod === "credit_card_asaas") {
         newReservation.endpoint = "asaas.card.checkout.created";
         newReservation.paymentStatus = selectedCancellationVoucher ? "Complemento aguardando cartão Asaas" : "Aguardando cartão Asaas";
@@ -1969,6 +2178,7 @@
     }
     saveState();reservationDialog.close();render();
     if (fullyCovered) showToast(`Reserva ${id} confirmada com voucher; evento publicado automaticamente.`);
+    else if (pixCollection) showToast(`Reserva ${id} criada com rateio Pix para ${pixCollection.memberCount} membros.`);
     else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
     else showToast(createsNewEvent ? `Reserva ${id} criada; pagamento preparado por ${paymentMethodLabel(newReservation.paymentMethod)}.` : `Reserva ${id} vinculada ao evento ${title}; pagamento preparado.`);
   });

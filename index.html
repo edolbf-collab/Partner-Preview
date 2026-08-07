@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.18</title>
+  <title>Tâmo On — Partners Preview 0.1.19</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.18</div>
+          <div class="brand-subtitle">Partners Preview 0.1.19</div>
         </div>
       </div>
       <div class="header-actions">
@@ -111,6 +111,23 @@
           <small class="field-help" id="paymentMethodNote"></small>
         </label>
         <div id="paymentProviderPreview" class="payment-provider-preview"></div>
+        <section id="pixSplitPanel" class="pix-split-panel" hidden>
+          <label class="cancellation-acknowledge pix-split-toggle-row">
+            <input id="pixSplitToggle" type="checkbox">
+            <span><strong>Ratear o pagamento entre membros do grupo</strong><small>Gera uma pendência Pix individual para cada membro selecionado, mas todos os pagamentos vão diretamente para a conta bancária do parceiro.</small></span>
+          </label>
+          <div id="pixSplitConfig" class="pix-split-config" hidden>
+            <label class="field">
+              <span>Forma de divisão</span>
+              <select id="pixSplitMode">
+                <option value="equal">Dividir igualmente</option>
+                <option value="custom">Definir valores individualmente</option>
+              </select>
+            </label>
+            <div class="pix-split-members" id="pixSplitMembers"></div>
+            <div class="pix-split-summary" id="pixSplitSummary"></div>
+          </div>
+        </section>
       </section>
       <div class="cancellation-policy-acceptance" role="note">
         <strong>Política de cancelamento e voucher</strong>
@@ -220,7 +237,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.18</h2>
+          <h2>Partners Preview 0.1.19</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>

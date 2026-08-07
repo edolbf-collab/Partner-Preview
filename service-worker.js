@@ -1,4 +1,4 @@
-const CACHE = "tamo-on-partners-preview-0.1.18";
+const CACHE = "tamo-on-partners-preview-0.1.19";
 const ASSETS = [
   "./",
   "./index.html",
