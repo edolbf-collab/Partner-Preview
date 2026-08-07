@@ -1597,3 +1597,55 @@ html[data-theme="light"] .dialog::backdrop { background: rgba(16,37,27,.42); }
   .theme-button { min-width: 42px; padding: 0 9px; }
   .theme-button-label { display: none; }
 }
+
+/* Partners Preview 0.1.18 — roteamento financeiro multiprovedor */
+.payment-method-panel {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.025);
+}
+.payment-method-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.payment-method-heading strong,
+.payment-method-heading small { display:block; }
+.payment-method-heading strong { font-size: 14px; }
+.payment-method-heading small { margin-top:3px; color:var(--muted); font-size:11px; }
+.payment-provider-preview {
+  display:grid;
+  gap:7px;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:rgba(255,255,255,.025);
+}
+.payment-provider-preview p { margin:0; color:var(--muted); font-size:11px; line-height:1.5; }
+.provider-status-line { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.provider-status-line strong { font-size:12px; }
+.provider-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.provider-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-width:0;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.025);
+}
+.provider-card > div { min-width:0; }
+.provider-card strong,
+.provider-card small { display:block; }
+.provider-card strong { font-size:13px; }
+.provider-card small { margin-top:3px; color:var(--muted); font-size:10px; }
+html[data-theme="light"] .payment-method-panel,
+html[data-theme="light"] .payment-provider-preview,
+html[data-theme="light"] .provider-card { background:rgba(14,86,59,.035); }
+@media (max-width:700px) {
+  .provider-grid { grid-template-columns:1fr; }
+  .provider-card { padding:10px 11px; }
+  .payment-method-panel { padding:12px; }
+}

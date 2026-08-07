@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.17";
-  const STORAGE_KEY = "tamo_on_partners_preview_0115";
+  const VERSION = "0.1.18";
+  const STORAGE_KEY = "tamo_on_partners_preview_0118";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
@@ -21,6 +21,10 @@
   const reservationAutomationPreview = document.getElementById("reservationAutomationPreview");
   const voucherSelect = document.getElementById("voucherSelect");
   const reservationVoucherPreview = document.getElementById("reservationVoucherPreview");
+  const paymentMethodSelect = document.getElementById("paymentMethodSelect");
+  const paymentMethodNote = document.getElementById("paymentMethodNote");
+  const paymentProviderPreview = document.getElementById("paymentProviderPreview");
+  const automationPaymentText = document.getElementById("automationPaymentText");
   const reservationPolicyAcknowledge = document.getElementById("reservationPolicyAcknowledge");
   const reservationPolicyText = document.getElementById("reservationPolicyText");
   const monthlyReservationToggle = document.getElementById("monthlyReservationToggle");
@@ -135,6 +139,14 @@
         { id: "LED-0001", type: "service_payment", reservationId: "R-0008", venueId: "arena-central", venue: "Arena Central", amount: 130, accountingMonth: "08/2026", fiscalAmount: 130, description: "Pagamento original da reserva" },
         { id: "LED-0002", type: "service_payment", reservationId: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", amount: 105, accountingMonth: "08/2026", fiscalAmount: 105, description: "Pagamento original da reserva" }
       ],
+      paymentIntents: [
+        { id:"PAY-0001", reservationId:"R-0008", method:"credit_card_asaas", provider:"ASAAS", status:"CONFIRMED", amount:130, route:"credit_card_asaas", externalReference:"R-0008", createdAt:"07/08/2026 18:01" },
+        { id:"PAY-0002", reservationId:"R-0006", method:"pix_direct_partner", provider:"SICOOB", status:"CONFIRMED", amount:105, route:"pix_direct_partner_api", externalReference:"R-0006", txid:"R0006TOTAL", createdAt:"06/08/2026 18:55" }
+      ],
+      paymentWebhookLog: [
+        { id:"WH-0001", provider:"ASAAS", event:"PAYMENT_CONFIRMED", reservationId:"R-0008", status:"Processado", createdAt:"07/08/2026 18:02" },
+        { id:"WH-0002", provider:"SICOOB", event:"PIX_RECEIVED", reservationId:"R-0006", status:"Processado", createdAt:"06/08/2026 18:56" }
+      ],
       favorites: ["arena-central"],
       appliedVouchers: [],
       ui: {},
@@ -142,7 +154,7 @@
         {
           id: "arena-central", name: "Arena Central", city: "Curitiba", neighborhood: "Água Verde", distance: "2,4 km",
           rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250",
-          facadeImage: "assets/venues/arena-central-fachada.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"],
+          facadeImage: "assets/venues/arena-central-fachada.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"], bankProviderId:"SICOOB", bankLabel:"Sicoob", pixKey:"CNPJ cadastrado", asaasWalletId:"wallet_preview_arena_central",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", endTime: "19:00", price: 120, monthlyEligible: true, monthlyPrice: 440, space: "Quadra Society 1" }, { time: "19:00", endTime: "20:00", price: 120, blocked: true, space: "Quadra Society 1" }, { time: "20:00", endTime: "21:30", price: 150, space: "Quadra Society 1" }, { time: "21:30", endTime: "22:30", price: 130, space: "Quadra Society 1" }] },
             { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "18:00", price: 130 }, { time: "19:00", price: 140 }, { time: "20:00", price: 140 }, { time: "21:00", price: 140 }] },
@@ -159,7 +171,7 @@
         {
           id: "cancha-horizonte", name: "Cancha Horizonte", city: "São José dos Pinhais", neighborhood: "Centro", distance: "8,1 km",
           rating: 4.6, reviews: 74, ratingSource: "users", types: ["Society"], price: 105, address: "Avenida Central, 840",
-          facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"],
+          facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"], bankProviderId:"SICREDI", bankLabel:"Sicredi", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_cancha_horizonte",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "17:30", price: 105 }, { time: "19:00", price: 105 }, { time: "20:30", price: 115, blocked: true }, { time: "22:00", price: 105 }] },
             { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "17:30", price: 110 }, { time: "19:00", price: 120 }, { time: "20:30", price: 120 }, { time: "22:00", price: 110 }] },
@@ -169,7 +181,7 @@
         {
           id: "vale-verde", name: "Complexo Vale Verde", city: "Colombo", neighborhood: "Roça Grande", distance: "11,7 km",
           rating: 4.7, reviews: 91, ratingSource: "users", types: ["Futsal", "Campo"], price: 95, address: "Estrada do Vale, 41",
-          facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"],
+          facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"], bankProviderId:"BB", bankLabel:"Banco do Brasil", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_vale_verde",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 95 }, { time: "19:30", price: 105 }, { time: "21:00", price: 105 }] },
             { date: "08/08/2026", shortDate: "08/08", weekday: "Sáb", dayLabel: "8 ago", slots: [{ time: "09:00", price: 120 }, { time: "11:00", price: 120 }, { time: "15:00", price: 140 }, { time: "17:00", price: 140 }] },
@@ -184,8 +196,8 @@
       ],
       reservations: [
         { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
-        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "payment.confirmed", paymentStatus: "Pago", paymentProvider: "Asaas", accountingRecognizedValue: 130, accountingMonth: "08/2026", fiscalObligationValue: 130, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
-        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", accountingRecognizedValue: 105, accountingMonth: "08/2026", fiscalObligationValue: 105, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
+        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "asaas.webhook.payment_confirmed", paymentStatus: "Pago via cartão", paymentMethod: "credit_card_asaas", paymentProvider: "ASAAS", paymentIntentId:"PAY-0001", accountingRecognizedValue: 130, accountingMonth: "08/2026", fiscalObligationValue: 130, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
+        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "bank_pix.webhook.received", paymentStatus:"Pix confirmado pelo banco", paymentMethod:"pix_direct_partner", paymentProvider:"SICOOB", paymentIntentId:"PAY-0002", accountingRecognizedValue: 105, accountingMonth: "08/2026", fiscalObligationValue: 105, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
         { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", groupId: "G-020", groupName: "Grupo do Paulo", eventId: "", event: "", eventMode: "none", eventPublicationStatus: "cancelled", pushStatus: "Não enviado", voucher: "" }
       ],
       partnerAgenda: [
@@ -241,12 +253,18 @@
         venueId: "arena-central",
         fiscalIssuer: "Parceiro emite documento fiscal ao usuário",
         commissionInvoice: "Tâmo On emite NFS-e da comissão ao parceiro",
-        paymentModel: "Pagamento externo nesta fase",
-        bank: "Banco Exemplo",
+        paymentModel: "Pix direto + cartão pelo Asaas",
+        bank: "Sicoob",
+        bankProviderId: "SICOOB",
         branch: "0001",
         account: "****-5",
         pixKey: "CNPJ cadastrado",
-        asaasSubaccount: "Não criada",
+        pixApiStatus: "Estrutura pronta · credenciais não configuradas",
+        pixAutoReconciliation: true,
+        pixWebhookStatus: "Rota preparada",
+        asaasSubaccount: "Sandbox não provisionado",
+        asaasWalletId: "wallet_preview_arena_central",
+        asaasCardStatus: "Checkout hospedado preparado",
         commissionRate: 6,
         documents: [
           { name: "Cartão CNPJ", status: "Validado" },
@@ -606,6 +624,73 @@
     updateVoucherPaymentPreview();
   }
 
+  function selectedPaymentMethod() {
+    return paymentMethodSelect?.value || window.TamoOnPaymentRouter?.METHODS?.PIX_DIRECT_PARTNER || "pix_direct_partner";
+  }
+
+  function paymentMethodLabel(method = selectedPaymentMethod()) {
+    return window.TamoOnPaymentRouter?.methodLabel(method) || (method === "credit_card_asaas" ? "Cartão de crédito · Asaas" : "Pix direto ao parceiro");
+  }
+
+  function paymentProviderForSelection() {
+    if (selectedPaymentMethod() === "credit_card_asaas") return "ASAAS";
+    return selectedReservation?.venue?.bankProviderId || state.partnerProfile.bankProviderId || "GENERIC_MANUAL";
+  }
+
+  function updatePaymentProviderPreview() {
+    if (!paymentProviderPreview || !paymentMethodNote || !selectedReservation) return;
+    const total = currentReservationValue();
+    const voucher = cancellationVoucherByValue(voucherSelect.value);
+    const due = Math.max(0, total - Number(voucher?.value || 0));
+    if (due <= 0) {
+      paymentMethodSelect.disabled = true;
+      paymentMethodNote.textContent = "O voucher cobre integralmente esta reserva; não haverá cobrança externa.";
+      paymentProviderPreview.innerHTML = `<span class="status status-ok">Sem cobrança</span><p>O evento poderá ser publicado após o resgate integral do voucher.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = "Reserva coberta integralmente por voucher";
+      return;
+    }
+    paymentMethodSelect.disabled = false;
+    const method = selectedPaymentMethod();
+    if (method === "credit_card_asaas") {
+      paymentMethodNote.textContent = "O cartão será processado pelo Asaas em checkout hospedado; o Tâmo On não precisa armazenar os dados do cartão.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status status-warning">Sandbox preparado</span><strong>Asaas · cartão</strong></div><p>${money(due)} será enviado ao checkout hospedado. A cobrança ficará vinculada à reserva e preparada para split entre parceiro e Tâmo On.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = "Aguardando confirmação do cartão pelo webhook Asaas";
+    } else {
+      const providerId = selectedReservation?.venue?.bankProviderId || state.partnerProfile.bankProviderId || "GENERIC_MANUAL";
+      const provider = window.TamoOnBankPix?.provider(providerId) || { label: state.partnerProfile.bank || "Banco do parceiro", mode: "manual" };
+      const automatic = provider.mode === "api";
+      paymentMethodNote.textContent = automatic ? "O Pix será gerado pela API do banco do parceiro e creditado diretamente na conta dele." : "O Pix será enviado diretamente ao parceiro; enquanto o banco não estiver integrado, a baixa será manual.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status ${automatic ? "status-ok" : "status-warning"}">${automatic ? "Baixa automática preparada" : "Confirmação manual"}</span><strong>${esc(provider.label)}</strong></div><p>${money(due)} vai diretamente para a conta do parceiro. O Tâmo On apenas concilia a reserva pelo identificador da cobrança.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = automatic ? `Aguardando confirmação Pix do ${provider.label}` : "Aguardando confirmação do parceiro";
+    }
+  }
+
+  function createPaymentIntentForReservation(reservation, amount) {
+    if (Number(amount || 0) <= 0) return null;
+    const intent = window.TamoOnPaymentRouter?.createPreviewIntent({
+      method: reservation.paymentMethod,
+      reservation,
+      partner: reservation.venueId === state.partnerProfile.venueId ? state.partnerProfile : (() => { const venue = state.venues.find((item)=>item.id===reservation.venueId); return { venueId: reservation.venueId, tradeName: reservation.venue, bank: venue?.bankLabel || "Banco do parceiro", bankProviderId: venue?.bankProviderId || "GENERIC_MANUAL", pixKey: venue?.pixKey || "Chave Pix cadastrada", asaasWalletId: venue?.asaasWalletId || "" }; })(),
+      amount,
+      commissionRate: Number(state.settings.defaultCommission || 0)
+    });
+    if (!intent) return null;
+    const providerIntentId = intent.id;
+    intent.id = nextId("PAY-", state.paymentIntents);
+    intent.providerIntentId = providerIntentId;
+    intent.reservationId = reservation.id;
+    intent.method = reservation.paymentMethod;
+    intent.amount = Number(amount || 0);
+    intent.externalReference = reservation.id;
+    intent.createdAt = new Date().toLocaleString("pt-BR");
+    state.paymentIntents.unshift(intent);
+    reservation.paymentIntentId = intent.id;
+    reservation.paymentProvider = intent.provider || (reservation.paymentMethod === "credit_card_asaas" ? "ASAAS" : state.partnerProfile.bankProviderId || "GENERIC_MANUAL");
+    reservation.paymentRoute = intent.route || reservation.paymentMethod;
+    if (intent.normalized?.txid) reservation.pixTxid = intent.normalized.txid;
+    return intent;
+  }
+
   function updateReservationPaymentSummary() {
     if (!selectedReservation) return;
     const total = currentReservationValue();
@@ -614,7 +699,8 @@
     const complement = Math.max(0, total - voucherValue);
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
-    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="payment-breakdown prominent"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher aplicado <b>${voucher ? `− ${money(voucherValue)}` : money(0)}</b></span><span class="voucher-total">Valor a pagar no Asaas <b>${money(complement)}</b></span></div>`;
+    const paymentLabel = complement <= 0 ? "Sem cobrança externa" : paymentMethodLabel();
+    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="payment-breakdown prominent"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher aplicado <b>${voucher ? `− ${money(voucherValue)}` : money(0)}</b></span><span class="voucher-total">Valor a pagar · ${esc(paymentLabel)} <b>${money(complement)}</b></span></div>`;
   }
 
   function updateVoucherPaymentPreview() {
@@ -623,11 +709,13 @@
     const total = currentReservationValue();
     const voucher = cancellationVoucherByValue(voucherSelect.value);
     if (!voucher) {
-      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><div class="voucher-calculation"><span>Valor total <b>${money(total)}</b></span><span>Voucher aplicado <b>${money(0)}</b></span><span class="voucher-total">Total a pagar <b>${money(total)}</b></span></div><p>O valor será processado pelos meios disponibilizados no app após a criação da reserva pendente.</p>`;
+      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><div class="voucher-calculation"><span>Valor total <b>${money(total)}</b></span><span>Voucher aplicado <b>${money(0)}</b></span><span class="voucher-total">Total a pagar <b>${money(total)}</b></span></div><p>Escolha Pix direto ao parceiro ou cartão de crédito pelo Asaas.</p>`;
+      updatePaymentProviderPreview();
       return;
     }
     const complement = Math.max(0, total - Number(voucher.value));
-    reservationVoucherPreview.innerHTML = `<strong>Pagamento com voucher</strong><div class="voucher-calculation"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Diferença a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único. Apenas a diferença, quando houver, será cobrada pelo Asaas e gerará nova obrigação fiscal e contábil.</p>`;
+    reservationVoucherPreview.innerHTML = `<strong>Pagamento com voucher</strong><div class="voucher-calculation"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Diferença a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único. Apenas a diferença, quando houver, seguirá para o meio de pagamento selecionado e gerará nova obrigação fiscal e contábil.</p>`;
+    updatePaymentProviderPreview();
   }
 
   function updateMonthlyReservationPreview() {
@@ -1078,7 +1166,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -1164,22 +1252,28 @@
   }
 
   function partnerFinance() {
-    const recognized = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
-    const complements = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const partnerReservations = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId);
+    const recognized = partnerReservations.reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
+    const complements = partnerReservations.reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const cardBase = partnerReservations.filter((item) => item.paymentMethod === "credit_card_asaas").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const pixDirectBase = partnerReservations.filter((item) => item.paymentMethod === "pix_direct_partner").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
     const tamoRate = Number(state.partnerProfile.commissionRate || state.settings.defaultCommission || 0);
     const asaasRate = Number(state.settings.asaasCommissionRate || 0);
-    const asaasCommission = recognized * (asaasRate / 100);
+    const asaasCommission = cardBase * (asaasRate / 100);
     const tamoCommission = recognized * (tamoRate / 100);
     const partnerNet = Math.max(0, recognized - asaasCommission - tamoCommission);
     const liability = activeVoucherLiability(state.partnerProfile.venueId);
-    return `${pageHeader("Portal do parceiro", "Financeiro", "Acompanhamento transparente do valor bruto e da divisão estimada entre parceiro, Asaas e Tâmo On.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
-      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "comissão Asaas", `${asaasRate}% simulados`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado do parceiro")}</section>
-      <section class="grid two"><article class="card"><h2>Vouchers e complementos</h2><div class="detail-list"><div class="detail-line"><span>Vouchers a honrar</span><strong>${money(liability.value)} · ${liability.count} ativos</strong></div><div class="detail-line"><span>Complementos novos</span><strong>${money(complements)}</strong></div><div class="detail-line"><span>Pagamento cancelado</span><strong>Permanece no mês original</strong></div><div class="detail-line"><span>Uso integral do voucher</span><strong>Sem nova obrigação</strong></div><div class="detail-line"><span>Reserva de valor superior</span><strong>Somente o complemento é novo</strong></div></div></article><article class="card"><h2>Conta para recebimento</h2><div class="detail-list"><div class="detail-line"><span>Banco</span><strong>${esc(state.partnerProfile.bank)}</strong></div><div class="detail-line"><span>Agência e conta</span><strong>${esc(state.partnerProfile.branch)} · ${esc(state.partnerProfile.account)}</strong></div><div class="detail-line"><span>Subconta Asaas</span><strong>${esc(state.partnerProfile.asaasSubaccount)}</strong></div><div class="detail-line"><span>Critério da taxa Asaas</span><strong>Estimativa da Preview; na integração será conciliada pela cobrança</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-bank-data">Editar dados</button></article></section>
-      <div class="callout section"><strong>Obrigação pendente</strong><p>O parceiro não pode encerrar as atividades na plataforma enquanto houver vouchers ativos. Para encerrar, deverá honrar os créditos ou ressarcir o Tâmo On para permitir a realocação.</p></div>`;
+    const bankProvider = window.TamoOnBankPix?.provider(state.partnerProfile.bankProviderId || "GENERIC_MANUAL") || { label:state.partnerProfile.bank, mode:"manual" };
+    return `${pageHeader("Portal do parceiro", "Financeiro", "Acompanhamento transparente por meio de pagamento, incluindo valor bruto, custos do Asaas e comissão do Tâmo On.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
+      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "custo Asaas estimado", `somente cartão · ${asaasRate}% simulado`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado do parceiro")}</section>
+      <section class="finance-secondary-strip"><span><b>${money(pixDirectBase)}</b> recebido por Pix direto</span><span><b>${money(cardBase)}</b> processado por cartão Asaas</span><span><b>${money(complements)}</b> em complementos</span></section>
+      <section class="grid two"><article class="card"><h2>Vouchers e complementos</h2><div class="detail-list"><div class="detail-line"><span>Vouchers a honrar</span><strong>${money(liability.value)} · ${liability.count} ativos</strong></div><div class="detail-line"><span>Pagamento cancelado</span><strong>Permanece no mês original</strong></div><div class="detail-line"><span>Uso integral do voucher</span><strong>Sem nova obrigação</strong></div><div class="detail-line"><span>Reserva de valor superior</span><strong>Somente o complemento é novo</strong></div></div></article><article class="card"><h2>Integrações de recebimento</h2><div class="detail-list"><div class="detail-line"><span>Pix direto</span><strong>${esc(bankProvider.label)} · ${bankProvider.mode === "api" ? "adaptador preparado" : "confirmação manual"}</strong></div><div class="detail-line"><span>Baixa automática Pix</span><strong>${state.partnerProfile.pixAutoReconciliation && bankProvider.mode === "api" ? "Preparada" : "Não disponível"}</strong></div><div class="detail-line"><span>Webhook bancário</span><strong>${esc(state.partnerProfile.pixWebhookStatus || "Não configurado")}</strong></div><div class="detail-line"><span>Cartão</span><strong>Asaas · checkout hospedado preparado</strong></div><div class="detail-line"><span>Subconta / wallet</span><strong>${esc(state.partnerProfile.asaasSubaccount)} · ${esc(state.partnerProfile.asaasWalletId ? "wallet configurável" : "wallet pendente")}</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-payment-integrations">Configurar integrações</button></article></section>
+      <div class="callout section"><strong>Rotas separadas</strong><p>Pix direto é creditado na conta bancária do parceiro e conciliado pelo banco. Cartão passa pelo Asaas e fica preparado para split. Nenhuma credencial real fica armazenada nesta Preview.</p></div>`;
   }
 
   function partnerRegistration() {
     const p = state.partnerProfile;
+    const bankProvider = window.TamoOnBankPix?.provider(p.bankProviderId || "GENERIC_MANUAL") || { label:p.bank, mode:"manual" };
     const group = (title, lines, action) => `<article class="detail-group"><div class="section-heading"><div><h2>${esc(title)}</h2></div><button class="button ghost small" data-action="${action}">Editar</button></div><div class="detail-list">${lines.map(([label,value]) => `<div class="detail-line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("")}</div></article>`;
     return `${pageHeader("Portal do parceiro", "Cadastro", "Dados cadastrais, operacionais, contratuais, fiscais e financeiros definidos para a homologação do parceiro.")}
       <section class="details-grid">
@@ -1187,7 +1281,8 @@
         ${group("Responsável", [["Nome",p.responsibleName],["CPF",p.responsibleCpf],["Função",p.responsibleRole],["E-mail",p.email],["Telefone",p.phone],["WhatsApp",p.whatsapp]], "edit-responsible-data")}
         ${group("Endereço", [["Logradouro",p.address],["Bairro",p.neighborhood],["Cidade/UF",`${p.city}/${p.state}`],["CEP",p.zip]], "edit-address-data")}
         ${group("Contratos e regras", [["Contrato",p.contractStatus],["Termos",p.termsStatus],["LGPD",p.privacyStatus],["Cancelamento",p.cancellationPolicy]], "edit-contract-data")}
-        ${group("Fiscal e financeiro", [["Documento ao usuário",p.fiscalIssuer],["NFS-e da comissão",p.commissionInvoice],["Pagamento",p.paymentModel],["Comissão",`${p.commissionRate}%`],["Subconta",p.asaasSubaccount]], "edit-fiscal-data")}
+        ${group("Fiscal e financeiro", [["Documento ao usuário",p.fiscalIssuer],["NFS-e da comissão",p.commissionInvoice],["Pagamento",p.paymentModel],["Comissão",`${p.commissionRate}%`]], "edit-fiscal-data")}
+        ${group("Integrações de pagamento", [["Banco Pix",`${bankProvider.label} · ${bankProvider.mode === "api" ? "API" : "manual"}`],["Status API Pix",p.pixApiStatus],["Baixa automática",p.pixAutoReconciliation ? "Preparada" : "Desativada"],["Webhook Pix",p.pixWebhookStatus],["Cartão",p.asaasCardStatus],["Subconta Asaas",p.asaasSubaccount]], "edit-payment-integrations")}
         <article class="detail-group"><div class="section-heading"><div><h2>Documentos</h2></div><button class="button ghost small" data-action="add-document">Adicionar</button></div><div class="detail-list">${p.documents.map((doc,index) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(doc.name)}</strong><small>${esc(doc.status)}</small></div><button class="button ghost small" data-action="edit-document" data-index="${index}">Alterar</button></div>`).join("")}</div></article>
         <article class="detail-group"><div class="section-heading"><div><h2>Vouchers e encerramento</h2></div><button class="button danger small" data-action="request-partner-closure">Solicitar encerramento</button></div><div class="detail-list"><div class="detail-line"><span>Vouchers ativos</span><strong>${activeVoucherLiability(p.venueId).count}</strong></div><div class="detail-line"><span>Valor a honrar</span><strong>${money(activeVoucherLiability(p.venueId).value)}</strong></div><div class="detail-line"><span>Regra</span><strong>Encerramento bloqueado com créditos pendentes</strong></div></div></article>
       </section>`;
@@ -1238,14 +1333,18 @@
     const refunds = state.cancellationLog.reduce((sum, item) => sum + Number(item.refundValue || 0), 0);
     const tamoRate = Number(state.settings.defaultCommission || 0);
     const asaasRate = Number(state.settings.asaasCommissionRate || 0);
-    const asaasCommission = recognized * (asaasRate / 100);
+    const cardBase = state.reservations.filter((item) => item.paymentMethod === "credit_card_asaas").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const pixDirectBase = state.reservations.filter((item) => item.paymentMethod === "pix_direct_partner").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const asaasCommission = cardBase * (asaasRate / 100);
     const tamoCommission = recognized * (tamoRate / 100);
     const partnerNet = Math.max(0, recognized - asaasCommission - tamoCommission);
     const activeVouchers = activeCancellationVouchers();
     const voucherLiability = activeVouchers.reduce((sum, item) => sum + Number(item.value || 0), 0);
     return `${pageHeader("Administração", "Financeiro", "Conciliação demonstrativa de pagamentos, vouchers, reembolsos, complementos e obrigações dos parceiros.", `<button class="button ghost" data-action="export-admin-finance">Exportar conciliação</button>`)}
-      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "comissão Asaas", `${asaasRate}% simulados`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado aos parceiros")}</section>
+      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "custo Asaas estimado", `somente cartão · ${asaasRate}% simulado`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado aos parceiros")}</section>
+      <section class="finance-secondary-strip"><span><b>${money(pixDirectBase)}</b> por Pix direto ao parceiro</span><span><b>${money(cardBase)}</b> por cartão Asaas</span><span><b>${state.paymentIntents.length}</b> intents de pagamento</span><span><b>${state.paymentWebhookLog.length}</b> webhooks processados</span></section>
       <section class="finance-secondary-strip"><span><b>${money(voucherLiability)}</b> em vouchers ativos · ${activeVouchers.length} créditos</span><span><b>${money(refunds)}</b> em reembolsos</span><span><b>${money(complements)}</b> em complementos</span></section>
+      <section class="card"><div class="section-heading"><div><h2>Conciliação por provedor</h2><p>Intents locais que representam o contrato futuro com bancos e Asaas.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Intent</th><th>Reserva</th><th>Meio</th><th>Provedor</th><th>Valor</th><th>Status</th></tr></thead><tbody>${state.paymentIntents.map((intent)=>`<tr><td>${esc(intent.id)}</td><td>${esc(intent.reservationId)}</td><td>${esc(paymentMethodLabel(intent.method))}</td><td>${esc(intent.provider || intent.normalized?.provider || "—")}</td><td>${money(intent.amount)}</td><td><span class="status ${intent.status === "CONFIRMED" || intent.status === "SETTLED" ? "status-ok" : "status-warning"}">${esc(intent.status)}</span></td></tr>`).join("") || `<tr><td colspan="6">Nenhuma intent criada.</td></tr>`}</tbody></table></div></section>
       <section class="card"><div class="section-heading"><div><h2>Vouchers de cancelamento</h2><p>Prazo condicionado à oferta de horários compatíveis e responsabilidade do parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Voucher</th><th>Parceiro</th><th>Valor</th><th>Uso</th><th>Faixa</th><th>Datas</th><th>Validade</th><th>Status</th><th>Ação</th></tr></thead><tbody>${state.cancellationVouchers.map((voucher) => `<tr><td>${esc(voucher.code)}</td><td>${esc(voucher.venue)}</td><td>${money(voucher.value)}</td><td>${voucher.eligibleBookingMode === "monthly" ? "Somente mensalista" : "Avulsa ou mensalista"}</td><td>${esc(voucher.originalTime || "—")} · ${esc(voucher.compatibilityWindow || "—")}</td><td>${esc(voucher.compatibleDatesCount || 0)}/${esc(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates)}</td><td>${esc(voucher.expiresAt)}</td><td><span class="status ${["active", "active_extended"].includes(voucher.status) ? "status-ok" : voucher.status === "reserved" ? "status-warning" : "status-neutral"}">${esc(voucherStatusLabel(voucher))}</span></td><td>${["active", "active_extended"].includes(voucher.status) ? `<button class="button ghost small" data-action="reassign-cancellation-voucher" data-id="${esc(voucher.id)}">Ressarcir e realocar</button>` : "—"}</td></tr>`).join("") || `<tr><td colspan="9">Nenhum voucher gerado.</td></tr>`}</tbody></table></div></section>
       <section class="card section"><div class="section-heading"><div><h2>Cancelamentos e reembolsos</h2><p>O responsável pelo cancelamento suporta a consequência financeira aplicável.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Registro</th><th>Reserva</th><th>Responsável</th><th>Modalidade</th><th>Reembolso</th><th>Taxas</th></tr></thead><tbody>${state.cancellationLog.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.reservationId || item.partnerReservationId)}</td><td>${esc(cancellationSourceLabel(item.source))}</td><td>${item.mode === "voucher" ? "Voucher" : item.mode === "refund" ? "Reembolso integral" : "Sem compensação"}</td><td>${money(item.refundValue || 0)}</td><td>${item.feeResponsibility ? esc(cancellationSourceLabel(item.feeResponsibility)) : "Não aplicável"}</td></tr>`).join("") || `<tr><td colspan="6">Nenhum cancelamento processado.</td></tr>`}</tbody></table></div></section>
       <section class="card section"><div class="section-heading"><div><h2>Análises excepcionais</h2><p>Cancelamentos fora do prazo submetidos conjuntamente ao Tâmo On e ao parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Solicitação</th><th>Reserva</th><th>Parceiro</th><th>Status</th><th>Decisões</th></tr></thead><tbody>${state.cancellationExceptionReviews.map((review) => `<tr><td>${esc(review.id)}</td><td>${esc(review.reservationId)}</td><td>${esc(review.venue)}</td><td><span class="status status-warning">${esc(review.status)}</span></td><td>Tâmo On: ${esc(review.tamoDecision)} · Parceiro: ${esc(review.partnerDecision)}</td></tr>`).join("") || `<tr><td colspan="5">Nenhuma análise excepcional pendente.</td></tr>`}</tbody></table></div></section>
@@ -1257,6 +1356,7 @@
     const toggle = (key,title,help,locked=false) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(title)}</strong><small>${esc(help)}</small></div><button class="switch ${settings[key] ? "on" : ""}" data-action="toggle-setting" data-key="${esc(key)}" aria-pressed="${settings[key]}" ${locked ? "disabled" : ""}></button></div>`;
     return `${pageHeader("Administração", "Configurações", "Controles locais da Preview. Pagamentos reais permanecem bloqueados.", `<button class="button ghost" data-action="edit-commercial-settings">Editar regras comerciais</button>`)}
       <section class="grid two"><article class="card"><h2>Operação</h2>${toggle("marketplaceEnabled","Área de parceiros","Exibe as áreas demonstrativas.")}${toggle("newPartners","Novos cadastros","Permite incluir parceiros fictícios.")}${toggle("vouchersEnabled","Vouchers","Exibe créditos de cancelamento e vouchers promocionais.")}${toggle("notificationEmails","Avisos por e-mail","Simulação de comunicações operacionais.")}</article><article class="card"><h2>Regras comerciais</h2><div class="detail-list" style="margin-top:14px"><div class="detail-line"><span>Comissão Tâmo On</span><strong>${esc(settings.defaultCommission)}%</strong></div><div class="detail-line"><span>Comissão Asaas simulada</span><strong>${esc(settings.asaasCommissionRate)}%</strong></div><div class="detail-line"><span>Prazo do usuário</span><strong>${esc(settings.cancellationHours)} horas</strong></div><div class="detail-line"><span>Validade nominal</span><strong>${esc(settings.voucherValidityDays)} dias</strong></div><div class="detail-line"><span>Faixa compatível</span><strong>± ${esc(settings.voucherCompatibilityWindowHours)} horas</strong></div><div class="detail-line"><span>Mínimo de datas</span><strong>${esc(settings.voucherMinimumCompatibleDates)}</strong></div><div class="detail-line"><span>Prorrogação</span><strong>${esc(settings.voucherExtensionDays)} dias</strong></div><div class="detail-line"><span>Persistência</span><strong>LocalStorage do navegador</strong></div></div></article></section>
+      <section class="section"><div class="section-heading"><div><h2>Provedores de pagamento</h2><p>Camada multiprovedor preparada para Pix direto e cartão via Asaas. Credenciais e chamadas reais continuam fora do frontend.</p></div></div><div class="provider-grid">${(window.TamoOnBankPix?.listProviders()||[]).map((provider)=>`<article class="provider-card"><div><strong>${esc(provider.label)}</strong><small>Pix · ${provider.mode === "api" ? "adaptador automático" : "fallback manual"}</small></div><span class="status ${provider.mode === "api" ? "status-ok" : "status-warning"}">${provider.mode === "api" ? "Contrato pronto" : "Manual"}</span></article>`).join("")}<article class="provider-card"><div><strong>Asaas</strong><small>Cartão · checkout hospedado + split</small></div><span class="status status-warning">Sandbox preparado</span></article></div></section>
       <section class="section"><button class="button danger" data-action="reset-local-data">Restaurar dados iniciais</button></section>`;
   }
 
@@ -1330,6 +1430,7 @@
     reservationTitle.textContent = `${venue.name} · ${timeRange(time,endTime)}`;
     monthlyReservationToggle.checked = false;
     reservationPolicyAcknowledge.checked = false;
+    if (paymentMethodSelect) paymentMethodSelect.value = window.TAMO_ON_PARTNERS_CONFIG?.payments?.defaultMethod || "pix_direct_partner";
     if (reservationPolicyText) reservationPolicyText.textContent = `Cancelamento pelo usuário até ${state.settings.cancellationHours} horas antes gera voucher de uso único. Cancelamento pelo parceiro ou pelo Tâmo On gera reembolso integral, com taxas suportadas pelo responsável. Fora do prazo não há crédito automático. O voucher tem prazo nominal de ${state.settings.voucherValidityDays} dias, mas só expira normalmente se houver ao menos ${state.settings.voucherMinimumCompatibleDates} datas em faixa compatível de ±${state.settings.voucherCompatibilityWindowHours} horas e no mesmo período do dia.`;
     populateVoucherOptions();
     updateMonthlyReservationPreview();
@@ -1346,16 +1447,22 @@
     if (statusKey === "confirmed") {
       const complement = Number(reservation.paymentDue || 0);
       const hadAccounting = Number(reservation.accountingRecognizedValue || 0) > 0;
+      const paymentMethod = reservation.paymentMethod || "credit_card_asaas";
+      const isCard = paymentMethod === "credit_card_asaas";
+      const provider = reservation.paymentProvider || (isCard ? "ASAAS" : "GENERIC_MANUAL");
       Object.assign(reservation, {
         statusKey: "confirmed",
         status: complement > 0 ? "Confirmada — complemento pago" : "Confirmada",
-        endpoint: complement > 0 ? "payment.complement.confirmed" : "payment.confirmed",
-        paymentStatus: complement > 0 ? "Complemento pago via Asaas" : "Pago",
+        endpoint: isCard ? "asaas.webhook.payment_confirmed" : "bank_pix.webhook.received",
+        paymentStatus: complement > 0 ? (isCard ? "Complemento pago via cartão Asaas" : "Complemento Pix confirmado pelo banco") : (isCard ? "Pago via cartão Asaas" : "Pix confirmado pelo banco do parceiro"),
         complementPaid: complement,
         accountingRecognizedValue: complement > 0 ? complement : Number(reservation.accountingRecognizedValue || reservation.value),
         fiscalObligationValue: complement > 0 ? complement : Number(reservation.fiscalObligationValue || reservation.value),
         accountingMonth: accountingMonth()
       });
+      const paymentIntent = state.paymentIntents.find((item) => item.id === reservation.paymentIntentId);
+      if (paymentIntent) Object.assign(paymentIntent, { status:"CONFIRMED", confirmedAt:new Date().toLocaleString("pt-BR") });
+      state.paymentWebhookLog.unshift({ id:nextId("WH-", state.paymentWebhookLog), provider, event:isCard ? "PAYMENT_CONFIRMED" : "PIX_RECEIVED", reservationId:reservation.id, status:"Processado", createdAt:new Date().toLocaleString("pt-BR") });
       if (linkedVoucher) {
         Object.assign(linkedVoucher, { status: "used", usedAt: new Date().toLocaleString("pt-BR"), usedReservationId: reservation.id, consumedValue: linkedVoucher.value });
       }
@@ -1408,7 +1515,7 @@
       if (reservation) {
         const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
         const latestPush = state.pushLog.find((push) => push.eventId === reservation.eventId);
-        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Período</span><strong>${esc(timeRange(reservation.time,reservation.endTime))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.monthly ? `Mensalista · ${esc(reservation.occurrenceCount)} datas` : "Avulsa"}</strong></div><div class="detail-line"><span>Valor total</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div><div class="detail-line"><span>Valor abatido</span><strong>${money(reservation.voucherAppliedValue || 0)}</strong></div><div class="detail-line"><span>Complemento</span><strong>${money(reservation.paymentDue || reservation.complementPaid || 0)}</strong></div><div class="detail-line"><span>Política aceita</span><strong>${reservation.cancellationPolicyAccepted ? "Sim" : "Não"}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(reservation.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.cancellationMode === "voucher" ? "Voucher" : reservation.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(reservation.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${reservation.refundFeePayer ? esc(cancellationSourceLabel(reservation.refundFeePayer)) : "Não aplicável"}</strong></div><div class="detail-line"><span>Análise excepcional</span><strong>${esc(reservation.exceptionReviewStatus || "Não solicitada")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint || "cancellation.pending")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
+        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Período</span><strong>${esc(timeRange(reservation.time,reservation.endTime))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.monthly ? `Mensalista · ${esc(reservation.occurrenceCount)} datas` : "Avulsa"}</strong></div><div class="detail-line"><span>Valor total</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Meio de pagamento</span><strong>${esc(reservation.paymentMethodLabel || paymentMethodLabel(reservation.paymentMethod || "credit_card_asaas"))}</strong></div><div class="detail-line"><span>Provedor</span><strong>${esc(reservation.paymentProvider || "Não informado")}</strong></div><div class="detail-line"><span>Intent</span><strong>${esc(reservation.paymentIntentId || "Não criado")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div><div class="detail-line"><span>Valor abatido</span><strong>${money(reservation.voucherAppliedValue || 0)}</strong></div><div class="detail-line"><span>Complemento</span><strong>${money(reservation.paymentDue || reservation.complementPaid || 0)}</strong></div><div class="detail-line"><span>Política aceita</span><strong>${reservation.cancellationPolicyAccepted ? "Sim" : "Não"}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(reservation.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.cancellationMode === "voucher" ? "Voucher" : reservation.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(reservation.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${reservation.refundFeePayer ? esc(cancellationSourceLabel(reservation.refundFeePayer)) : "Não aplicável"}</strong></div><div class="detail-line"><span>Análise excepcional</span><strong>${esc(reservation.exceptionReviewStatus || "Não solicitada")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint || "cancellation.pending")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
       }
     } else if (action === "cancel-paid-user-reservation") {
       openPaidCancellation("user", id);
@@ -1549,7 +1656,7 @@
       exportCsv(`financeiro-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Valor","Status","Pagamento","Voucher","Reconhecido"],...state.partnerReservations.map((r)=>[r.id,r.client,r.value,r.status,r.payment,r.voucherGeneratedCode||"",r.accountingRecognizedValue||0])]);
     } else if (action === "edit-bank-data") {
       const p=state.partnerProfile;openForm({eyebrow:"Financeiro",title:"Editar dados bancários",fields:[{name:"bank",label:"Banco",value:p.bank},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount,full:true}],onSubmit:(data)=>{Object.assign(p,data);saveState();render();showToast("Dados bancários atualizados localmente.");}});
-    } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data"].includes(action)) {
+    } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data","edit-payment-integrations"].includes(action)) {
       editPartnerProfileSection(action);
     } else if (action === "add-document" || action === "edit-document") {
       const index=Number(button.dataset.index);const item=action==="edit-document"?state.partnerProfile.documents[index]:null;
@@ -1619,10 +1726,11 @@
       "edit-responsible-data":{title:"Responsável e contatos",fields:[{name:"responsibleName",label:"Nome",value:p.responsibleName},{name:"responsibleCpf",label:"CPF",value:p.responsibleCpf},{name:"responsibleRole",label:"Função",value:p.responsibleRole},{name:"email",label:"E-mail",type:"email",value:p.email},{name:"phone",label:"Telefone",value:p.phone},{name:"whatsapp",label:"WhatsApp",value:p.whatsapp}]},
       "edit-address-data":{title:"Endereço",fields:[{name:"address",label:"Logradouro",value:p.address,full:true},{name:"neighborhood",label:"Bairro",value:p.neighborhood},{name:"city",label:"Cidade",value:p.city},{name:"state",label:"UF",value:p.state},{name:"zip",label:"CEP",value:p.zip}]},
       "edit-contract-data":{title:"Contratos e regras",fields:[{name:"contractStatus",label:"Contrato",type:"select",value:p.contractStatus,options:["Não enviado","Enviado","Assinado"]},{name:"termsStatus",label:"Termos",type:"select",value:p.termsStatus,options:["Pendente","Aceitos"]},{name:"privacyStatus",label:"LGPD",type:"select",value:p.privacyStatus,options:["Pendente","Aceita"]},{name:"cancellationPolicy",label:"Política de cancelamento",value:p.cancellationPolicy,full:true}]},
-      "edit-fiscal-data":{title:"Fiscal e financeiro",fields:[{name:"fiscalIssuer",label:"Documento fiscal do serviço",value:p.fiscalIssuer,full:true},{name:"commissionInvoice",label:"Documento fiscal da comissão",value:p.commissionInvoice,full:true},{name:"paymentModel",label:"Modelo de pagamento",value:p.paymentModel},{name:"commissionRate",label:"Comissão (%)",type:"number",step:"0.1",value:p.commissionRate},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount}]}
+      "edit-fiscal-data":{title:"Fiscal e financeiro",fields:[{name:"fiscalIssuer",label:"Documento fiscal do serviço",value:p.fiscalIssuer,full:true},{name:"commissionInvoice",label:"Documento fiscal da comissão",value:p.commissionInvoice,full:true},{name:"paymentModel",label:"Modelo de pagamento",value:p.paymentModel},{name:"commissionRate",label:"Comissão (%)",type:"number",step:"0.1",value:p.commissionRate}]},
+      "edit-payment-integrations":{title:"Integrações de pagamento",fields:[{name:"bankProviderId",label:"Banco / adaptador Pix",type:"select",value:p.bankProviderId||"GENERIC_MANUAL",options:(window.TamoOnBankPix?.listProviders()||[]).map((provider)=>({value:provider.id,label:provider.label}))},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"pixApiStatus",label:"Status da API Pix",value:p.pixApiStatus,full:true},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount},{name:"asaasWalletId",label:"Wallet ID Asaas",value:p.asaasWalletId},{name:"asaasCardStatus",label:"Status do cartão Asaas",value:p.asaasCardStatus,full:true}]}
     };
     const config=configs[action];if(!config)return;
-    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);Object.assign(p,data);saveState();render();showToast(`${config.title} atualizado.`);}});
+    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);saveState();render();showToast(`${config.title} atualizado.`);}});
   }
 
   function resetState() {
@@ -1672,6 +1780,7 @@
   eventSelect.addEventListener("change", updateNewEventPanel);
   newEventTitle.addEventListener("input", updateReservationSubmitState);
   voucherSelect.addEventListener("change", updateVoucherPaymentPreview);
+  paymentMethodSelect?.addEventListener("change", () => { updateVoucherPaymentPreview(); updateReservationSubmitState(); });
   monthlyReservationToggle.addEventListener("change", () => { if (eventSelect.value === "__new__" && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation); updateMonthlyReservationPreview(); populateVoucherOptions(); updateReservationSubmitState(); });
   reservationPolicyAcknowledge.addEventListener("change", updateReservationSubmitState);
 
@@ -1814,6 +1923,9 @@
       endpoint: fullyCovered ? "voucher.redeemed" : selectedCancellationVoucher ? "payment.complement.pending" : "reservation.created",
       paymentStatus: fullyCovered ? "Pago com voucher" : selectedCancellationVoucher ? "Complemento pendente" : "Pagamento pendente",
       paymentDue,
+      paymentMethod: paymentDue > 0 ? selectedPaymentMethod() : "voucher",
+      paymentMethodLabel: paymentDue > 0 ? paymentMethodLabel() : "Voucher integral",
+      paymentProvider: paymentDue > 0 ? paymentProviderForSelection() : "TAMO_ON",
       voucherAppliedValue,
       cancellationVoucherId:selectedCancellationVoucher?.id || "",
       voucher:selectedCancellationVoucher?.code || promoVoucher,
@@ -1833,6 +1945,19 @@
       accountingOriginMonth:selectedCancellationVoucher?.accountingOriginMonth || ""
     };
     state.reservations.unshift(newReservation);
+    const paymentIntent = paymentDue > 0 ? createPaymentIntentForReservation(newReservation, paymentDue) : null;
+    if (paymentIntent) {
+      if (newReservation.paymentMethod === "credit_card_asaas") {
+        newReservation.endpoint = "asaas.card.checkout.created";
+        newReservation.paymentStatus = selectedCancellationVoucher ? "Complemento aguardando cartão Asaas" : "Aguardando cartão Asaas";
+      } else if (paymentIntent.route === "pix_direct_partner_manual") {
+        newReservation.endpoint = "bank_pix.manual.pending";
+        newReservation.paymentStatus = "Pix direto · confirmação manual";
+      } else {
+        newReservation.endpoint = "bank_pix.charge.created";
+        newReservation.paymentStatus = "Pix direto · aguardando webhook bancário";
+      }
+    }
     if (selectedCancellationVoucher) {
       if (fullyCovered) {
         Object.assign(selectedCancellationVoucher, { status:"used", usedAt:new Date().toLocaleString("pt-BR"), usedReservationId:id, consumedValue:selectedCancellationVoucher.value });
@@ -1844,8 +1969,8 @@
     }
     saveState();reservationDialog.close();render();
     if (fullyCovered) showToast(`Reserva ${id} confirmada com voucher; evento publicado automaticamente.`);
-    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} de complemento.`);
-    else showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
+    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
+    else showToast(createsNewEvent ? `Reserva ${id} criada; pagamento preparado por ${paymentMethodLabel(newReservation.paymentMethod)}.` : `Reserva ${id} vinculada ao evento ${title}; pagamento preparado.`);
   });
 
   applyMarketplaceTheme(storedMarketplaceTheme(), false);
