@@ -1,11 +1,13 @@
-const CACHE = "tamo-on-partners-preview-0.1.17";
+const CACHE = "tamo-on-partners-preview-0.1.20";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./config.preview.js",
+  "./pix-bank-adapters.js",
   "./asaas-sandbox.js",
+  "./payment-router.js",
   "./manifest.webmanifest",
   "./assets/preview-icon.svg",
   "./assets/venues/arena-central.svg",

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.17</title>
+  <title>Tâmo On — Partners Preview 0.1.20</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.17</div>
+          <div class="brand-subtitle">Partners Preview 0.1.20</div>
         </div>
       </div>
       <div class="header-actions">
@@ -95,6 +95,40 @@
         <small class="field-help">Os vouchers elegíveis aparecem quando forem válidos para o parceiro e para uma reserva de valor igual ou superior. A diferença fica explícita antes do pagamento.</small>
       </label>
       <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
+      <section class="payment-method-panel" aria-labelledby="paymentMethodTitle">
+        <div class="payment-method-heading">
+          <div>
+            <strong id="paymentMethodTitle">Forma de pagamento</strong>
+            <small>Escolha como pagar o valor restante desta reserva.</small>
+          </div>
+        </div>
+        <label class="field">
+          <span>Meio de pagamento</span>
+          <select id="paymentMethodSelect">
+            <option value="pix_direct_partner">Pix direto ao parceiro</option>
+            <option value="credit_card_asaas">Cartão de crédito · Asaas</option>
+          </select>
+          <small class="field-help" id="paymentMethodNote"></small>
+        </label>
+        <div id="paymentProviderPreview" class="payment-provider-preview"></div>
+        <section id="pixSplitPanel" class="pix-split-panel" hidden>
+          <label class="cancellation-acknowledge pix-split-toggle-row">
+            <input id="pixSplitToggle" type="checkbox">
+            <span><strong>Ratear o pagamento entre membros do grupo</strong><small>Gera uma pendência Pix individual para cada membro selecionado, mas todos os pagamentos vão diretamente para a conta bancária do parceiro.</small></span>
+          </label>
+          <div id="pixSplitConfig" class="pix-split-config" hidden>
+            <label class="field">
+              <span>Forma de divisão</span>
+              <select id="pixSplitMode">
+                <option value="equal">Dividir igualmente</option>
+                <option value="custom">Definir valores individualmente</option>
+              </select>
+            </label>
+            <div class="pix-split-members" id="pixSplitMembers"></div>
+            <div class="pix-split-summary" id="pixSplitSummary"></div>
+          </div>
+        </section>
+      </section>
       <div class="cancellation-policy-acceptance" role="note">
         <strong>Política de cancelamento e voucher</strong>
         <p id="reservationPolicyText">Reservas avulsas canceladas pelo usuário dentro do prazo geram voucher. Pacotes mensalistas só podem ser cancelados até 24 horas antes da primeira ocorrência; o voucher integral gerado será exclusivo para outra reserva mensalista de valor igual ou superior. Depois desse prazo, o usuário não poderá cancelar o pacote. Cancelamentos pelo parceiro ou pelo Tâmo On seguem a regra de reembolso integral atribuída ao responsável.</p>
@@ -105,7 +139,7 @@
       </div>
       <div class="automation-preview" id="reservationAutomationPreview">
         <div class="automation-step active"><b>1</b><span><strong>Reserva pendente</strong><small>Horário bloqueado temporariamente</small></span></div>
-        <div class="automation-step"><b>2</b><span><strong>Pagamento Asaas</strong><small>Aguardando endpoint de confirmação</small></span></div>
+        <div class="automation-step"><b>2</b><span><strong>Pagamento</strong><small id="automationPaymentText">Aguardando confirmação do provedor</small></span></div>
         <div class="automation-step"><b>3</b><span><strong>Publicação e push</strong><small>Automáticos após o pagamento</small></span></div>
       </div>
       <div class="dialog-actions">
@@ -203,7 +237,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.17</h2>
+          <h2>Partners Preview 0.1.20</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
@@ -217,7 +251,7 @@
         <li>Reservas, agenda, espaços, equipe, clientes, vouchers e controles administrativos funcionais.</li>
         <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
         <li>Cancelamento pós-pagamento conforme o responsável: voucher para o usuário elegível, reembolso integral para cancelamento do parceiro ou Tâmo On e ausência de crédito automático fora do prazo.</li>
-        <li>Sem Supabase, Asaas, emissão fiscal, webhook ou transação real.</li>
+        <li>Sem Supabase ou transação real; adaptadores Pix e Asaas permanecem em modo de arquitetura/sandbox, sem credenciais.</li>
       </ul>
       <button class="button primary full" value="cancel" formnovalidate>Entendi</button>
     </form>
@@ -226,7 +260,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="config.preview.js"></script>
+  <script src="pix-bank-adapters.js"></script>
   <script src="asaas-sandbox.js"></script>
+  <script src="payment-router.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

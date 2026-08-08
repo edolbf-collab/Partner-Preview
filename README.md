@@ -108,7 +108,28 @@ Abra `http://localhost:8080`.
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
 
 
-## Atualização 0.1.17
+## Atualização 0.1.20
 - Tema claro opcional exclusivo do Marketplace/Partners Preview.
 - Alternância disponível no cabeçalho para usuário, parceiro e administração.
 - Preferência persistida no navegador sem alterar o tema do aplicativo principal Tâmo On.
+
+## Atualização 0.1.20 — pagamentos multiprovedor
+
+A Preview passa a separar os meios de pagamento por uma camada interna de roteamento:
+
+- **Pix direto ao parceiro**: seleciona o adaptador do banco cadastrado no parceiro; o dinheiro não passa pelo Asaas;
+- **Cartão de crédito · Asaas**: prepara checkout hospedado, `externalReference` da reserva, webhook e split;
+- adaptadores Pix demonstrativos: Sicoob, Sicredi, Banco do Brasil e Inter;
+- banco ainda não integrado utiliza fallback de confirmação manual;
+- os detalhes da reserva registram meio, provedor, intent e endpoint lógico;
+- parceiro e administração visualizam separadamente o volume de Pix direto e de cartão Asaas.
+
+A Preview não contém credenciais, não chama APIs externas e não movimenta dinheiro real.
+
+
+## Partners Preview 0.1.20
+
+- Controles de agenda concentrados exclusivamente na aba **Agenda** do parceiro.
+- Seleção múltipla da agenda publicada com exclusão em lote.
+- Proteção automática de horários com reserva ativa.
+- Reorganização encadeada de horários contíguos após alteração de término, preservando a duração dos períodos seguintes.

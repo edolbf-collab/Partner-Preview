@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.17";
-  const STORAGE_KEY = "tamo_on_partners_preview_0115";
+  const VERSION = "0.1.20";
+  const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
   const roleButtons = [...document.querySelectorAll(".role-chip")];
@@ -21,6 +21,16 @@
   const reservationAutomationPreview = document.getElementById("reservationAutomationPreview");
   const voucherSelect = document.getElementById("voucherSelect");
   const reservationVoucherPreview = document.getElementById("reservationVoucherPreview");
+  const paymentMethodSelect = document.getElementById("paymentMethodSelect");
+  const paymentMethodNote = document.getElementById("paymentMethodNote");
+  const paymentProviderPreview = document.getElementById("paymentProviderPreview");
+  const automationPaymentText = document.getElementById("automationPaymentText");
+  const pixSplitPanel = document.getElementById("pixSplitPanel");
+  const pixSplitToggle = document.getElementById("pixSplitToggle");
+  const pixSplitConfig = document.getElementById("pixSplitConfig");
+  const pixSplitMode = document.getElementById("pixSplitMode");
+  const pixSplitMembers = document.getElementById("pixSplitMembers");
+  const pixSplitSummary = document.getElementById("pixSplitSummary");
   const reservationPolicyAcknowledge = document.getElementById("reservationPolicyAcknowledge");
   const reservationPolicyText = document.getElementById("reservationPolicyText");
   const monthlyReservationToggle = document.getElementById("monthlyReservationToggle");
@@ -119,6 +129,19 @@
         { id: "G-002", name: "Amigos do Bairro", role: "Organizador", memberCount: 14, canCreateEvents: true, canEditEvents: true },
         { id: "G-003", name: "Família FC", role: "Membro", memberCount: 22, canCreateEvents: false, canEditEvents: false }
       ],
+      groupMembers: [
+        { id:"GM-001", groupId:"G-001", name:"Eduardo Batista", role:"Administrador" },
+        { id:"GM-002", groupId:"G-001", name:"Carlos Mendes", role:"Membro" },
+        { id:"GM-003", groupId:"G-001", name:"Rafael Souza", role:"Membro" },
+        { id:"GM-004", groupId:"G-001", name:"Marcos Lima", role:"Membro" },
+        { id:"GM-005", groupId:"G-001", name:"João Martins", role:"Membro" },
+        { id:"GM-006", groupId:"G-001", name:"Paulo Reis", role:"Membro" },
+        { id:"GM-101", groupId:"G-002", name:"Eduardo Batista", role:"Organizador" },
+        { id:"GM-102", groupId:"G-002", name:"Mariana Lopes", role:"Membro" },
+        { id:"GM-103", groupId:"G-002", name:"Ana Paula Costa", role:"Membro" },
+        { id:"GM-104", groupId:"G-002", name:"Lucas Ferreira", role:"Membro" },
+        { id:"GM-105", groupId:"G-002", name:"Bruno Alves", role:"Membro" }
+      ],
       groupEvents: [
         { id: "EV-0101", groupId: "G-001", title: "Pelada de quinta-feira", date: "13/08/2026", time: "20:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
         { id: "EV-0102", groupId: "G-002", title: "Amistoso de sábado", date: "15/08/2026", time: "16:00", statusKey: "published", status: "Publicado", published: true, source: "existing" },
@@ -135,14 +158,23 @@
         { id: "LED-0001", type: "service_payment", reservationId: "R-0008", venueId: "arena-central", venue: "Arena Central", amount: 130, accountingMonth: "08/2026", fiscalAmount: 130, description: "Pagamento original da reserva" },
         { id: "LED-0002", type: "service_payment", reservationId: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", amount: 105, accountingMonth: "08/2026", fiscalAmount: 105, description: "Pagamento original da reserva" }
       ],
+      pixCollections: [],
+      paymentIntents: [
+        { id:"PAY-0001", reservationId:"R-0008", method:"credit_card_asaas", provider:"ASAAS", status:"CONFIRMED", amount:130, route:"credit_card_asaas", externalReference:"R-0008", createdAt:"07/08/2026 18:01" },
+        { id:"PAY-0002", reservationId:"R-0006", method:"pix_direct_partner", provider:"SICOOB", status:"CONFIRMED", amount:105, route:"pix_direct_partner_api", externalReference:"R-0006", txid:"R0006TOTAL", createdAt:"06/08/2026 18:55" }
+      ],
+      paymentWebhookLog: [
+        { id:"WH-0001", provider:"ASAAS", event:"PAYMENT_CONFIRMED", reservationId:"R-0008", status:"Processado", createdAt:"07/08/2026 18:02" },
+        { id:"WH-0002", provider:"SICOOB", event:"PIX_RECEIVED", reservationId:"R-0006", status:"Processado", createdAt:"06/08/2026 18:56" }
+      ],
       favorites: ["arena-central"],
       appliedVouchers: [],
-      ui: {},
+      ui: { selectedAvailabilityKeys: [] },
       venues: [
         {
           id: "arena-central", name: "Arena Central", city: "Curitiba", neighborhood: "Água Verde", distance: "2,4 km",
           rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250",
-          facadeImage: "assets/venues/arena-central-fachada.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"],
+          facadeImage: "assets/venues/arena-central-fachada.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"], bankProviderId:"SICOOB", bankLabel:"Sicoob", pixKey:"CNPJ cadastrado", asaasWalletId:"wallet_preview_arena_central",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", endTime: "19:00", price: 120, monthlyEligible: true, monthlyPrice: 440, space: "Quadra Society 1" }, { time: "19:00", endTime: "20:00", price: 120, blocked: true, space: "Quadra Society 1" }, { time: "20:00", endTime: "21:30", price: 150, space: "Quadra Society 1" }, { time: "21:30", endTime: "22:30", price: 130, space: "Quadra Society 1" }] },
             { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "18:00", price: 130 }, { time: "19:00", price: 140 }, { time: "20:00", price: 140 }, { time: "21:00", price: 140 }] },
@@ -159,7 +191,7 @@
         {
           id: "cancha-horizonte", name: "Cancha Horizonte", city: "São José dos Pinhais", neighborhood: "Centro", distance: "8,1 km",
           rating: 4.6, reviews: 74, ratingSource: "users", types: ["Society"], price: 105, address: "Avenida Central, 840",
-          facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"],
+          facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"], bankProviderId:"SICREDI", bankLabel:"Sicredi", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_cancha_horizonte",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "17:30", price: 105 }, { time: "19:00", price: 105 }, { time: "20:30", price: 115, blocked: true }, { time: "22:00", price: 105 }] },
             { date: "07/08/2026", shortDate: "07/08", weekday: "Sex", dayLabel: "7 ago", slots: [{ time: "17:30", price: 110 }, { time: "19:00", price: 120 }, { time: "20:30", price: 120 }, { time: "22:00", price: 110 }] },
@@ -169,7 +201,7 @@
         {
           id: "vale-verde", name: "Complexo Vale Verde", city: "Colombo", neighborhood: "Roça Grande", distance: "11,7 km",
           rating: 4.7, reviews: 91, ratingSource: "users", types: ["Futsal", "Campo"], price: 95, address: "Estrada do Vale, 41",
-          facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"],
+          facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"], bankProviderId:"BB", bankLabel:"Banco do Brasil", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_vale_verde",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 95 }, { time: "19:30", price: 105 }, { time: "21:00", price: 105 }] },
             { date: "08/08/2026", shortDate: "08/08", weekday: "Sáb", dayLabel: "8 ago", slots: [{ time: "09:00", price: 120 }, { time: "11:00", price: 120 }, { time: "15:00", price: 140 }, { time: "17:00", price: 140 }] },
@@ -184,8 +216,8 @@
       ],
       reservations: [
         { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
-        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "payment.confirmed", paymentStatus: "Pago", paymentProvider: "Asaas", accountingRecognizedValue: 130, accountingMonth: "08/2026", fiscalObligationValue: 130, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
-        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "payment.confirmed", accountingRecognizedValue: 105, accountingMonth: "08/2026", fiscalObligationValue: 105, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
+        { id: "R-0008", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "07/08/2026", shortDate: "07/08", time: "18:00", value: 130, statusKey: "confirmed", status: "Confirmada e paga", endpoint: "asaas.webhook.payment_confirmed", paymentStatus: "Pago via cartão", paymentMethod: "credit_card_asaas", paymentProvider: "ASAAS", paymentIntentId:"PAY-0001", accountingRecognizedValue: 130, accountingMonth: "08/2026", fiscalObligationValue: 130, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-002", groupName: "Amigos do Bairro", groupRole: "Organizador", eventId: "EV-0202", event: "Arena Central · 07/08 às 18:00", eventMode: "new", eventPublicationStatus: "published", pushStatus: "Enviado", voucher: "" },
+        { id: "R-0006", venueId: "cancha-horizonte", venue: "Cancha Horizonte", user: "Marcos Lima", date: "06/08/2026", shortDate: "06/08", time: "19:00", value: 105, statusKey: "confirmed", status: "Confirmada", endpoint: "bank_pix.webhook.received", paymentStatus:"Pix confirmado pelo banco", paymentMethod:"pix_direct_partner", paymentProvider:"SICOOB", paymentIntentId:"PAY-0002", accountingRecognizedValue: 105, accountingMonth: "08/2026", fiscalObligationValue: 105, cancellationPolicyAccepted: true, cancellationPolicyVersion: "voucher-responsibility-availability-v2", groupId: "G-010", groupName: "Amigos do Bairro", eventId: "EV-0901", event: "Amistoso do bairro", eventMode: "existing", eventPublicationStatus: "linked_existing", pushStatus: "Não aplicável", voucher: "FORADEPICO" },
         { id: "R-0005", venueId: "arena-central", venue: "Arena Central", user: "Paulo Reis", date: "05/08/2026", shortDate: "05/08", time: "21:00", value: 120, statusKey: "cancelled", status: "Cancelada", endpoint: "reservation.cancelled", groupId: "G-020", groupName: "Grupo do Paulo", eventId: "", event: "", eventMode: "none", eventPublicationStatus: "cancelled", pushStatus: "Não enviado", voucher: "" }
       ],
       partnerAgenda: [
@@ -241,12 +273,18 @@
         venueId: "arena-central",
         fiscalIssuer: "Parceiro emite documento fiscal ao usuário",
         commissionInvoice: "Tâmo On emite NFS-e da comissão ao parceiro",
-        paymentModel: "Pagamento externo nesta fase",
-        bank: "Banco Exemplo",
+        paymentModel: "Pix direto + cartão pelo Asaas",
+        bank: "Sicoob",
+        bankProviderId: "SICOOB",
         branch: "0001",
         account: "****-5",
         pixKey: "CNPJ cadastrado",
-        asaasSubaccount: "Não criada",
+        pixApiStatus: "Estrutura pronta · credenciais não configuradas",
+        pixAutoReconciliation: true,
+        pixWebhookStatus: "Rota preparada",
+        asaasSubaccount: "Sandbox não provisionado",
+        asaasWalletId: "wallet_preview_arena_central",
+        asaasCardStatus: "Checkout hospedado preparado",
         commissionRate: 6,
         documents: [
           { name: "Cartão CNPJ", status: "Validado" },
@@ -325,7 +363,10 @@
   function loadState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      return saved && saved.activePage && saved.venues ? saved : initialState();
+      if (!(saved && saved.activePage && saved.venues)) return initialState();
+      saved.ui = saved.ui || {};
+      saved.ui.selectedAvailabilityKeys = Array.isArray(saved.ui.selectedAvailabilityKeys) ? saved.ui.selectedAvailabilityKeys : [];
+      return saved;
     } catch (_error) {
       return initialState();
     }
@@ -428,6 +469,118 @@
     const day = venue.schedule.find((item) => item.shortDate === dateMeta.shortDate);
     if (!day) return null;
     return day.slots.find((slot) => slot !== excludeSlot && normalizedSlotSpace(slot) === space && timeRangesOverlap(startTime, endTime, slot.time, slotEndTime(slot))) || null;
+  }
+
+  function availabilityKey(shortDate, time, space) {
+    return `${String(shortDate || "")}::${String(time || "")}::${String(space || "")}`;
+  }
+
+  function selectedAvailabilityKeys() {
+    state.ui = state.ui || {};
+    state.ui.selectedAvailabilityKeys = Array.isArray(state.ui.selectedAvailabilityKeys) ? state.ui.selectedAvailabilityKeys : [];
+    return state.ui.selectedAvailabilityKeys;
+  }
+
+  function publicAvailabilityEntries(venue) {
+    return (venue?.schedule || []).flatMap((day) => day.slots.map((slot) => ({ day, slot, key: availabilityKey(day.shortDate, slot.time, normalizedSlotSpace(slot)) })));
+  }
+
+  function availabilityHasActiveReservation(venue, day, slot) {
+    return Boolean(findReservationForSlot(venue.id, slot.time, day.shortDate, slotEndTime(slot), normalizedSlotSpace(slot)));
+  }
+
+  function removeAvailabilityEntries(venue, keys) {
+    const keySet = new Set(keys);
+    let removed = 0;
+    venue.schedule.forEach((day) => {
+      const before = day.slots.length;
+      day.slots = day.slots.filter((slot) => !keySet.has(availabilityKey(day.shortDate, slot.time, normalizedSlotSpace(slot))));
+      removed += before - day.slots.length;
+    });
+    venue.schedule = venue.schedule.filter((day) => day.slots.length);
+    state.ui.selectedAvailabilityKeys = selectedAvailabilityKeys().filter((key) => !keySet.has(key));
+    return removed;
+  }
+
+  function cascadeAvailabilityPlan(venue, editDay, editSlot, nextEndTime) {
+    const space = normalizedSlotSpace(editSlot);
+    const ordered = editDay.slots.filter((slot) => normalizedSlotSpace(slot) === space).sort((a,b) => a.time.localeCompare(b.time));
+    const index = ordered.indexOf(editSlot);
+    if (index < 0) return { valid: true, changes: [] };
+    const following = [];
+    let originalCursor = slotEndTime(editSlot);
+    for (const candidate of ordered.slice(index + 1)) {
+      if (candidate.time !== originalCursor) break;
+      following.push(candidate);
+      originalCursor = slotEndTime(candidate);
+    }
+    let cursor = timeToMinutes(nextEndTime);
+    const changes = [];
+    for (const slot of following) {
+      const duration = Math.max(1, timeToMinutes(slotEndTime(slot)) - timeToMinutes(slot.time));
+      const nextStart = minutesToTime(cursor);
+      if (availabilityHasActiveReservation(venue, editDay, slot) && slot.time !== nextStart) {
+        return { valid:false, reason:`O horário ${timeRange(slot.time,slotEndTime(slot))} possui reserva ativa e não pode ser deslocado automaticamente.` };
+      }
+      const endMinutes = cursor + duration;
+      if (endMinutes >= 1440) return { valid:false, reason:"A reorganização ultrapassaria 23:59. Ajuste o término ou reorganize a grade manualmente." };
+      changes.push({ slot, startTime: nextStart, endTime: minutesToTime(endMinutes) });
+      cursor = endMinutes;
+    }
+    return { valid:true, changes };
+  }
+
+  function monthlyAvailabilityPropagationPlan(venue, sourceDay, sourceSlot, desiredStartTime, desiredEndTime) {
+    const sourceDate = parsePtDateTime(sourceDay.date, "12:00");
+    const originalStart = sourceSlot.time;
+    const originalSpace = normalizedSlotSpace(sourceSlot);
+    const targetDuration = timeToMinutes(desiredEndTime) - timeToMinutes(desiredStartTime);
+    if (targetDuration <= 0) return { valid:false, reason:"A duração mensalista precisa ser maior que zero.", dayPlans:[] };
+    const dayPlans = [];
+    const candidateDays = venue.schedule.filter((day) => {
+      if (day === sourceDay) return false;
+      const date = parsePtDateTime(day.date, "12:00");
+      return date >= sourceDate && date.getMonth() === sourceDate.getMonth() && date.getFullYear() === sourceDate.getFullYear() && date.getDay() === sourceDate.getDay();
+    });
+    for (const day of candidateDays) {
+      const slot = day.slots.find((item) => normalizedSlotSpace(item) === originalSpace && item.time === originalStart);
+      if (!slot) continue;
+      if (slot.blocked) return { valid:false, reason:`${day.date} possui o período ${timeRange(slot.time,slotEndTime(slot))} bloqueado e ele não pode integrar a sequência mensalista.`, dayPlans:[] };
+      if (availabilityHasActiveReservation(venue, day, slot) && (slot.time !== desiredStartTime || slotEndTime(slot) !== desiredEndTime)) {
+        return { valid:false, reason:`${day.date} · ${timeRange(slot.time,slotEndTime(slot))} já possui reserva ativa e não pode ter sua duração alterada.`, dayPlans:[] };
+      }
+      const cascade = cascadeAvailabilityPlan(venue, day, slot, desiredEndTime);
+      if (!cascade.valid) return { valid:false, reason:`${day.date}: ${cascade.reason}`, dayPlans:[] };
+      const followingSet = new Set(cascade.changes.map((change) => change.slot));
+      const unaffected = day.slots.filter((item) => item !== slot && !followingSet.has(item) && normalizedSlotSpace(item) === originalSpace);
+      const proposed = [{ startTime:desiredStartTime, endTime:desiredEndTime }, ...cascade.changes];
+      const collision = proposed.find((period) => unaffected.some((item) => timeRangesOverlap(period.startTime,period.endTime,item.time,slotEndTime(item))));
+      if (collision) {
+        const conflict = unaffected.find((item) => timeRangesOverlap(collision.startTime,collision.endTime,item.time,slotEndTime(item)));
+        return { valid:false, reason:`${day.date}: a grade ajustada em ${timeRange(collision.startTime,collision.endTime)} encontraria o horário independente ${timeRange(conflict.time,slotEndTime(conflict))}.`, dayPlans:[] };
+      }
+      dayPlans.push({ day, slot, cascade });
+    }
+    return { valid:true, dayPlans };
+  }
+
+  function applyMonthlyAvailabilityPropagation(plan, desiredStartTime, desiredEndTime, monthlyPrice) {
+    let changedDays = 0;
+    let shiftedSlots = 0;
+    (plan?.dayPlans || []).forEach(({day,slot,cascade}) => {
+      slot.time = desiredStartTime;
+      slot.endTime = desiredEndTime;
+      slot.monthlyEligible = true;
+      slot.monthlyPrice = Number(monthlyPrice || 0);
+      cascade.changes.forEach((change) => {
+        change.slot.time = change.startTime;
+        change.slot.endTime = change.endTime;
+        shiftedSlots += 1;
+      });
+      day.slots.sort((a,b) => a.time.localeCompare(b.time));
+      changedDays += 1;
+    });
+    return { changedDays, shiftedSlots };
   }
 
   function datesForAgendaRange(startIso, endIso, preset) {
@@ -606,6 +759,188 @@
     updateVoucherPaymentPreview();
   }
 
+  function groupMembers(groupId) {
+    return state.groupMembers.filter((member) => member.groupId === groupId);
+  }
+
+  function pixSplitEnabled() {
+    return selectedPaymentMethod() === "pix_direct_partner" && Boolean(pixSplitToggle?.checked);
+  }
+
+  function equalPixShares(total, members) {
+    const cents = Math.round(Number(total || 0) * 100);
+    const count = Math.max(1, members.length);
+    const base = Math.floor(cents / count);
+    let remainder = cents - base * count;
+    return members.map((member) => ({ member, amount: (base + (remainder-- > 0 ? 1 : 0)) / 100 }));
+  }
+
+  function selectedPixSplitShares() {
+    if (!pixSplitEnabled()) return [];
+    const members = groupMembers(groupSelect.value).filter((member) => pixSplitMembers?.querySelector(`[data-split-member="${member.id}"]`)?.checked);
+    if (pixSplitMode?.value !== "custom") return equalPixShares(currentPaymentDue(), members);
+    return members.map((member) => ({ member, amount: Number(pixSplitMembers?.querySelector(`[data-split-value="${member.id}"]`)?.value || 0) }));
+  }
+
+  function currentPaymentDue() {
+    const total = currentReservationValue();
+    const voucher = cancellationVoucherByValue(voucherSelect.value);
+    return Math.max(0, total - Number(voucher?.value || 0));
+  }
+
+  function updatePixSplitPanel() {
+    if (!pixSplitPanel || !selectedReservation) return;
+    const due = currentPaymentDue();
+    const isPix = selectedPaymentMethod() === "pix_direct_partner" && due > 0;
+    pixSplitPanel.hidden = !isPix;
+    if (!isPix) {
+      pixSplitToggle.checked = false;
+      pixSplitConfig.hidden = true;
+      return;
+    }
+    pixSplitConfig.hidden = !pixSplitToggle.checked;
+    if (!pixSplitToggle.checked) return;
+    const members = groupMembers(groupSelect.value);
+    const existingSelection = new Map([...pixSplitMembers.querySelectorAll('[data-split-member]')].map((input) => [input.dataset.splitMember, input.checked]));
+    const existingValues = new Map([...pixSplitMembers.querySelectorAll('[data-split-value]')].map((input) => [input.dataset.splitValue, input.value]));
+    const selectedMembers = members.filter((m) => existingSelection.has(m.id) ? existingSelection.get(m.id) : true);
+    const equal = equalPixShares(due, selectedMembers);
+    const equalMap = new Map(equal.map((item) => [item.member.id, item.amount]));
+    pixSplitMembers.innerHTML = members.map((member) => {
+      const checked = existingSelection.has(member.id) ? existingSelection.get(member.id) : true;
+      const amount = pixSplitMode.value === "custom" ? (existingValues.get(member.id) ?? (checked ? (equalMap.get(member.id) || 0).toFixed(2) : "0.00")) : (checked ? (equalMap.get(member.id) || 0).toFixed(2) : "0.00");
+      return `<div class="pix-split-member-row"><label><input type="checkbox" data-split-member="${esc(member.id)}" ${checked ? "checked" : ""}><span><strong>${esc(member.name)}</strong><small>${esc(member.role)}</small></span></label><div class="pix-split-value"><span>R$</span><input type="number" min="0" step="0.01" inputmode="decimal" data-split-value="${esc(member.id)}" value="${esc(amount)}" ${pixSplitMode.value === "equal" ? "readonly" : ""}></div></div>`;
+    }).join("");
+    updatePixSplitSummary();
+  }
+
+  function updatePixSplitSummary() {
+    if (!pixSplitSummary || !pixSplitEnabled()) return;
+    const due = currentPaymentDue();
+    const shares = selectedPixSplitShares();
+    if (pixSplitMode.value === "equal") {
+      const equal = equalPixShares(due, shares.map((share)=>share.member));
+      const byId = new Map(equal.map((share)=>[share.member.id,share.amount]));
+      pixSplitMembers.querySelectorAll('[data-split-value]').forEach((input)=>{ input.value=(byId.get(input.dataset.splitValue)||0).toFixed(2); });
+    }
+    const finalShares = selectedPixSplitShares();
+    const total = finalShares.reduce((sum, share) => sum + Number(share.amount || 0), 0);
+    const diff = Math.round((due - total) * 100) / 100;
+    const valid = finalShares.length >= 2 && Math.abs(diff) < 0.01 && finalShares.every((share)=>share.amount > 0);
+    pixSplitSummary.innerHTML = `<div><span>Valor a arrecadar</span><strong>${money(due)}</strong></div><div><span>Membros selecionados</span><strong>${finalShares.length}</strong></div><div><span>Soma das cotas</span><strong>${money(total)}</strong></div><p class="${valid ? "split-ok" : "split-warning"}">${valid ? "Rateio pronto. Cada membro receberá uma pendência Pix própria." : finalShares.length < 2 ? "Selecione ao menos dois membros para usar o rateio." : `A soma das cotas precisa ser exatamente ${money(due)}. Diferença: ${money(Math.abs(diff))}.`}</p>`;
+    updateReservationSubmitState();
+  }
+
+  function validatePixSplit() {
+    if (!pixSplitEnabled()) return { valid:true, shares:[] };
+    const due = currentPaymentDue();
+    const shares = selectedPixSplitShares();
+    const total = shares.reduce((sum, share)=>sum + Number(share.amount||0),0);
+    const valid = shares.length >= 2 && shares.every((share)=>share.amount > 0) && Math.abs(total-due) < 0.01;
+    return { valid, shares, total, due };
+  }
+
+  function createPixSplitCollection(reservation, shares) {
+    const collectionId = nextId("COL-", state.pixCollections);
+    const collection = { id:collectionId, reservationId:reservation.id, groupId:reservation.groupId, groupName:reservation.groupName, venueId:reservation.venueId, venue:reservation.venue, amount:shares.reduce((sum,share)=>sum+share.amount,0), status:"PENDING", paidAmount:0, paidCount:0, memberCount:shares.length, createdAt:new Date().toLocaleString("pt-BR"), items:[] };
+    const venue = state.venues.find((item)=>item.id===reservation.venueId);
+    const partner = { venueId:reservation.venueId, tradeName:reservation.venue, bank:venue?.bankLabel||"Banco do parceiro", bankProviderId:venue?.bankProviderId||"GENERIC_MANUAL", pixKey:venue?.pixKey||"Chave Pix cadastrada", asaasWalletId:venue?.asaasWalletId||"" };
+    shares.forEach((share,index)=>{
+      const memberReservation = { ...reservation, id:`${reservation.id}-${share.member.id}`, externalReference:`${reservation.id}:${share.member.id}`, memberId:share.member.id, memberName:share.member.name };
+      const intent = window.TamoOnPaymentRouter?.createPreviewIntent({ method:"pix_direct_partner", reservation:memberReservation, partner, amount:share.amount, commissionRate:0 });
+      if (!intent) return;
+      const providerIntentId=intent.id;
+      intent.id=nextId("PAY-",state.paymentIntents);
+      intent.providerIntentId=providerIntentId;
+      intent.reservationId=reservation.id;
+      intent.collectionId=collectionId;
+      intent.memberId=share.member.id;
+      intent.memberName=share.member.name;
+      intent.method="pix_direct_partner";
+      intent.amount=share.amount;
+      intent.externalReference=`${reservation.id}:${share.member.id}`;
+      intent.createdAt=new Date().toLocaleString("pt-BR");
+      state.paymentIntents.unshift(intent);
+      collection.items.push({ memberId:share.member.id, memberName:share.member.name, amount:share.amount, status:"PENDING", paymentIntentId:intent.id, txid:intent.normalized?.txid||"" });
+    });
+    state.pixCollections.unshift(collection);
+    reservation.pixSplit=true;
+    reservation.pixCollectionId=collectionId;
+    reservation.paymentIntentIds=collection.items.map((item)=>item.paymentIntentId);
+    reservation.paymentRoute="pix_direct_partner_split";
+    reservation.paymentProvider=partner.bankProviderId;
+    return collection;
+  }
+
+  function selectedPaymentMethod() {
+    return paymentMethodSelect?.value || window.TamoOnPaymentRouter?.METHODS?.PIX_DIRECT_PARTNER || "pix_direct_partner";
+  }
+
+  function paymentMethodLabel(method = selectedPaymentMethod()) {
+    return window.TamoOnPaymentRouter?.methodLabel(method) || (method === "credit_card_asaas" ? "Cartão de crédito · Asaas" : "Pix direto ao parceiro");
+  }
+
+  function paymentProviderForSelection() {
+    if (selectedPaymentMethod() === "credit_card_asaas") return "ASAAS";
+    return selectedReservation?.venue?.bankProviderId || state.partnerProfile.bankProviderId || "GENERIC_MANUAL";
+  }
+
+  function updatePaymentProviderPreview() {
+    if (!paymentProviderPreview || !paymentMethodNote || !selectedReservation) return;
+    const total = currentReservationValue();
+    const voucher = cancellationVoucherByValue(voucherSelect.value);
+    const due = Math.max(0, total - Number(voucher?.value || 0));
+    if (due <= 0) {
+      paymentMethodSelect.disabled = true;
+      paymentMethodNote.textContent = "O voucher cobre integralmente esta reserva; não haverá cobrança externa.";
+      paymentProviderPreview.innerHTML = `<span class="status status-ok">Sem cobrança</span><p>O evento poderá ser publicado após o resgate integral do voucher.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = "Reserva coberta integralmente por voucher";
+      if (pixSplitPanel) { pixSplitPanel.hidden = true; pixSplitToggle.checked = false; pixSplitConfig.hidden = true; }
+      return;
+    }
+    paymentMethodSelect.disabled = false;
+    const method = selectedPaymentMethod();
+    if (method === "credit_card_asaas") {
+      paymentMethodNote.textContent = "O cartão será processado pelo Asaas em checkout hospedado; o Tâmo On não precisa armazenar os dados do cartão.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status status-warning">Sandbox preparado</span><strong>Asaas · cartão</strong></div><p>${money(due)} será enviado ao checkout hospedado. A cobrança ficará vinculada à reserva e preparada para split entre parceiro e Tâmo On.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = "Aguardando confirmação do cartão pelo webhook Asaas";
+    } else {
+      const providerId = selectedReservation?.venue?.bankProviderId || state.partnerProfile.bankProviderId || "GENERIC_MANUAL";
+      const provider = window.TamoOnBankPix?.provider(providerId) || { label: state.partnerProfile.bank || "Banco do parceiro", mode: "manual" };
+      const automatic = provider.mode === "api";
+      paymentMethodNote.textContent = automatic ? "O Pix será gerado pela API do banco do parceiro e creditado diretamente na conta dele." : "O Pix será enviado diretamente ao parceiro; enquanto o banco não estiver integrado, a baixa será manual.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status ${automatic ? "status-ok" : "status-warning"}">${automatic ? "Baixa automática preparada" : "Confirmação manual"}</span><strong>${esc(provider.label)}</strong></div><p>${money(due)} vai diretamente para a conta do parceiro. O Tâmo On apenas concilia a reserva pelo identificador da cobrança.</p>`;
+      if (automationPaymentText) automationPaymentText.textContent = automatic ? `Aguardando confirmação Pix do ${provider.label}` : "Aguardando confirmação do parceiro";
+    }
+    updatePixSplitPanel();
+  }
+
+  function createPaymentIntentForReservation(reservation, amount) {
+    if (Number(amount || 0) <= 0) return null;
+    const intent = window.TamoOnPaymentRouter?.createPreviewIntent({
+      method: reservation.paymentMethod,
+      reservation,
+      partner: reservation.venueId === state.partnerProfile.venueId ? state.partnerProfile : (() => { const venue = state.venues.find((item)=>item.id===reservation.venueId); return { venueId: reservation.venueId, tradeName: reservation.venue, bank: venue?.bankLabel || "Banco do parceiro", bankProviderId: venue?.bankProviderId || "GENERIC_MANUAL", pixKey: venue?.pixKey || "Chave Pix cadastrada", asaasWalletId: venue?.asaasWalletId || "" }; })(),
+      amount,
+      commissionRate: Number(state.settings.defaultCommission || 0)
+    });
+    if (!intent) return null;
+    const providerIntentId = intent.id;
+    intent.id = nextId("PAY-", state.paymentIntents);
+    intent.providerIntentId = providerIntentId;
+    intent.reservationId = reservation.id;
+    intent.method = reservation.paymentMethod;
+    intent.amount = Number(amount || 0);
+    intent.externalReference = reservation.id;
+    intent.createdAt = new Date().toLocaleString("pt-BR");
+    state.paymentIntents.unshift(intent);
+    reservation.paymentIntentId = intent.id;
+    reservation.paymentProvider = intent.provider || (reservation.paymentMethod === "credit_card_asaas" ? "ASAAS" : state.partnerProfile.bankProviderId || "GENERIC_MANUAL");
+    reservation.paymentRoute = intent.route || reservation.paymentMethod;
+    if (intent.normalized?.txid) reservation.pixTxid = intent.normalized.txid;
+    return intent;
+  }
+
   function updateReservationPaymentSummary() {
     if (!selectedReservation) return;
     const total = currentReservationValue();
@@ -614,7 +949,8 @@
     const complement = Math.max(0, total - voucherValue);
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
-    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="payment-breakdown prominent"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher aplicado <b>${voucher ? `− ${money(voucherValue)}` : money(0)}</b></span><span class="voucher-total">Valor a pagar no Asaas <b>${money(complement)}</b></span></div>`;
+    const paymentLabel = complement <= 0 ? "Sem cobrança externa" : paymentMethodLabel();
+    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="payment-breakdown prominent"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher aplicado <b>${voucher ? `− ${money(voucherValue)}` : money(0)}</b></span><span class="voucher-total">Valor a pagar · ${esc(paymentLabel)} <b>${money(complement)}</b></span></div>`;
   }
 
   function updateVoucherPaymentPreview() {
@@ -623,11 +959,13 @@
     const total = currentReservationValue();
     const voucher = cancellationVoucherByValue(voucherSelect.value);
     if (!voucher) {
-      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><div class="voucher-calculation"><span>Valor total <b>${money(total)}</b></span><span>Voucher aplicado <b>${money(0)}</b></span><span class="voucher-total">Total a pagar <b>${money(total)}</b></span></div><p>O valor será processado pelos meios disponibilizados no app após a criação da reserva pendente.</p>`;
+      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><div class="voucher-calculation"><span>Valor total <b>${money(total)}</b></span><span>Voucher aplicado <b>${money(0)}</b></span><span class="voucher-total">Total a pagar <b>${money(total)}</b></span></div><p>Escolha Pix direto ao parceiro ou cartão de crédito pelo Asaas.</p>`;
+      updatePaymentProviderPreview();
       return;
     }
     const complement = Math.max(0, total - Number(voucher.value));
-    reservationVoucherPreview.innerHTML = `<strong>Pagamento com voucher</strong><div class="voucher-calculation"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Diferença a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único. Apenas a diferença, quando houver, será cobrada pelo Asaas e gerará nova obrigação fiscal e contábil.</p>`;
+    reservationVoucherPreview.innerHTML = `<strong>Pagamento com voucher</strong><div class="voucher-calculation"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Diferença a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único. Apenas a diferença, quando houver, seguirá para o meio de pagamento selecionado e gerará nova obrigação fiscal e contábil.</p>`;
+    updatePaymentProviderPreview();
   }
 
   function updateMonthlyReservationPreview() {
@@ -734,6 +1072,7 @@
     eventSelect.value = "__new__";
     newEventTitle.value = selectedReservation ? defaultEventTitle(selectedReservation) : "";
     updateNewEventPanel();
+    updatePixSplitPanel();
   }
 
   function updateNewEventPanel() {
@@ -751,8 +1090,9 @@
     const validGroup = canManageGroupEvents(group);
     const validEvent = Boolean(eventSelect.value) && (eventSelect.value !== "__new__" || newEventTitle.value.trim());
     const validPolicy = Boolean(reservationPolicyAcknowledge?.checked);
+    const splitValidation = validatePixSplit();
     const submit = document.getElementById("confirmReservation");
-    if (submit) submit.disabled = !(validGroup && validEvent && validPolicy);
+    if (submit) submit.disabled = !(validGroup && validEvent && validPolicy && splitValidation.valid);
   }
 
   function publishStandbyEventForReservation(reservation, publicationEndpoint = "event.publish_after_payment") {
@@ -1063,6 +1403,56 @@
     return `<button class="button danger small" data-action="cancel-paid-user-reservation" data-id="${esc(reservation.id)}">Cancelar reserva</button>`;
   }
 
+  function pixCollectionForReservation(reservationId) {
+    return state.pixCollections.find((collection) => collection.reservationId === reservationId) || null;
+  }
+
+  function pixSplitDetailsBody(reservation) {
+    const collection = pixCollectionForReservation(reservation.id);
+    if (!collection) return `<p class="dialog-description">Nenhum rateio Pix foi encontrado para esta reserva.</p>`;
+    const paid = collection.items.filter((item)=>item.status === "PAID").length;
+    const paidAmount = collection.items.filter((item)=>item.status === "PAID").reduce((sum,item)=>sum+Number(item.amount||0),0);
+    return `<div class="pix-collection-overview"><div><span>Valor da arrecadação</span><strong>${money(collection.amount)}</strong></div><div><span>Recebido</span><strong>${money(paidAmount)}</strong></div><div><span>Pagamentos</span><strong>${paid} de ${collection.memberCount}</strong></div></div><div class="list pix-collection-list">${collection.items.map((item)=>`<div class="list-item compact"><div class="avatar">${initials(item.memberName)}</div><div class="list-item-main"><strong>${esc(item.memberName)}</strong><small>${money(item.amount)} · ${item.txid ? `txid ${esc(item.txid)}` : "confirmação manual"}</small></div><span class="status ${item.status === "PAID" ? "status-ok" : "status-warning"}">${item.status === "PAID" ? "Pago" : "Pendente"}</span>${item.status !== "PAID" ? `<button type="button" class="button secondary small" data-action="simulate-pix-share-paid" data-id="${esc(item.paymentIntentId)}">Simular baixa</button>` : ""}</div>`).join("")}</div><div class="callout"><strong>Fluxo real</strong><p>Cada membro recebe sua cobrança Pix individual diretamente para a conta do parceiro. O webhook do banco baixa a cota pelo identificador da cobrança. A reserva só é quitada quando a soma das cotas confirmadas atingir o valor total.</p></div>`;
+  }
+
+  function openPixSplitDetails(reservationId) {
+    const reservation = state.reservations.find((item)=>item.id===reservationId);
+    if (!reservation) return;
+    openDetail({ eyebrow:"Rateio Pix", title:`${reservation.id} · ${reservation.groupName || "Grupo"}`, body:pixSplitDetailsBody(reservation) });
+  }
+
+  function simulatePixSharePaid(paymentIntentId) {
+    const intent = state.paymentIntents.find((item)=>item.id===paymentIntentId);
+    if (!intent || !intent.collectionId || intent.status === "CONFIRMED") return;
+    const collection = state.pixCollections.find((item)=>item.id===intent.collectionId);
+    const reservation = state.reservations.find((item)=>item.id===intent.reservationId);
+    if (!collection || !reservation) return;
+    const share = collection.items.find((item)=>item.paymentIntentId===intent.id);
+    if (!share) return;
+    intent.status="CONFIRMED";
+    intent.confirmedAt=new Date().toLocaleString("pt-BR");
+    share.status="PAID";
+    share.paidAt=intent.confirmedAt;
+    collection.paidCount=collection.items.filter((item)=>item.status==="PAID").length;
+    collection.paidAmount=collection.items.filter((item)=>item.status==="PAID").reduce((sum,item)=>sum+Number(item.amount||0),0);
+    state.paymentWebhookLog.unshift({ id:nextId("WH-",state.paymentWebhookLog), provider:intent.provider||reservation.paymentProvider, event:"PIX_RECEIVED", reservationId:reservation.id, paymentIntentId:intent.id, memberId:intent.memberId, status:"Processado", createdAt:intent.confirmedAt });
+    if (collection.paidCount >= collection.memberCount && Math.abs(collection.paidAmount-collection.amount)<0.01) {
+      collection.status="SETTLED";
+      collection.settledAt=intent.confirmedAt;
+      Object.assign(reservation,{ statusKey:"confirmed", status:"Confirmada — rateio quitado", endpoint:"bank_pix.split.settled", paymentStatus:`Rateio Pix quitado · ${collection.paidCount} de ${collection.memberCount} cotas`, accountingRecognizedValue:collection.amount, fiscalObligationValue:collection.amount, accountingMonth:accountingMonth() });
+      state.accountingLedger.unshift({ id:nextId("LED-",state.accountingLedger), type:"service_payment", reservationId:reservation.id, venueId:reservation.venueId, venue:reservation.venue, amount:collection.amount, fiscalAmount:collection.amount, accountingMonth:reservation.accountingMonth, description:"Reserva quitada por rateio Pix direto ao parceiro" });
+      publishStandbyEventForReservation(reservation,"event.publish_after_pix_split");
+      showToast(`Rateio quitado: ${collection.paidCount} de ${collection.memberCount} cotas confirmadas.`);
+    } else {
+      reservation.paymentStatus=`Rateio Pix · ${collection.paidCount} de ${collection.memberCount} cotas pagas`;
+      showToast(`${share.memberName}: Pix confirmado. Faltam ${collection.memberCount-collection.paidCount} cota(s).`);
+    }
+    saveState(); render();
+    if (detailDialog.open) {
+      detailBody.innerHTML=pixSplitDetailsBody(reservation);
+    }
+  }
+
   function userReservations() {
     const allReservations = state.reservations.filter((item) => item.user === state.userProfile.name || item.id === "R-0007");
     const pending = allReservations.filter((item) => item.statusKey === "pending").length;
@@ -1078,7 +1468,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.statusKey === "pending" ? `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button><button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -1122,7 +1512,7 @@
     const pending = state.partnerReservations.filter((item) => item.status === "Pendente").length;
     const activeSpaces = state.partnerSpaces.filter((item) => item.status === "Ativo").length;
     const gross = state.partnerReservations.filter((item) => item.status === "Confirmada").reduce((sum, item) => sum + item.value, 0);
-    return `${pageHeader("Portal do parceiro", "Visão geral", "Atalhos objetivos para a operação diária da Arena Central.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Bloquear horário</button><button class="button ghost" data-action="new-partner-reservation">Nova reserva manual</button>`)}
+    return `${pageHeader("Portal do parceiro", "Visão geral", "Resumo objetivo da operação diária da Arena Central.")}
       <section class="stats-grid compact-kpi-grid">${stat(confirmed, "confirmadas", "+1 nesta semana")}${stat(pending, "pendentes")}${stat(activeSpaces, "espaços ativos")}${stat(money(gross), "reservas confirmadas")}</section>
       <section class="grid two">
         <article class="card"><div class="section-heading"><div><h2>Próximos horários</h2><p>Agenda de 06/08/2026</p></div><button class="button ghost small" data-nav="agenda">Ver agenda</button></div><div class="list">${state.partnerAgenda.filter((item) => item.day === 6).slice(0,3).map((item) => `<div class="list-item"><div class="avatar">${esc(item.time.slice(0,2))}</div><div class="list-item-main"><strong>${esc(item.title)}</strong><small>${esc(item.time)} · ${esc(item.space)} · ${esc(item.detail)}</small></div><span class="status ${item.type === "confirmed" ? "status-ok" : item.type === "pending" ? "status-warning" : "status-neutral"}">${item.type === "confirmed" ? "Confirmado" : item.type === "pending" ? "Pendente" : "Bloqueio"}</span></div>`).join("")}</div></article>
@@ -1134,9 +1524,19 @@
     const days = [["SEG",3],["TER",4],["QUA",5],["QUI",6],["SEX",7],["SÁB",8],["DOM",9]];
     const items = state.partnerAgenda.filter((item) => item.day === state.partnerDay).sort((a,b) => a.time.localeCompare(b.time));
     const venue = state.venues.find((item) => item.id === state.partnerProfile.venueId);
-    const publicSlots = (venue?.schedule || []).flatMap((day) => day.slots.map((slot) => ({ ...slot, date: day.date, shortDate: day.shortDate, weekday: day.weekday, dayLabel: day.dayLabel }))).sort((a,b) => parsePtDateTime(a.date,a.time) - parsePtDateTime(b.date,b.time));
-    return `${pageHeader("Portal do parceiro", "Agenda", "Publique horários com início e término flexíveis, defina preços avulsos e ofereça planos mensalistas.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
-      <section class="agenda-batch-guide"><strong>Criação em lote</strong><span>Escolha o período do mês, os dias da semana e uma faixa de funcionamento. A grade automática cria todos os horários de uma vez e bloqueia qualquer sobreposição no mesmo espaço.</span></section><section class="card"><div class="section-heading"><div><h2>Agenda publicada no marketplace</h2><p>Horários de 30, 60, 90 minutos ou outra duração definida pelo parceiro.</p></div></div><div class="public-agenda-list">${publicSlots.map((slot) => `<div class="public-agenda-row"><div><strong>${esc(slot.weekday)} · ${esc(slot.dayLabel)}</strong><small>${esc(slot.space || "Espaço principal")}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${slot.blocked ? "Bloqueado" : money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}</small></div><div class="item-actions"><button class="button ghost small" data-action="edit-availability" data-date="${esc(slot.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Editar</button><button class="button danger small" data-action="delete-availability" data-date="${esc(slot.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Excluir</button></div></div>`).join("") || emptyState("▦", "Nenhum horário publicado.")}</div></section>
+    const publicEntries = publicAvailabilityEntries(venue).sort((a,b) => parsePtDateTime(a.day.date,a.slot.time) - parsePtDateTime(b.day.date,b.slot.time));
+    const selected = selectedAvailabilityKeys();
+    const selectableEntries = publicEntries.filter(({day,slot}) => !availabilityHasActiveReservation(venue,day,slot));
+    const selectedCount = selected.filter((key) => selectableEntries.some((entry) => entry.key === key)).length;
+    const allSelectableSelected = selectableEntries.length > 0 && selectableEntries.every((entry) => selected.includes(entry.key));
+    return `${pageHeader("Portal do parceiro", "Agenda", "Publique, organize e mantenha os horários disponíveis do marketplace em um único lugar.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
+      <section class="agenda-batch-guide"><strong>Criação em lote</strong><span>Escolha o período do mês, os dias da semana e uma faixa de funcionamento. A grade automática cria todos os horários de uma vez e bloqueia qualquer sobreposição no mesmo espaço. Horários mensalistas com duração especial são mantidos com a mesma duração nas datas equivalentes do mês, reorganizando a sequência diária quando necessário.</span></section>
+      <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada no marketplace</h2><p>Selecione vários horários para excluir em lote. Horários com reserva ativa ficam protegidos.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
+        <div class="public-agenda-list">${publicEntries.map(({day,slot,key}) => {
+          const occupied = availabilityHasActiveReservation(venue,day,slot);
+          const checked = selected.includes(key);
+          return `<div class="public-agenda-row ${checked ? "selected" : ""}"><label class="agenda-row-check" title="${occupied ? "Horário protegido por reserva ativa" : "Selecionar horário"}"><input type="checkbox" data-action="toggle-availability-selection" data-key="${esc(key)}" ${checked ? "checked" : ""} ${occupied ? "disabled" : ""}><span></span></label><div><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong><small>${esc(slot.space || "Espaço principal")}${occupied ? " · reserva ativa" : ""}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${slot.blocked ? "Bloqueado" : money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}</small></div><div class="item-actions"><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Editar</button><button class="button danger small" data-action="delete-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Excluir</button></div></div>`;
+        }).join("") || emptyState("▦", "Nenhum horário publicado.")}</div></section>
       <section class="card"><div class="section-heading"><div><h2>Reservas e bloqueios operacionais</h2><p>Acompanhe os compromissos do período de teste.</p></div></div><div class="calendar-strip">${days.map(([label,day]) => `<button class="day ${day === state.partnerDay ? "active" : ""}" data-action="partner-day" data-day="${day}"><small>${label}</small><strong>${day}</strong></button>`).join("")}</div><div class="timeline">${items.map((item) => `<div class="timeline-row"><div class="timeline-time">${esc(timeRange(item.time,item.endTime))}</div><div class="timeline-event ${item.type === "pending" ? "warning" : item.type === "blocked" ? "blocked" : ""}"><strong>${esc(item.title)}</strong><div class="meta-row"><span>${esc(item.space)}</span><span>${esc(item.detail)}</span></div></div><div class="item-actions"><button class="button ghost small" data-action="agenda-details" data-id="${esc(item.id)}">Abrir</button><button class="button ghost small" data-action="edit-agenda" data-id="${esc(item.id)}">Editar</button></div></div>`).join("") || emptyState("▦", "Nenhum compromisso para o dia selecionado.")}</div></section>`;
   }
 
@@ -1164,22 +1564,28 @@
   }
 
   function partnerFinance() {
-    const recognized = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
-    const complements = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId).reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const partnerReservations = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId);
+    const recognized = partnerReservations.reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
+    const complements = partnerReservations.reduce((sum, item) => sum + Number(item.complementPaid || 0), 0);
+    const cardBase = partnerReservations.filter((item) => item.paymentMethod === "credit_card_asaas").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const pixDirectBase = partnerReservations.filter((item) => item.paymentMethod === "pix_direct_partner").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
     const tamoRate = Number(state.partnerProfile.commissionRate || state.settings.defaultCommission || 0);
     const asaasRate = Number(state.settings.asaasCommissionRate || 0);
-    const asaasCommission = recognized * (asaasRate / 100);
+    const asaasCommission = cardBase * (asaasRate / 100);
     const tamoCommission = recognized * (tamoRate / 100);
     const partnerNet = Math.max(0, recognized - asaasCommission - tamoCommission);
     const liability = activeVoucherLiability(state.partnerProfile.venueId);
-    return `${pageHeader("Portal do parceiro", "Financeiro", "Acompanhamento transparente do valor bruto e da divisão estimada entre parceiro, Asaas e Tâmo On.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
-      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "comissão Asaas", `${asaasRate}% simulados`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado do parceiro")}</section>
-      <section class="grid two"><article class="card"><h2>Vouchers e complementos</h2><div class="detail-list"><div class="detail-line"><span>Vouchers a honrar</span><strong>${money(liability.value)} · ${liability.count} ativos</strong></div><div class="detail-line"><span>Complementos novos</span><strong>${money(complements)}</strong></div><div class="detail-line"><span>Pagamento cancelado</span><strong>Permanece no mês original</strong></div><div class="detail-line"><span>Uso integral do voucher</span><strong>Sem nova obrigação</strong></div><div class="detail-line"><span>Reserva de valor superior</span><strong>Somente o complemento é novo</strong></div></div></article><article class="card"><h2>Conta para recebimento</h2><div class="detail-list"><div class="detail-line"><span>Banco</span><strong>${esc(state.partnerProfile.bank)}</strong></div><div class="detail-line"><span>Agência e conta</span><strong>${esc(state.partnerProfile.branch)} · ${esc(state.partnerProfile.account)}</strong></div><div class="detail-line"><span>Subconta Asaas</span><strong>${esc(state.partnerProfile.asaasSubaccount)}</strong></div><div class="detail-line"><span>Critério da taxa Asaas</span><strong>Estimativa da Preview; na integração será conciliada pela cobrança</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-bank-data">Editar dados</button></article></section>
-      <div class="callout section"><strong>Obrigação pendente</strong><p>O parceiro não pode encerrar as atividades na plataforma enquanto houver vouchers ativos. Para encerrar, deverá honrar os créditos ou ressarcir o Tâmo On para permitir a realocação.</p></div>`;
+    const bankProvider = window.TamoOnBankPix?.provider(state.partnerProfile.bankProviderId || "GENERIC_MANUAL") || { label:state.partnerProfile.bank, mode:"manual" };
+    return `${pageHeader("Portal do parceiro", "Financeiro", "Acompanhamento transparente por meio de pagamento, incluindo valor bruto, custos do Asaas e comissão do Tâmo On.", `<button class="button ghost" data-action="export-partner-finance">Exportar demonstrativo</button>`)}
+      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "custo Asaas estimado", `somente cartão · ${asaasRate}% simulado`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado do parceiro")}</section>
+      <section class="finance-secondary-strip"><span><b>${money(pixDirectBase)}</b> recebido por Pix direto</span><span><b>${money(cardBase)}</b> processado por cartão Asaas</span><span><b>${money(complements)}</b> em complementos</span></section>
+      <section class="grid two"><article class="card"><h2>Vouchers e complementos</h2><div class="detail-list"><div class="detail-line"><span>Vouchers a honrar</span><strong>${money(liability.value)} · ${liability.count} ativos</strong></div><div class="detail-line"><span>Pagamento cancelado</span><strong>Permanece no mês original</strong></div><div class="detail-line"><span>Uso integral do voucher</span><strong>Sem nova obrigação</strong></div><div class="detail-line"><span>Reserva de valor superior</span><strong>Somente o complemento é novo</strong></div></div></article><article class="card"><h2>Integrações de recebimento</h2><div class="detail-list"><div class="detail-line"><span>Pix direto</span><strong>${esc(bankProvider.label)} · ${bankProvider.mode === "api" ? "adaptador preparado" : "confirmação manual"}</strong></div><div class="detail-line"><span>Baixa automática Pix</span><strong>${state.partnerProfile.pixAutoReconciliation && bankProvider.mode === "api" ? "Preparada" : "Não disponível"}</strong></div><div class="detail-line"><span>Webhook bancário</span><strong>${esc(state.partnerProfile.pixWebhookStatus || "Não configurado")}</strong></div><div class="detail-line"><span>Cartão</span><strong>Asaas · checkout hospedado preparado</strong></div><div class="detail-line"><span>Subconta / wallet</span><strong>${esc(state.partnerProfile.asaasSubaccount)} · ${esc(state.partnerProfile.asaasWalletId ? "wallet configurável" : "wallet pendente")}</strong></div></div><button class="button ghost small" style="margin-top:14px" data-action="edit-payment-integrations">Configurar integrações</button></article></section>
+      <div class="callout section"><strong>Rotas separadas</strong><p>Pix direto é creditado na conta bancária do parceiro e conciliado pelo banco. Cartão passa pelo Asaas e fica preparado para split. Nenhuma credencial real fica armazenada nesta Preview.</p></div>`;
   }
 
   function partnerRegistration() {
     const p = state.partnerProfile;
+    const bankProvider = window.TamoOnBankPix?.provider(p.bankProviderId || "GENERIC_MANUAL") || { label:p.bank, mode:"manual" };
     const group = (title, lines, action) => `<article class="detail-group"><div class="section-heading"><div><h2>${esc(title)}</h2></div><button class="button ghost small" data-action="${action}">Editar</button></div><div class="detail-list">${lines.map(([label,value]) => `<div class="detail-line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("")}</div></article>`;
     return `${pageHeader("Portal do parceiro", "Cadastro", "Dados cadastrais, operacionais, contratuais, fiscais e financeiros definidos para a homologação do parceiro.")}
       <section class="details-grid">
@@ -1187,7 +1593,8 @@
         ${group("Responsável", [["Nome",p.responsibleName],["CPF",p.responsibleCpf],["Função",p.responsibleRole],["E-mail",p.email],["Telefone",p.phone],["WhatsApp",p.whatsapp]], "edit-responsible-data")}
         ${group("Endereço", [["Logradouro",p.address],["Bairro",p.neighborhood],["Cidade/UF",`${p.city}/${p.state}`],["CEP",p.zip]], "edit-address-data")}
         ${group("Contratos e regras", [["Contrato",p.contractStatus],["Termos",p.termsStatus],["LGPD",p.privacyStatus],["Cancelamento",p.cancellationPolicy]], "edit-contract-data")}
-        ${group("Fiscal e financeiro", [["Documento ao usuário",p.fiscalIssuer],["NFS-e da comissão",p.commissionInvoice],["Pagamento",p.paymentModel],["Comissão",`${p.commissionRate}%`],["Subconta",p.asaasSubaccount]], "edit-fiscal-data")}
+        ${group("Fiscal e financeiro", [["Documento ao usuário",p.fiscalIssuer],["NFS-e da comissão",p.commissionInvoice],["Pagamento",p.paymentModel],["Comissão",`${p.commissionRate}%`]], "edit-fiscal-data")}
+        ${group("Integrações de pagamento", [["Banco Pix",`${bankProvider.label} · ${bankProvider.mode === "api" ? "API" : "manual"}`],["Status API Pix",p.pixApiStatus],["Baixa automática",p.pixAutoReconciliation ? "Preparada" : "Desativada"],["Webhook Pix",p.pixWebhookStatus],["Cartão",p.asaasCardStatus],["Subconta Asaas",p.asaasSubaccount]], "edit-payment-integrations")}
         <article class="detail-group"><div class="section-heading"><div><h2>Documentos</h2></div><button class="button ghost small" data-action="add-document">Adicionar</button></div><div class="detail-list">${p.documents.map((doc,index) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(doc.name)}</strong><small>${esc(doc.status)}</small></div><button class="button ghost small" data-action="edit-document" data-index="${index}">Alterar</button></div>`).join("")}</div></article>
         <article class="detail-group"><div class="section-heading"><div><h2>Vouchers e encerramento</h2></div><button class="button danger small" data-action="request-partner-closure">Solicitar encerramento</button></div><div class="detail-list"><div class="detail-line"><span>Vouchers ativos</span><strong>${activeVoucherLiability(p.venueId).count}</strong></div><div class="detail-line"><span>Valor a honrar</span><strong>${money(activeVoucherLiability(p.venueId).value)}</strong></div><div class="detail-line"><span>Regra</span><strong>Encerramento bloqueado com créditos pendentes</strong></div></div></article>
       </section>`;
@@ -1238,14 +1645,18 @@
     const refunds = state.cancellationLog.reduce((sum, item) => sum + Number(item.refundValue || 0), 0);
     const tamoRate = Number(state.settings.defaultCommission || 0);
     const asaasRate = Number(state.settings.asaasCommissionRate || 0);
-    const asaasCommission = recognized * (asaasRate / 100);
+    const cardBase = state.reservations.filter((item) => item.paymentMethod === "credit_card_asaas").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const pixDirectBase = state.reservations.filter((item) => item.paymentMethod === "pix_direct_partner").reduce((sum,item)=>sum+Number(item.accountingRecognizedValue || 0),0);
+    const asaasCommission = cardBase * (asaasRate / 100);
     const tamoCommission = recognized * (tamoRate / 100);
     const partnerNet = Math.max(0, recognized - asaasCommission - tamoCommission);
     const activeVouchers = activeCancellationVouchers();
     const voucherLiability = activeVouchers.reduce((sum, item) => sum + Number(item.value || 0), 0);
     return `${pageHeader("Administração", "Financeiro", "Conciliação demonstrativa de pagamentos, vouchers, reembolsos, complementos e obrigações dos parceiros.", `<button class="button ghost" data-action="export-admin-finance">Exportar conciliação</button>`)}
-      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "comissão Asaas", `${asaasRate}% simulados`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado aos parceiros")}</section>
+      <section class="stats-grid compact-kpi-grid financial-kpi-grid">${stat(money(recognized), "valor bruto total")}${stat(money(asaasCommission), "custo Asaas estimado", `somente cartão · ${asaasRate}% simulado`)}${stat(money(tamoCommission), "comissão Tâmo On", `${tamoRate}%`)}${stat(money(partnerNet), "líquido estimado aos parceiros")}</section>
+      <section class="finance-secondary-strip"><span><b>${money(pixDirectBase)}</b> por Pix direto ao parceiro</span><span><b>${money(cardBase)}</b> por cartão Asaas</span><span><b>${state.paymentIntents.length}</b> intents de pagamento</span><span><b>${state.paymentWebhookLog.length}</b> webhooks processados</span></section>
       <section class="finance-secondary-strip"><span><b>${money(voucherLiability)}</b> em vouchers ativos · ${activeVouchers.length} créditos</span><span><b>${money(refunds)}</b> em reembolsos</span><span><b>${money(complements)}</b> em complementos</span></section>
+      <section class="card"><div class="section-heading"><div><h2>Conciliação por provedor</h2><p>Intents locais que representam o contrato futuro com bancos e Asaas.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Intent</th><th>Reserva</th><th>Meio</th><th>Provedor</th><th>Valor</th><th>Status</th></tr></thead><tbody>${state.paymentIntents.map((intent)=>`<tr><td>${esc(intent.id)}</td><td>${esc(intent.reservationId)}</td><td>${esc(paymentMethodLabel(intent.method))}</td><td>${esc(intent.provider || intent.normalized?.provider || "—")}</td><td>${money(intent.amount)}</td><td><span class="status ${intent.status === "CONFIRMED" || intent.status === "SETTLED" ? "status-ok" : "status-warning"}">${esc(intent.status)}</span></td></tr>`).join("") || `<tr><td colspan="6">Nenhuma intent criada.</td></tr>`}</tbody></table></div></section>
       <section class="card"><div class="section-heading"><div><h2>Vouchers de cancelamento</h2><p>Prazo condicionado à oferta de horários compatíveis e responsabilidade do parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Voucher</th><th>Parceiro</th><th>Valor</th><th>Uso</th><th>Faixa</th><th>Datas</th><th>Validade</th><th>Status</th><th>Ação</th></tr></thead><tbody>${state.cancellationVouchers.map((voucher) => `<tr><td>${esc(voucher.code)}</td><td>${esc(voucher.venue)}</td><td>${money(voucher.value)}</td><td>${voucher.eligibleBookingMode === "monthly" ? "Somente mensalista" : "Avulsa ou mensalista"}</td><td>${esc(voucher.originalTime || "—")} · ${esc(voucher.compatibilityWindow || "—")}</td><td>${esc(voucher.compatibleDatesCount || 0)}/${esc(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates)}</td><td>${esc(voucher.expiresAt)}</td><td><span class="status ${["active", "active_extended"].includes(voucher.status) ? "status-ok" : voucher.status === "reserved" ? "status-warning" : "status-neutral"}">${esc(voucherStatusLabel(voucher))}</span></td><td>${["active", "active_extended"].includes(voucher.status) ? `<button class="button ghost small" data-action="reassign-cancellation-voucher" data-id="${esc(voucher.id)}">Ressarcir e realocar</button>` : "—"}</td></tr>`).join("") || `<tr><td colspan="9">Nenhum voucher gerado.</td></tr>`}</tbody></table></div></section>
       <section class="card section"><div class="section-heading"><div><h2>Cancelamentos e reembolsos</h2><p>O responsável pelo cancelamento suporta a consequência financeira aplicável.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Registro</th><th>Reserva</th><th>Responsável</th><th>Modalidade</th><th>Reembolso</th><th>Taxas</th></tr></thead><tbody>${state.cancellationLog.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.reservationId || item.partnerReservationId)}</td><td>${esc(cancellationSourceLabel(item.source))}</td><td>${item.mode === "voucher" ? "Voucher" : item.mode === "refund" ? "Reembolso integral" : "Sem compensação"}</td><td>${money(item.refundValue || 0)}</td><td>${item.feeResponsibility ? esc(cancellationSourceLabel(item.feeResponsibility)) : "Não aplicável"}</td></tr>`).join("") || `<tr><td colspan="6">Nenhum cancelamento processado.</td></tr>`}</tbody></table></div></section>
       <section class="card section"><div class="section-heading"><div><h2>Análises excepcionais</h2><p>Cancelamentos fora do prazo submetidos conjuntamente ao Tâmo On e ao parceiro.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Solicitação</th><th>Reserva</th><th>Parceiro</th><th>Status</th><th>Decisões</th></tr></thead><tbody>${state.cancellationExceptionReviews.map((review) => `<tr><td>${esc(review.id)}</td><td>${esc(review.reservationId)}</td><td>${esc(review.venue)}</td><td><span class="status status-warning">${esc(review.status)}</span></td><td>Tâmo On: ${esc(review.tamoDecision)} · Parceiro: ${esc(review.partnerDecision)}</td></tr>`).join("") || `<tr><td colspan="5">Nenhuma análise excepcional pendente.</td></tr>`}</tbody></table></div></section>
@@ -1257,6 +1668,7 @@
     const toggle = (key,title,help,locked=false) => `<div class="toggle-row"><div class="toggle-copy"><strong>${esc(title)}</strong><small>${esc(help)}</small></div><button class="switch ${settings[key] ? "on" : ""}" data-action="toggle-setting" data-key="${esc(key)}" aria-pressed="${settings[key]}" ${locked ? "disabled" : ""}></button></div>`;
     return `${pageHeader("Administração", "Configurações", "Controles locais da Preview. Pagamentos reais permanecem bloqueados.", `<button class="button ghost" data-action="edit-commercial-settings">Editar regras comerciais</button>`)}
       <section class="grid two"><article class="card"><h2>Operação</h2>${toggle("marketplaceEnabled","Área de parceiros","Exibe as áreas demonstrativas.")}${toggle("newPartners","Novos cadastros","Permite incluir parceiros fictícios.")}${toggle("vouchersEnabled","Vouchers","Exibe créditos de cancelamento e vouchers promocionais.")}${toggle("notificationEmails","Avisos por e-mail","Simulação de comunicações operacionais.")}</article><article class="card"><h2>Regras comerciais</h2><div class="detail-list" style="margin-top:14px"><div class="detail-line"><span>Comissão Tâmo On</span><strong>${esc(settings.defaultCommission)}%</strong></div><div class="detail-line"><span>Comissão Asaas simulada</span><strong>${esc(settings.asaasCommissionRate)}%</strong></div><div class="detail-line"><span>Prazo do usuário</span><strong>${esc(settings.cancellationHours)} horas</strong></div><div class="detail-line"><span>Validade nominal</span><strong>${esc(settings.voucherValidityDays)} dias</strong></div><div class="detail-line"><span>Faixa compatível</span><strong>± ${esc(settings.voucherCompatibilityWindowHours)} horas</strong></div><div class="detail-line"><span>Mínimo de datas</span><strong>${esc(settings.voucherMinimumCompatibleDates)}</strong></div><div class="detail-line"><span>Prorrogação</span><strong>${esc(settings.voucherExtensionDays)} dias</strong></div><div class="detail-line"><span>Persistência</span><strong>LocalStorage do navegador</strong></div></div></article></section>
+      <section class="section"><div class="section-heading"><div><h2>Provedores de pagamento</h2><p>Camada multiprovedor preparada para Pix direto e cartão via Asaas. Credenciais e chamadas reais continuam fora do frontend.</p></div></div><div class="provider-grid">${(window.TamoOnBankPix?.listProviders()||[]).map((provider)=>`<article class="provider-card"><div><strong>${esc(provider.label)}</strong><small>Pix · ${provider.mode === "api" ? "adaptador automático" : "fallback manual"}</small></div><span class="status ${provider.mode === "api" ? "status-ok" : "status-warning"}">${provider.mode === "api" ? "Contrato pronto" : "Manual"}</span></article>`).join("")}<article class="provider-card"><div><strong>Asaas</strong><small>Cartão · checkout hospedado + split</small></div><span class="status status-warning">Sandbox preparado</span></article></div></section>
       <section class="section"><button class="button danger" data-action="reset-local-data">Restaurar dados iniciais</button></section>`;
   }
 
@@ -1330,6 +1742,10 @@
     reservationTitle.textContent = `${venue.name} · ${timeRange(time,endTime)}`;
     monthlyReservationToggle.checked = false;
     reservationPolicyAcknowledge.checked = false;
+    if (paymentMethodSelect) paymentMethodSelect.value = window.TAMO_ON_PARTNERS_CONFIG?.payments?.defaultMethod || "pix_direct_partner";
+    if (pixSplitToggle) pixSplitToggle.checked = false;
+    if (pixSplitMode) pixSplitMode.value = "equal";
+    if (pixSplitConfig) pixSplitConfig.hidden = true;
     if (reservationPolicyText) reservationPolicyText.textContent = `Cancelamento pelo usuário até ${state.settings.cancellationHours} horas antes gera voucher de uso único. Cancelamento pelo parceiro ou pelo Tâmo On gera reembolso integral, com taxas suportadas pelo responsável. Fora do prazo não há crédito automático. O voucher tem prazo nominal de ${state.settings.voucherValidityDays} dias, mas só expira normalmente se houver ao menos ${state.settings.voucherMinimumCompatibleDates} datas em faixa compatível de ±${state.settings.voucherCompatibilityWindowHours} horas e no mesmo período do dia.`;
     populateVoucherOptions();
     updateMonthlyReservationPreview();
@@ -1346,16 +1762,22 @@
     if (statusKey === "confirmed") {
       const complement = Number(reservation.paymentDue || 0);
       const hadAccounting = Number(reservation.accountingRecognizedValue || 0) > 0;
+      const paymentMethod = reservation.paymentMethod || "credit_card_asaas";
+      const isCard = paymentMethod === "credit_card_asaas";
+      const provider = reservation.paymentProvider || (isCard ? "ASAAS" : "GENERIC_MANUAL");
       Object.assign(reservation, {
         statusKey: "confirmed",
         status: complement > 0 ? "Confirmada — complemento pago" : "Confirmada",
-        endpoint: complement > 0 ? "payment.complement.confirmed" : "payment.confirmed",
-        paymentStatus: complement > 0 ? "Complemento pago via Asaas" : "Pago",
+        endpoint: isCard ? "asaas.webhook.payment_confirmed" : "bank_pix.webhook.received",
+        paymentStatus: complement > 0 ? (isCard ? "Complemento pago via cartão Asaas" : "Complemento Pix confirmado pelo banco") : (isCard ? "Pago via cartão Asaas" : "Pix confirmado pelo banco do parceiro"),
         complementPaid: complement,
         accountingRecognizedValue: complement > 0 ? complement : Number(reservation.accountingRecognizedValue || reservation.value),
         fiscalObligationValue: complement > 0 ? complement : Number(reservation.fiscalObligationValue || reservation.value),
         accountingMonth: accountingMonth()
       });
+      const paymentIntent = state.paymentIntents.find((item) => item.id === reservation.paymentIntentId);
+      if (paymentIntent) Object.assign(paymentIntent, { status:"CONFIRMED", confirmedAt:new Date().toLocaleString("pt-BR") });
+      state.paymentWebhookLog.unshift({ id:nextId("WH-", state.paymentWebhookLog), provider, event:isCard ? "PAYMENT_CONFIRMED" : "PIX_RECEIVED", reservationId:reservation.id, status:"Processado", createdAt:new Date().toLocaleString("pt-BR") });
       if (linkedVoucher) {
         Object.assign(linkedVoucher, { status: "used", usedAt: new Date().toLocaleString("pt-BR"), usedReservationId: reservation.id, consumedValue: linkedVoucher.value });
       }
@@ -1394,7 +1816,11 @@
     const action = button.dataset.action;
     const id = button.dataset.id;
 
-    if (action === "toggle-favorite") {
+    if (action === "pix-split-details") {
+      openPixSplitDetails(id);
+    } else if (action === "simulate-pix-share-paid") {
+      simulatePixSharePaid(id);
+    } else if (action === "toggle-favorite") {
       state.favorites = state.favorites.includes(id) ? state.favorites.filter((item) => item !== id) : [...state.favorites,id];
       saveState(); render(); showToast(state.favorites.includes(id) ? "Quadra adicionada aos favoritos." : "Quadra removida dos favoritos.");
     } else if (action === "reserve-slot") {
@@ -1408,7 +1834,7 @@
       if (reservation) {
         const linkedEvent = state.groupEvents.find((event) => event.id === reservation.eventId);
         const latestPush = state.pushLog.find((push) => push.eventId === reservation.eventId);
-        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Período</span><strong>${esc(timeRange(reservation.time,reservation.endTime))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.monthly ? `Mensalista · ${esc(reservation.occurrenceCount)} datas` : "Avulsa"}</strong></div><div class="detail-line"><span>Valor total</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div><div class="detail-line"><span>Valor abatido</span><strong>${money(reservation.voucherAppliedValue || 0)}</strong></div><div class="detail-line"><span>Complemento</span><strong>${money(reservation.paymentDue || reservation.complementPaid || 0)}</strong></div><div class="detail-line"><span>Política aceita</span><strong>${reservation.cancellationPolicyAccepted ? "Sim" : "Não"}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(reservation.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.cancellationMode === "voucher" ? "Voucher" : reservation.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(reservation.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${reservation.refundFeePayer ? esc(cancellationSourceLabel(reservation.refundFeePayer)) : "Não aplicável"}</strong></div><div class="detail-line"><span>Análise excepcional</span><strong>${esc(reservation.exceptionReviewStatus || "Não solicitada")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint || "cancellation.pending")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
+        openDetail({ eyebrow: "Reserva e automação", title: reservation.id, body: `<div class="details-grid"><div class="detail-group"><h3>Horário</h3><div class="detail-list"><div class="detail-line"><span>Local</span><strong>${esc(reservation.venue)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(reservation.date)}</strong></div><div class="detail-line"><span>Período</span><strong>${esc(timeRange(reservation.time,reservation.endTime))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.monthly ? `Mensalista · ${esc(reservation.occurrenceCount)} datas` : "Avulsa"}</strong></div><div class="detail-line"><span>Valor total</span><strong>${money(reservation.value)}</strong></div></div></div><div class="detail-group"><h3>Grupo e permissão</h3><div class="detail-list"><div class="detail-line"><span>Grupo</span><strong>${esc(reservation.groupName || "Não informado")}</strong></div><div class="detail-line"><span>Função do usuário</span><strong>${esc(reservation.groupRole || "Não informada")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(reservation.event || "Não informado")}</strong></div><div class="detail-line"><span>Origem</span><strong>${reservation.eventMode === "new" ? "Criado pela reserva" : "Evento existente"}</strong></div></div></div><div class="detail-group"><h3>Pagamento e publicação</h3><div class="detail-list"><div class="detail-line"><span>Reserva</span><strong>${esc(reservation.status)}</strong></div><div class="detail-line"><span>Endpoint do pagamento</span><strong>${esc(reservation.endpoint)}</strong></div><div class="detail-line"><span>Meio de pagamento</span><strong>${esc(reservation.paymentMethodLabel || paymentMethodLabel(reservation.paymentMethod || "credit_card_asaas"))}</strong></div><div class="detail-line"><span>Provedor</span><strong>${esc(reservation.paymentProvider || "Não informado")}</strong></div><div class="detail-line"><span>Intent</span><strong>${esc(reservation.paymentIntentId || "Não criado")}</strong></div><div class="detail-line"><span>Evento</span><strong>${esc(linkedEvent?.status || eventPublicationLabel(reservation.eventPublicationStatus).label)}</strong></div><div class="detail-line"><span>Endpoint de publicação</span><strong>${esc(linkedEvent?.publicationEndpoint || "Aguardando pagamento")}</strong></div></div></div><div class="detail-group"><h3>Notificação automática</h3><div class="detail-list"><div class="detail-line"><span>Status do push</span><strong>${esc(reservation.pushStatus || linkedEvent?.pushStatus || "Não iniciado")}</strong></div><div class="detail-line"><span>Destinatários</span><strong>${latestPush ? `${esc(latestPush.recipients)} membros` : "Aguardando publicação"}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(latestPush?.endpoint || "push.group_members")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucher || "Não aplicado")}</strong></div><div class="detail-line"><span>Valor abatido</span><strong>${money(reservation.voucherAppliedValue || 0)}</strong></div><div class="detail-line"><span>Complemento</span><strong>${money(reservation.paymentDue || reservation.complementPaid || 0)}</strong></div><div class="detail-line"><span>Política aceita</span><strong>${reservation.cancellationPolicyAccepted ? "Sim" : "Não"}</strong></div></div></div>${reservation.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(reservation.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${reservation.cancellationMode === "voucher" ? "Voucher" : reservation.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(reservation.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(reservation.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(reservation.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${reservation.refundFeePayer ? esc(cancellationSourceLabel(reservation.refundFeePayer)) : "Não aplicável"}</strong></div><div class="detail-line"><span>Análise excepcional</span><strong>${esc(reservation.exceptionReviewStatus || "Não solicitada")}</strong></div><div class="detail-line"><span>Endpoint</span><strong>${esc(reservation.endpoint || "cancellation.pending")}</strong></div><div class="detail-line"><span>Horário</span><strong>${reservation.slotReleased ? "Liberado" : "Bloqueado"}</strong></div></div></div>` : ""}</div>` });
       }
     } else if (action === "cancel-paid-user-reservation") {
       openPaidCancellation("user", id);
@@ -1430,6 +1856,24 @@
       openDetail({ eyebrow: "Perfil principal", title: "Gerenciar dados no Tâmo On", body: `<div class="profile-central-explanation"><p>Nome e e-mail são fornecidos pela conta Google. Telefone, cidade e preferências são preenchidos uma única vez no perfil principal do Tâmo On.</p><div class="detail-list"><div class="detail-line"><span>Marketplace</span><strong>Somente leitura</strong></div><div class="detail-line"><span>Grupos</span><strong>Usa o mesmo perfil</strong></div><div class="detail-line"><span>Administração e organização</span><strong>Permissões herdadas dos grupos</strong></div></div><p class="dialog-description">Na aplicação integrada, este botão abrirá o perfil principal. A Preview não cria outro cadastro nem duplica os campos pessoais.</p></div>` });
     } else if (action === "partner-day") {
       state.partnerDay = Number(button.dataset.day); saveState(); render();
+    } else if (action === "toggle-availability-selection") {
+      const key=button.dataset.key;
+      const selected=selectedAvailabilityKeys();
+      state.ui.selectedAvailabilityKeys=button.checked ? [...new Set([...selected,key])] : selected.filter((item)=>item!==key);
+      saveState();render();
+    } else if (action === "toggle-all-availability") {
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const eligible=publicAvailabilityEntries(venue).filter(({day,slot})=>!availabilityHasActiveReservation(venue,day,slot)).map((entry)=>entry.key);
+      state.ui.selectedAvailabilityKeys=button.checked ? eligible : [];
+      saveState();render();
+    } else if (action === "delete-selected-availability") {
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const selected=selectedAvailabilityKeys();
+      const entries=publicAvailabilityEntries(venue).filter((entry)=>selected.includes(entry.key));
+      const blocked=entries.filter(({day,slot})=>availabilityHasActiveReservation(venue,day,slot));
+      if(blocked.length){openDetail({eyebrow:"Agenda",title:"Há horários protegidos",body:`<div class="cancellation-warning"><strong>Exclusão em lote interrompida</strong><p>${esc(blocked.length)} horário(s) selecionado(s) possuem reserva ativa. Remova esses itens da seleção antes de continuar.</p></div>`});return;}
+      if(!entries.length){showToast("Selecione ao menos um horário para excluir.");return;}
+      askConfirm({title:"Excluir horários selecionados",message:`Excluir ${entries.length} horário(s) publicados? Horários ocupados não entram nesta seleção.`,confirmLabel:"Excluir horários",onConfirm:()=>{const removed=removeAvailabilityEntries(venue,entries.map((entry)=>entry.key));saveState();render();showToast(`${removed} horário(s) excluído(s) da agenda.`);}});
     } else if (action === "new-availability" || action === "edit-availability") {
       const venue = state.venues.find((item) => item.id === state.partnerProfile.venueId);
       if (!venue) return;
@@ -1438,28 +1882,62 @@
       const defaultSpace = state.partnerSpaces.find((space) => space.name === normalizedSlotSpace(editSlot)) || state.partnerSpaces[0];
       const defaultIsoDate = editDay ? `${editDay.date.slice(6)}-${editDay.date.slice(3,5)}-${editDay.date.slice(0,2)}` : "2026-08-01";
       if (editSlot) {
-        openForm({ eyebrow:"Agenda pública", title:"Editar horário disponível", description:"Altere este horário sem criar conflito com outro período do mesmo espaço.", fields:[
+        openForm({ eyebrow:"Agenda pública", title:"Editar horário disponível", description:"Altere este horário sem criar conflito. Se ele estiver elegível para mensalista, a mesma duração será sincronizada automaticamente nas datas equivalentes restantes do mês.", fields:[
           {name:"date",label:"Data",type:"date",value:defaultIsoDate,required:true},
           {name:"startTime",label:"Início",type:"time",value:editSlot.time,required:true},
           {name:"endTime",label:"Término",type:"time",value:slotEndTime(editSlot),required:true},
           {name:"space",label:"Espaço",type:"select",value:normalizedSlotSpace(editSlot),options:state.partnerSpaces.filter((item)=>item.status==="Ativo").map((item)=>item.name),required:true},
           {name:"price",label:"Valor avulso",type:"number",step:"0.01",value:editSlot.price,required:true},
           {name:"monthlyEnabled",label:"Disponível para mensalista",type:"select",value:editSlot.monthlyEligible?"Sim":"Não",options:["Sim","Não"]},
-          {name:"monthlyPrice",label:"Valor do pacote mensal",type:"number",step:"0.01",value:editSlot.monthlyPrice||defaultSpace?.monthlyPrice||440,help:"Valor total da aquisição mensalista."}
+          {name:"monthlyPrice",label:"Valor do pacote mensal",type:"number",step:"0.01",value:editSlot.monthlyPrice||defaultSpace?.monthlyPrice||440,help:"Valor total da aquisição mensalista."},
+          {name:"cascadeFollowing",label:"Reorganizar horários subsequentes",type:"select",value:"Sim",options:["Sim","Não"],full:true,help:"Ao alterar o término, os próximos horários do mesmo dia e espaço passam a iniciar no término do anterior, preservando a duração de cada período."}
         ], submitLabel:"Salvar horário", onSubmit:(data)=>{
           const start=timeToMinutes(data.startTime), end=timeToMinutes(data.endTime);
           if(end<=start){showToast("O horário de término deve ser posterior ao início.");return;}
           const meta=scheduleDayFromDate(isoToLocalDate(data.date));
-          const conflict=scheduleConflict(venue,meta,data.space,data.startTime,data.endTime,editSlot);
-          if(conflict){openDetail({eyebrow:"Conflito de agenda",title:"Horário sobreposto",body:`<div class="cancellation-warning"><strong>Não foi possível salvar</strong><p>${esc(meta.date)} · ${esc(data.space)} já possui o período ${esc(timeRange(conflict.time,slotEndTime(conflict)))}. Escolha outro intervalo.</p></div>`});return;}
+          const sameDay=meta.shortDate===editDay.shortDate;
+          const sameSpace=data.space===normalizedSlotSpace(editSlot);
+          const cascade=data.cascadeFollowing==="Sim" && sameDay && sameSpace;
+          let cascadePlan={valid:true,changes:[]};
+          if(cascade){
+            cascadePlan=cascadeAvailabilityPlan(venue,editDay,editSlot,data.endTime);
+            if(!cascadePlan.valid){openDetail({eyebrow:"Reorganização da agenda",title:"Não foi possível ajustar os próximos horários",body:`<div class="cancellation-warning"><strong>Alteração interrompida</strong><p>${esc(cascadePlan.reason)}</p></div>`});return;}
+            const followingSet=new Set(cascadePlan.changes.map((change)=>change.slot));
+            const unaffected=editDay.slots.filter((slot)=>slot!==editSlot && !followingSet.has(slot) && normalizedSlotSpace(slot)===data.space);
+            const proposed=[{startTime:data.startTime,endTime:data.endTime},...cascadePlan.changes];
+            const collision=proposed.find((period)=>unaffected.some((slot)=>timeRangesOverlap(period.startTime,period.endTime,slot.time,slotEndTime(slot))));
+            if(collision){const conflict=unaffected.find((slot)=>timeRangesOverlap(collision.startTime,collision.endTime,slot.time,slotEndTime(slot)));openDetail({eyebrow:"Conflito de agenda",title:"A sequência encontraria outro horário",body:`<div class="cancellation-warning"><strong>Não foi possível salvar</strong><p>A reorganização de ${esc(timeRange(collision.startTime,collision.endTime))} encontraria o período independente ${esc(timeRange(conflict.time,slotEndTime(conflict)))}. Ajuste o término ou edite a outra sequência.</p></div>`});return;}
+          } else {
+            const conflict=scheduleConflict(venue,meta,data.space,data.startTime,data.endTime,editSlot);
+            if(conflict){openDetail({eyebrow:"Conflito de agenda",title:"Horário sobreposto",body:`<div class="cancellation-warning"><strong>Não foi possível salvar</strong><p>${esc(meta.date)} · ${esc(data.space)} já possui o período ${esc(timeRange(conflict.time,slotEndTime(conflict)))}. Ative a reorganização automática para deslocar a sequência quando aplicável.</p></div>`});return;}
+          }
+          let monthlyPlan={valid:true,dayPlans:[]};
+          const syncMonthly=data.monthlyEnabled==="Sim" && sameDay && sameSpace;
+          if(syncMonthly){
+            monthlyPlan=monthlyAvailabilityPropagationPlan(venue,editDay,editSlot,data.startTime,data.endTime);
+            if(!monthlyPlan.valid){openDetail({eyebrow:"Mensalista",title:"Não foi possível sincronizar o mês",body:`<div class="cancellation-warning"><strong>Alteração interrompida</strong><p>${esc(monthlyPlan.reason)}</p><p>As datas mensalistas precisam manter a mesma duração sem sobrepor horários ou deslocar reservas existentes.</p></div>`});return;}
+          }
+          if(cascade){
+            Object.assign(editSlot,{time:data.startTime,endTime:data.endTime,price:Number(data.price),space:data.space,monthlyEligible:data.monthlyEnabled==="Sim",monthlyPrice:data.monthlyEnabled==="Sim"?Number(data.monthlyPrice):0});
+            cascadePlan.changes.forEach((change)=>{change.slot.time=change.startTime;change.slot.endTime=change.endTime;});
+            editDay.slots.sort((a,b)=>a.time.localeCompare(b.time));
+            const monthlyResult=syncMonthly?applyMonthlyAvailabilityPropagation(monthlyPlan,data.startTime,data.endTime,Number(data.monthlyPrice)):null;
+            state.ui.selectedAvailabilityKeys=[];
+            saveState();render();
+            if(monthlyResult?.changedDays){showToast(`Horário mensalista sincronizado em ${monthlyResult.changedDays + 1} data(s); ${cascadePlan.changes.length + monthlyResult.shiftedSlots} período(s) subsequente(s) reorganizado(s).`);}
+            else showToast(cascadePlan.changes.length?`Horário atualizado e ${cascadePlan.changes.length} período(s) subsequente(s) reorganizado(s).`:"Horário atualizado.");
+            return;
+          }
           editDay.slots=editDay.slots.filter((slot)=>slot!==editSlot);
           if(!editDay.slots.length) venue.schedule=venue.schedule.filter((day)=>day!==editDay);
           let day=venue.schedule.find((item)=>item.shortDate===meta.shortDate);
           if(!day){day={...meta,slots:[]};venue.schedule.push(day);}
           day.slots.push({time:data.startTime,endTime:data.endTime,price:Number(data.price),space:data.space,monthlyEligible:data.monthlyEnabled==="Sim",monthlyPrice:data.monthlyEnabled==="Sim"?Number(data.monthlyPrice):0});
           day.slots.sort((a,b)=>a.time.localeCompare(b.time));
+          const monthlyResult=syncMonthly?applyMonthlyAvailabilityPropagation(monthlyPlan,data.startTime,data.endTime,Number(data.monthlyPrice)):null;
           venue.schedule.sort((a,b)=>parsePtDateTime(a.date,"12:00")-parsePtDateTime(b.date,"12:00"));
-          saveState();render();showToast("Horário atualizado.");
+          state.ui.selectedAvailabilityKeys=[];
+          saveState();render();showToast(monthlyResult?.changedDays?`Horário atualizado e duração mensalista replicada em ${monthlyResult.changedDays} outra(s) data(s).`:"Horário atualizado.");
         }});
       } else {
         openForm({ eyebrow:"Agenda pública", title:"Criar agenda em lote", description:"Configure uma faixa do mês. A grade automática divide o período diário em vários horários e publica tudo de uma vez.", fields:[
@@ -1503,7 +1981,7 @@
       if(!day||!slot)return;
       const occupied=findReservationForSlot(venue.id,slot.time,day.shortDate,slotEndTime(slot),normalizedSlotSpace(slot));
       if(occupied){openDetail({eyebrow:"Agenda",title:"Horário com reserva ativa",body:`<div class="cancellation-warning"><strong>Exclusão bloqueada</strong><p>O período ${esc(timeRange(slot.time,slotEndTime(slot)))} em ${esc(day.date)} está vinculado à reserva ${esc(occupied.id)}. Cancele ou trate a reserva antes de excluir a disponibilidade.</p></div>`});return;}
-      askConfirm({title:"Excluir horário",message:`Excluir ${day.date}, ${timeRange(slot.time,slotEndTime(slot))}, em ${normalizedSlotSpace(slot)}?`,confirmLabel:"Excluir horário",onConfirm:()=>{day.slots=day.slots.filter((item)=>item!==slot);if(!day.slots.length)venue.schedule=venue.schedule.filter((item)=>item!==day);saveState();render();showToast("Horário excluído da agenda.");}});
+      askConfirm({title:"Excluir horário",message:`Excluir ${day.date}, ${timeRange(slot.time,slotEndTime(slot))}, em ${normalizedSlotSpace(slot)}?`,confirmLabel:"Excluir horário",onConfirm:()=>{const key=availabilityKey(day.shortDate,slot.time,normalizedSlotSpace(slot));day.slots=day.slots.filter((item)=>item!==slot);if(!day.slots.length)venue.schedule=venue.schedule.filter((item)=>item!==day);state.ui.selectedAvailabilityKeys=selectedAvailabilityKeys().filter((item)=>item!==key);saveState();render();showToast("Horário excluído da agenda.");}});
     } else if (action === "new-block") {
       openForm({ eyebrow:"Agenda",title:"Novo bloqueio",description:"O bloqueio será salvo apenas nesta Preview.",fields:[
         {name:"day",label:"Dia de agosto",type:"number",value:state.partnerDay,min:3,max:31,required:true},{name:"time",label:"Início",type:"time",value:"21:00",required:true},{name:"endTime",label:"Término",type:"time",value:"22:00",required:true},
@@ -1549,7 +2027,7 @@
       exportCsv(`financeiro-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Valor","Status","Pagamento","Voucher","Reconhecido"],...state.partnerReservations.map((r)=>[r.id,r.client,r.value,r.status,r.payment,r.voucherGeneratedCode||"",r.accountingRecognizedValue||0])]);
     } else if (action === "edit-bank-data") {
       const p=state.partnerProfile;openForm({eyebrow:"Financeiro",title:"Editar dados bancários",fields:[{name:"bank",label:"Banco",value:p.bank},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount,full:true}],onSubmit:(data)=>{Object.assign(p,data);saveState();render();showToast("Dados bancários atualizados localmente.");}});
-    } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data"].includes(action)) {
+    } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data","edit-payment-integrations"].includes(action)) {
       editPartnerProfileSection(action);
     } else if (action === "add-document" || action === "edit-document") {
       const index=Number(button.dataset.index);const item=action==="edit-document"?state.partnerProfile.documents[index]:null;
@@ -1619,10 +2097,11 @@
       "edit-responsible-data":{title:"Responsável e contatos",fields:[{name:"responsibleName",label:"Nome",value:p.responsibleName},{name:"responsibleCpf",label:"CPF",value:p.responsibleCpf},{name:"responsibleRole",label:"Função",value:p.responsibleRole},{name:"email",label:"E-mail",type:"email",value:p.email},{name:"phone",label:"Telefone",value:p.phone},{name:"whatsapp",label:"WhatsApp",value:p.whatsapp}]},
       "edit-address-data":{title:"Endereço",fields:[{name:"address",label:"Logradouro",value:p.address,full:true},{name:"neighborhood",label:"Bairro",value:p.neighborhood},{name:"city",label:"Cidade",value:p.city},{name:"state",label:"UF",value:p.state},{name:"zip",label:"CEP",value:p.zip}]},
       "edit-contract-data":{title:"Contratos e regras",fields:[{name:"contractStatus",label:"Contrato",type:"select",value:p.contractStatus,options:["Não enviado","Enviado","Assinado"]},{name:"termsStatus",label:"Termos",type:"select",value:p.termsStatus,options:["Pendente","Aceitos"]},{name:"privacyStatus",label:"LGPD",type:"select",value:p.privacyStatus,options:["Pendente","Aceita"]},{name:"cancellationPolicy",label:"Política de cancelamento",value:p.cancellationPolicy,full:true}]},
-      "edit-fiscal-data":{title:"Fiscal e financeiro",fields:[{name:"fiscalIssuer",label:"Documento fiscal do serviço",value:p.fiscalIssuer,full:true},{name:"commissionInvoice",label:"Documento fiscal da comissão",value:p.commissionInvoice,full:true},{name:"paymentModel",label:"Modelo de pagamento",value:p.paymentModel},{name:"commissionRate",label:"Comissão (%)",type:"number",step:"0.1",value:p.commissionRate},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount}]}
+      "edit-fiscal-data":{title:"Fiscal e financeiro",fields:[{name:"fiscalIssuer",label:"Documento fiscal do serviço",value:p.fiscalIssuer,full:true},{name:"commissionInvoice",label:"Documento fiscal da comissão",value:p.commissionInvoice,full:true},{name:"paymentModel",label:"Modelo de pagamento",value:p.paymentModel},{name:"commissionRate",label:"Comissão (%)",type:"number",step:"0.1",value:p.commissionRate}]},
+      "edit-payment-integrations":{title:"Integrações de pagamento",fields:[{name:"bankProviderId",label:"Banco / adaptador Pix",type:"select",value:p.bankProviderId||"GENERIC_MANUAL",options:(window.TamoOnBankPix?.listProviders()||[]).map((provider)=>({value:provider.id,label:provider.label}))},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"pixApiStatus",label:"Status da API Pix",value:p.pixApiStatus,full:true},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount},{name:"asaasWalletId",label:"Wallet ID Asaas",value:p.asaasWalletId},{name:"asaasCardStatus",label:"Status do cartão Asaas",value:p.asaasCardStatus,full:true}]}
     };
     const config=configs[action];if(!config)return;
-    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);Object.assign(p,data);saveState();render();showToast(`${config.title} atualizado.`);}});
+    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);saveState();render();showToast(`${config.title} atualizado.`);}});
   }
 
   function resetState() {
@@ -1672,6 +2151,11 @@
   eventSelect.addEventListener("change", updateNewEventPanel);
   newEventTitle.addEventListener("input", updateReservationSubmitState);
   voucherSelect.addEventListener("change", updateVoucherPaymentPreview);
+  paymentMethodSelect?.addEventListener("change", () => { updateVoucherPaymentPreview(); updatePixSplitPanel(); updateReservationSubmitState(); });
+  pixSplitToggle?.addEventListener("change", () => { updatePixSplitPanel(); updateReservationSubmitState(); });
+  pixSplitMode?.addEventListener("change", updatePixSplitPanel);
+  pixSplitMembers?.addEventListener("change", (event) => { if (event.target.matches('[data-split-member]')) updatePixSplitPanel(); });
+  pixSplitMembers?.addEventListener("input", (event) => { if (event.target.matches('[data-split-value]')) updatePixSplitSummary(); });
   monthlyReservationToggle.addEventListener("change", () => { if (eventSelect.value === "__new__" && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation); updateMonthlyReservationPreview(); populateVoucherOptions(); updateReservationSubmitState(); });
   reservationPolicyAcknowledge.addEventListener("change", updateReservationSubmitState);
 
@@ -1757,6 +2241,11 @@
         return;
       }
     }
+    const splitValidation = validatePixSplit();
+    if (!splitValidation.valid) {
+      showToast("Revise o rateio: selecione ao menos dois membros e faça a soma das cotas coincidir com o valor a pagar.");
+      return;
+    }
     const id=nextId("R-",state.reservations);
     const promoVoucher = String(voucherSelect.value || "").startsWith("PROMO:") ? String(voucherSelect.value).slice(6) : "";
     const voucherAppliedValue = Number(selectedCancellationVoucher?.value || 0);
@@ -1814,6 +2303,11 @@
       endpoint: fullyCovered ? "voucher.redeemed" : selectedCancellationVoucher ? "payment.complement.pending" : "reservation.created",
       paymentStatus: fullyCovered ? "Pago com voucher" : selectedCancellationVoucher ? "Complemento pendente" : "Pagamento pendente",
       paymentDue,
+      paymentMethod: paymentDue > 0 ? selectedPaymentMethod() : "voucher",
+      paymentMethodLabel: paymentDue > 0 ? paymentMethodLabel() : "Voucher integral",
+      paymentProvider: paymentDue > 0 ? paymentProviderForSelection() : "TAMO_ON",
+      pixSplit: paymentDue > 0 && pixSplitEnabled(),
+      pixSplitMemberCount: paymentDue > 0 && pixSplitEnabled() ? splitValidation.shares.length : 0,
       voucherAppliedValue,
       cancellationVoucherId:selectedCancellationVoucher?.id || "",
       voucher:selectedCancellationVoucher?.code || promoVoucher,
@@ -1833,6 +2327,23 @@
       accountingOriginMonth:selectedCancellationVoucher?.accountingOriginMonth || ""
     };
     state.reservations.unshift(newReservation);
+    const pixCollection = paymentDue > 0 && newReservation.paymentMethod === "pix_direct_partner" && pixSplitEnabled() ? createPixSplitCollection(newReservation, splitValidation.shares) : null;
+    const paymentIntent = paymentDue > 0 && !pixCollection ? createPaymentIntentForReservation(newReservation, paymentDue) : null;
+    if (pixCollection) {
+      newReservation.endpoint = "bank_pix.split.charges_created";
+      newReservation.paymentStatus = `Rateio Pix · 0 de ${pixCollection.memberCount} cotas pagas`;
+    } else if (paymentIntent) {
+      if (newReservation.paymentMethod === "credit_card_asaas") {
+        newReservation.endpoint = "asaas.card.checkout.created";
+        newReservation.paymentStatus = selectedCancellationVoucher ? "Complemento aguardando cartão Asaas" : "Aguardando cartão Asaas";
+      } else if (paymentIntent.route === "pix_direct_partner_manual") {
+        newReservation.endpoint = "bank_pix.manual.pending";
+        newReservation.paymentStatus = "Pix direto · confirmação manual";
+      } else {
+        newReservation.endpoint = "bank_pix.charge.created";
+        newReservation.paymentStatus = "Pix direto · aguardando webhook bancário";
+      }
+    }
     if (selectedCancellationVoucher) {
       if (fullyCovered) {
         Object.assign(selectedCancellationVoucher, { status:"used", usedAt:new Date().toLocaleString("pt-BR"), usedReservationId:id, consumedValue:selectedCancellationVoucher.value });
@@ -1844,8 +2355,9 @@
     }
     saveState();reservationDialog.close();render();
     if (fullyCovered) showToast(`Reserva ${id} confirmada com voucher; evento publicado automaticamente.`);
-    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} de complemento.`);
-    else showToast(createsNewEvent ? `Reserva ${id} criada; evento em espera até o pagamento.` : `Reserva ${id} vinculada ao evento ${title}.`);
+    else if (pixCollection) showToast(`Reserva ${id} criada com rateio Pix para ${pixCollection.memberCount} membros.`);
+    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
+    else showToast(createsNewEvent ? `Reserva ${id} criada; pagamento preparado por ${paymentMethodLabel(newReservation.paymentMethod)}.` : `Reserva ${id} vinculada ao evento ${title}; pagamento preparado.`);
   });
 
   applyMarketplaceTheme(storedMarketplaceTheme(), false);

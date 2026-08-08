@@ -1,18 +1,20 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.17",
+  "version": "0.1.20",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
   "persistence": "browser-local-storage",
-  "asaas": "sandbox-planned-disabled",
+  "payments": "multi-provider-preview",
+  "pix_direct_partner": "adapter-contract-ready-network-disabled",
+  "asaas": "credit-card-hosted-checkout-contract-ready-sandbox-disabled",
   "real_money": false,
-  "released_at": "2026-08-06",
+  "released_at": "2026-08-07",
   "notes": [
-    "Botão de alternância entre tema escuro e tema claro disponível no cabeçalho das três áreas.",
-    "Preferência de tema persistida localmente e aplicada somente ao Partners Preview/Marketplace.",
-    "Tema claro mantém o verde esmeralda, os estados de reserva e a identidade visual do Tâmo On.",
-    "Cards, formulários, tabelas, agendas e diálogos receberam contraste específico para fundo claro.",
-    "Asaas, Supabase, banco, emissão fiscal, webhooks e push real permanecem desativados."
+    "Controles de agenda removidos da Visão geral e concentrados na aba Agenda.",
+    "Agenda publicada permite seleção por checkbox, seleção total e exclusão em lote.",
+    "Horários com reserva ativa permanecem protegidos contra exclusão.",
+    "Edição pode reorganizar automaticamente a sequência contígua de horários do mesmo dia e espaço.",
+    "A reorganização preserva a duração dos horários seguintes e bloqueia conflitos ou deslocamento de reserva ativa."
   ]
 }
