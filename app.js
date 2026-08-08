@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.26";
+  const VERSION = "0.1.27";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -513,6 +513,12 @@
 
   function publicAvailabilityEntries(venue) {
     return (venue?.schedule || []).flatMap((day) => day.slots.map((slot) => ({ day, slot, key: availabilityKey(day.shortDate, slot.time, normalizedSlotSpace(slot)) })));
+  }
+
+  function blockableAvailabilityEntries(venue) {
+    return publicAvailabilityEntries(venue)
+      .filter(({day,slot}) => !slot.blocked && !availabilityHasActiveReservation(venue,day,slot))
+      .sort((a,b) => parsePtDateTime(a.day.date,a.slot.time) - parsePtDateTime(b.day.date,b.slot.time) || normalizedSlotSpace(a.slot).localeCompare(normalizedSlotSpace(b.slot)));
   }
 
   function availabilityHasActiveReservation(venue, day, slot) {
@@ -1963,26 +1969,22 @@
     const publicEntries = publicAvailabilityEntries(venue)
       .filter(({day}) => day.shortDate === selectedDate)
       .sort((a,b) => a.slot.time.localeCompare(b.slot.time) || normalizedSlotSpace(a.slot).localeCompare(normalizedSlotSpace(b.slot)));
-    const operationalEntries = publicEntries.map((entry) => ({...entry, info:operationalSlotInfo(venue,entry.day,entry.slot)}));
     const selected = selectedAvailabilityKeys();
     const selectableEntries = publicEntries.filter(({day,slot}) => !availabilityHasActiveReservation(venue,day,slot));
     const selectedCount = selected.filter((key) => selectableEntries.some((entry) => entry.key === key)).length;
     const allSelectableSelected = selectableEntries.length > 0 && selectableEntries.every((entry) => selected.includes(entry.key));
     const dateStrip = partnerAgendaDateStrip(venue, selectedDate);
-    return `${pageHeader("Portal do parceiro", "Agenda", "A agenda publicada, as reservas e os bloqueios usam a mesma grade e são atualizados em conjunto.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
-      <section class="agenda-batch-guide"><strong>Grade única</strong><span>Qualquer criação, edição, bloqueio, reserva ou exclusão abaixo altera a mesma agenda que o usuário consulta no marketplace.</span></section>
-      <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada no marketplace</h2><p>Use a linha de dias para consultar toda a agenda criada. A seleção múltipla atua no dia exibido.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
+    return `${pageHeader("Portal do parceiro", "Agenda", "Uma única grade controla publicação, reservas e bloqueios do marketplace.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
+      <section class="agenda-batch-guide"><strong>Grade única</strong><span>Todas as ações abaixo alteram imediatamente a mesma agenda consultada pelo usuário no marketplace.</span></section>
+      <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada e operacional</h2><p>Navegue por todos os dias criados e gerencie disponibilidade, reservas e bloqueios no mesmo local.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
         ${dateStrip}
         <div class="public-agenda-list">${publicEntries.map(({day,slot,key}) => {
           const occupied = availabilityHasActiveReservation(venue,day,slot);
           const checked = selected.includes(key);
           const info = operationalSlotInfo(venue,day,slot);
           const statusText = info.type === "available" ? `${info.statusLabel} · ${money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}` : info.type === "blocked" ? `${info.statusLabel} · ${info.title}` : `${info.statusLabel} · ${info.title}`;
-          return `<div class="public-agenda-row ${checked ? "selected" : ""}"><label class="agenda-row-check" title="${occupied ? "Horário protegido por reserva ativa" : "Selecionar horário"}"><input type="checkbox" data-action="toggle-availability-selection" data-key="${esc(key)}" ${checked ? "checked" : ""} ${occupied ? "disabled" : ""}><span></span></label><div><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong><small>${esc(normalizedSlotSpace(slot))}${occupied ? " · reserva ativa" : ""}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${esc(statusText)}</small></div><div class="item-actions"><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Editar</button>${slot.blocked ? `<button class="button ghost small" data-action="unblock-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Desbloquear</button>` : ""}<button class="button danger small" data-action="delete-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Excluir</button></div></div>`;
-        }).join("") || emptyState("▦", "Nenhum horário criado neste dia.")}</div></section>
-      <section class="card"><div class="section-heading"><div><h2>Reservas e bloqueios operacionais</h2><p>Esta visão é derivada da mesma grade acima. Não existem mais compromissos paralelos.</p></div></div>
-        ${dateStrip}
-        <div class="timeline">${operationalEntries.map(({day,slot,info}) => `<div class="timeline-row"><div class="timeline-time">${esc(timeRange(slot.time,slotEndTime(slot)))}</div><div class="timeline-event ${info.type === "pending" ? "warning" : info.type === "blocked" ? "blocked" : info.type === "available" ? "available" : ""}"><strong>${esc(info.title)}</strong><div class="meta-row"><span>${esc(normalizedSlotSpace(slot))}</span><span>${esc(info.detail)}</span></div></div><div class="item-actions"><button class="button ghost small" data-action="schedule-slot-details" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Abrir</button><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${info.reservation ? "disabled" : ""}>Editar</button>${slot.blocked ? `<button class="button ghost small" data-action="unblock-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Desbloquear</button>` : ""}</div></div>`).join("") || emptyState("▦", "Nenhum horário criado neste dia.")}</div></section>`;
+          return `<div class="public-agenda-row ${checked ? "selected" : ""} ${info.type !== "available" ? `agenda-row-${info.type}` : ""}"><label class="agenda-row-check" title="${occupied ? "Horário protegido por reserva ativa" : "Selecionar horário"}"><input type="checkbox" data-action="toggle-availability-selection" data-key="${esc(key)}" ${checked ? "checked" : ""} ${occupied ? "disabled" : ""}><span></span></label><div><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong><small>${esc(normalizedSlotSpace(slot))}${occupied ? " · reserva ativa" : ""}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${esc(statusText)}</small></div><div class="item-actions"><button class="button ghost small" data-action="schedule-slot-details" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Abrir</button><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Editar</button>${slot.blocked ? `<button class="button ghost small" data-action="unblock-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Desbloquear</button>` : !occupied ? `<button class="button ghost small" data-action="block-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Bloquear</button>` : ""}<button class="button danger small" data-action="delete-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Excluir</button></div></div>`;
+        }).join("") || emptyState("▦", "Nenhum horário criado neste dia.")}</div></section>`;
   }
 
   function partnerReservations() {
@@ -2529,30 +2531,32 @@
       askConfirm({title:"Excluir horário",message:`Excluir ${day.date}, ${timeRange(slot.time,slotEndTime(slot))}, em ${normalizedSlotSpace(slot)}?`,confirmLabel:"Excluir horário",onConfirm:()=>{const key=availabilityKey(day.shortDate,slot.time,normalizedSlotSpace(slot));day.slots=day.slots.filter((item)=>item!==slot);if(!day.slots.length)venue.schedule=venue.schedule.filter((item)=>item!==day);state.ui.selectedAvailabilityKeys=selectedAvailabilityKeys().filter((item)=>item!==key);saveState();render();showToast("Horário excluído da agenda.");}});
     } else if (action === "new-block") {
       const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const available=blockableAvailabilityEntries(venue);
+      if(!available.length){openDetail({eyebrow:"Agenda",title:"Nenhum horário disponível para bloquear",body:`<div class="cancellation-warning"><strong>A grade não possui horários livres.</strong><p>Crie novos horários ou libere uma reserva/bloqueio existente antes de realizar outro bloqueio.</p></div>`});return;}
       const selectedDate=selectedPartnerAgendaDate(venue);
-      const selectedDay=venue.schedule.find((day)=>day.shortDate===selectedDate);
-      const defaultIso=selectedDay?`${selectedDay.date.slice(6)}-${selectedDay.date.slice(3,5)}-${selectedDay.date.slice(0,2)}`:"2026-08-08";
-      openForm({ eyebrow:"Agenda",title:"Novo bloqueio",description:"O bloqueio usa a mesma grade publicada no marketplace e aparece imediatamente nas duas visões da agenda.",fields:[
-        {name:"date",label:"Data",type:"date",value:defaultIso,required:true},{name:"time",label:"Início",type:"time",value:"21:00",required:true},{name:"endTime",label:"Término",type:"time",value:"22:00",required:true},
-        {name:"space",label:"Espaço",type:"select",value:state.partnerSpaces[0]?.name,options:state.partnerSpaces.map((item)=>item.name)},{name:"title",label:"Motivo",value:"Manutenção",required:true},
-        {name:"detail",label:"Observação",type:"textarea",value:"Bloqueio interno",full:true}
-      ],submitLabel:"Criar bloqueio",onSubmit:(data)=>{
-        const start=timeToMinutes(data.time),end=timeToMinutes(data.endTime);if(end<=start){showToast("O término deve ser posterior ao início.");return;}
-        const meta=scheduleDayFromDate(isoToLocalDate(data.date));
-        const {day,slot}=slotForSchedulePeriod(venue,meta,data.space,data.time,data.endTime);
-        if(slot){
-          if(availabilityHasActiveReservation(venue,day,slot)){openDetail({eyebrow:"Bloqueio",title:"Horário possui reserva ativa",body:`<div class="cancellation-warning"><strong>Bloqueio não aplicado</strong><p>O período ${esc(timeRange(slot.time,slotEndTime(slot)))} já está reservado. Trate a reserva antes de bloquear o horário.</p></div>`});return;}
-          slot.blocked=true;slot.blockTitle=data.title;slot.blockDetail=data.detail||"Bloqueio interno";
-        }else{
-          const conflict=scheduleConflict(venue,meta,data.space,data.time,data.endTime);
-          if(conflict){openDetail({eyebrow:"Conflito de agenda",title:"Período sobreposto",body:`<div class="cancellation-warning"><strong>Bloqueio não aplicado</strong><p>O período informado sobrepõe ${esc(timeRange(conflict.time,slotEndTime(conflict)))}. Para bloquear um horário existente, informe exatamente o mesmo início e término.</p></div>`});return;}
-          const scheduleDay=ensureScheduleDay(venue,meta);
-          const baseSpace=state.partnerSpaces.find((item)=>item.name===data.space);
-          scheduleDay.slots.push({time:data.time,endTime:data.endTime,price:Number(baseSpace?.price||0),space:data.space,monthlyEligible:false,monthlyPrice:0,blocked:true,blockTitle:data.title,blockDetail:data.detail||"Bloqueio interno"});
-          scheduleDay.slots.sort((a,b)=>a.time.localeCompare(b.time));
-        }
-        state.ui.partnerAgendaDate=meta.shortDate;state.ui.selectedAvailabilityKeys=[];saveState();render();showToast("Bloqueio aplicado na grade única da agenda.");
-      } });
+      const preferred=available.find(({day})=>day.shortDate===selectedDate)||available[0];
+      openForm({eyebrow:"Agenda",title:"Novo bloqueio",description:"Selecione um horário já disponível na agenda. Somente dias e períodos livres são exibidos.",fields:[
+        {name:"slotKey",label:"Dia e horário disponível",type:"select",value:preferred.key,required:true,options:available.map(({day,slot,key})=>({value:key,label:`${day.date} · ${timeRange(slot.time,slotEndTime(slot))} · ${normalizedSlotSpace(slot)}`}))},
+        {name:"title",label:"Motivo",value:"Manutenção",required:true},{name:"detail",label:"Observação",type:"textarea",value:"Bloqueio interno",full:true}
+      ],submitLabel:"Bloquear horário",onSubmit:(data)=>{
+        const [shortDate,time,space]=String(data.slotKey||"").split("::");
+        const day=venue.schedule.find((item)=>item.shortDate===shortDate);
+        const slot=day?.slots.find((item)=>item.time===time && normalizedSlotSpace(item)===space);
+        if(!day||!slot){showToast("O horário selecionado não existe mais na agenda.");return;}
+        if(slot.blocked||availabilityHasActiveReservation(venue,day,slot)){openDetail({eyebrow:"Bloqueio",title:"Horário não está mais disponível",body:`<div class="cancellation-warning"><strong>Bloqueio não aplicado</strong><p>Este período foi reservado ou bloqueado depois da abertura do formulário. Atualize a agenda e tente novamente.</p></div>`});return;}
+        slot.blocked=true;slot.blockTitle=data.title;slot.blockDetail=data.detail||"Bloqueio interno";
+        state.ui.partnerAgendaDate=day.shortDate;state.ui.selectedAvailabilityKeys=[];saveState();render();showToast("Horário bloqueado e retirado imediatamente da disponibilidade do marketplace.");
+      }});
+    } else if (action === "block-availability") {
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const day=venue.schedule.find((item)=>item.shortDate===button.dataset.date);
+      const slot=day?.slots.find((item)=>item.time===button.dataset.time && normalizedSlotSpace(item)===(button.dataset.space||normalizedSlotSpace(item)));
+      if(!day||!slot)return;
+      if(slot.blocked||availabilityHasActiveReservation(venue,day,slot)){showToast("Este horário não está disponível para bloqueio.");return;}
+      openForm({eyebrow:"Agenda",title:`Bloquear ${day.date} · ${timeRange(slot.time,slotEndTime(slot))}`,description:`${normalizedSlotSpace(slot)} será retirado da disponibilidade do marketplace.`,fields:[{name:"title",label:"Motivo",value:"Manutenção",required:true},{name:"detail",label:"Observação",type:"textarea",value:"Bloqueio interno",full:true}],submitLabel:"Bloquear horário",onSubmit:(data)=>{
+        if(slot.blocked||availabilityHasActiveReservation(venue,day,slot)){showToast("Este horário não está mais disponível para bloqueio.");return;}
+        slot.blocked=true;slot.blockTitle=data.title;slot.blockDetail=data.detail||"Bloqueio interno";state.ui.partnerAgendaDate=day.shortDate;state.ui.selectedAvailabilityKeys=[];saveState();render();showToast("Horário bloqueado e retirado imediatamente da disponibilidade do marketplace.");
+      }});
     } else if (action === "new-partner-reservation") {
       const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
       const selectedDate=selectedPartnerAgendaDate(venue);

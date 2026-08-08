@@ -1970,7 +1970,7 @@ html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,
 }
 
 
-/* Partners Preview 0.1.26 — grade única da agenda do parceiro */
+/* Partners Preview 0.1.27 — agenda operacional unificada do parceiro */
 .partner-agenda-date-strip { display:flex; gap:7px; margin:12px 0 14px; padding-bottom:3px; }
 .partner-agenda-date-strip > .schedule-day { flex:0 0 86px; min-width:86px; }
 .timeline-event.available { border-left-color:#74877e; background:rgba(255,255,255,.025); }
