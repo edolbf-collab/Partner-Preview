@@ -1851,7 +1851,7 @@ html[data-theme="light"] .message-alert-banner { background:rgba(211,142,18,.08)
   .partner-reservation-card .reservation-card-actions { gap:5px; }
 }
 
-/* Partners Preview 0.1.23 — reserva mais leve e progressiva */
+/* Partners Preview 0.1.24 — resumo, voucher, rateio e mensalista */
 #reservationDialog .summary-card { margin-bottom:10px; padding:11px 12px; }
 #reservationDialog .payment-summary-title small { margin-top:2px; }
 .reservation-total-line {
@@ -1931,4 +1931,24 @@ html[data-theme="light"] .reservation-terms-compact { background:rgba(15,164,99,
   .compact-payment-panel { padding:9px; }
   .reservation-outcome-note { display:block; }
   .reservation-outcome-note strong { margin-right:4px; }
+}
+
+
+/* 0.1.24 — ajustes finais do balão de reserva */
+.reservation-summary-card { display:grid; gap:8px; }
+.reservation-summary-voucher { margin:2px 0 0; padding-top:8px; border-top:1px solid var(--line); }
+.reservation-summary-voucher select { width:100%; }
+.reservation-summary-card .voucher-compact-result { margin:0; }
+.reservation-summary-card .reservation-total-line { margin-top:0; }
+.pix-split-config[hidden], .pix-split-members[hidden], .pix-split-summary[hidden] { display:none !important; }
+.monthly-preview-heading { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.monthly-preview-heading > span { font-size:11px; color:var(--muted); }
+.monthly-occurrence-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:6px; }
+.monthly-occurrence-list > span { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid var(--line); border-radius:9px; background:rgba(255,255,255,.025); }
+.monthly-occurrence-list b { font-size:10px; color:var(--text); }
+.monthly-occurrence-list small { font-size:10px; color:var(--muted); white-space:nowrap; }
+html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,42,.025); }
+@media (max-width:520px) {
+  .monthly-occurrence-list { grid-template-columns:1fr; }
+  .reservation-summary-card { gap:7px; }
 }

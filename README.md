@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.23
+# Tâmo On — Partners Preview 0.1.24
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
@@ -145,3 +145,11 @@ A Preview não contém credenciais, não chama APIs externas e não movimenta di
 - um canal por reserva, acessível em **Minhas reservas** e **Reservas** do parceiro;
 - histórico preservado após encerramento/cancelamento, em modo consulta;
 - Preview usa persistência local; produção deverá usar backend autenticado e sincronização em tempo real.
+
+
+## Partners Preview 0.1.24 — ajustes do balão de reserva
+
+- voucher reposicionado para o bloco superior de resumo financeiro, imediatamente antes do valor total;
+- rateio Pix inicia desmarcado em toda nova reserva e a lista de membros é removida da tela ao desmarcar;
+- ao selecionar Mensalista, o resumo passa a listar todas as datas e respectivos horários incluídos no pacote;
+- mantido o fluxo compacto da 0.1.23, sem reintroduzir textos extensos.

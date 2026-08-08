@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -11,10 +11,9 @@
   "real_money": false,
   "released_at": "2026-08-08",
   "notes": [
-    "Fluxo de reserva foi compactado para reduzir excesso de informação no modal.",
-    "Resumo inicial prioriza horário, modalidade e valor efetivamente a pagar.",
-    "Detalhes extensos de cancelamento e voucher ficam recolhidos em seção expansível.",
-    "Ao criar novo evento, os dados são derivados automaticamente da reserva, sem formulário de edição no Marketplace.",
-    "Mensalista, voucher, pagamento e rateio Pix tiveram textos reduzidos sem remover as regras operacionais."
+    "Voucher movido para o resumo financeiro da reserva, imediatamente antes do valor total.",
+    "Rateio Pix inicia desmarcado e limpa completamente a lista de membros ao ser desativado.",
+    "Mensalista selecionado exibe todas as datas e horários que compõem a reserva recorrente.",
+    "Fluxo compacto da 0.1.23 foi preservado sem reintroduzir textos extensos."
   ]
 }

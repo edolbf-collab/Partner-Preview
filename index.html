@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.23</title>
+  <title>Tâmo On — Partners Preview 0.1.24</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.23</div>
+          <div class="brand-subtitle">Partners Preview 0.1.24</div>
         </div>
       </div>
       <div class="header-actions">
@@ -60,7 +60,17 @@
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
-      <div class="summary-card" id="reservationSummary"></div>
+      <div class="summary-card reservation-summary-card" id="reservationSummary">
+        <div id="reservationSummaryHead"></div>
+        <label class="field compact-voucher-field reservation-summary-voucher">
+          <span>Voucher <small class="inline-hint">opcional</small></span>
+          <select id="voucherSelect">
+            <option value="">Não utilizar voucher</option>
+          </select>
+        </label>
+        <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
+        <div id="reservationSummaryTotal"></div>
+      </div>
       <div class="monthly-reservation-panel compact-reservation-section" id="monthlyReservationPanel" hidden>
         <label class="cancellation-acknowledge monthly-toggle-row">
           <input id="monthlyReservationToggle" type="checkbox">
@@ -83,13 +93,6 @@
       <div class="new-event-panel" id="newEventPanel" hidden aria-hidden="true">
         <input id="newEventTitle" type="hidden">
       </div>
-      <label class="field compact-voucher-field">
-        <span>Voucher <small class="inline-hint">opcional</small></span>
-        <select id="voucherSelect">
-          <option value="">Não utilizar voucher</option>
-        </select>
-      </label>
-      <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
       <section class="payment-method-panel compact-payment-panel" aria-labelledby="paymentMethodTitle">
         <div class="payment-method-heading">
           <strong id="paymentMethodTitle">Pagamento</strong>
@@ -252,7 +255,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.23</h2>
+          <h2>Partners Preview 0.1.24</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>

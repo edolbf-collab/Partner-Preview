@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.23";
+  const VERSION = "0.1.24";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -13,6 +13,8 @@
   const reservationForm = document.getElementById("reservationForm");
   const reservationTitle = document.getElementById("reservationTitle");
   const reservationSummary = document.getElementById("reservationSummary");
+  const reservationSummaryHead = document.getElementById("reservationSummaryHead");
+  const reservationSummaryTotal = document.getElementById("reservationSummaryTotal");
   const groupSelect = document.getElementById("groupSelect");
   const groupPermissionNote = document.getElementById("groupPermissionNote");
   const eventSelect = document.getElementById("eventSelect");
@@ -822,10 +824,16 @@
     if (!isPix) {
       pixSplitToggle.checked = false;
       pixSplitConfig.hidden = true;
+      pixSplitMembers.innerHTML = "";
+      pixSplitSummary.innerHTML = "";
       return;
     }
     pixSplitConfig.hidden = !pixSplitToggle.checked;
-    if (!pixSplitToggle.checked) return;
+    if (!pixSplitToggle.checked) {
+      pixSplitMembers.innerHTML = "";
+      pixSplitSummary.innerHTML = "";
+      return;
+    }
     const members = groupMembers(groupSelect.value);
     const existingSelection = new Map([...pixSplitMembers.querySelectorAll('[data-split-member]')].map((input) => [input.dataset.splitMember, input.checked]));
     const existingValues = new Map([...pixSplitMembers.querySelectorAll('[data-split-value]')].map((input) => [input.dataset.splitValue, input.value]));
@@ -975,8 +983,8 @@
     const complement = Math.max(0, total - voucherValue);
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
-    const paymentLabel = complement <= 0 ? "Sem cobrança externa" : paymentMethodLabel();
-    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="reservation-total-line"><span>${voucher ? `Total ${money(total)} · voucher −${money(voucherValue)}` : "Valor da reserva"}</span><strong>${money(complement)}</strong></div>`;
+    reservationSummaryHead.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div>`;
+    reservationSummaryTotal.innerHTML = `<div class="reservation-total-line"><span>${voucher ? `Valor ${money(total)} · voucher −${money(voucherValue)}` : "Valor total"}</span><strong>${money(complement)}</strong></div>`;
   }
 
   function updateVoucherPaymentPreview() {
@@ -1006,7 +1014,12 @@
       return;
     }
     const occurrences = monthlyOccurrencesForSelection(selectedReservation);
-    monthlyReservationPreview.innerHTML = `<strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas · ${timeRange(selectedReservation.time, selectedReservation.endTime)}</span>`;
+    if (!monthlyReservationToggle.checked) {
+      monthlyReservationPreview.innerHTML = `<strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas disponíveis · ${timeRange(selectedReservation.time, selectedReservation.endTime)}</span>`;
+      updateVoucherPaymentPreview();
+      return;
+    }
+    monthlyReservationPreview.innerHTML = `<div class="monthly-preview-heading"><strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas reservadas</span></div><div class="monthly-occurrence-list">${occurrences.map((occurrence) => `<span><b>${esc(occurrence.date)}</b><small>${esc(timeRange(occurrence.time, occurrence.endTime))}</small></span>`).join("")}</div>`;
     updateVoucherPaymentPreview();
   }
 
@@ -1997,6 +2010,8 @@
     if (pixSplitToggle) pixSplitToggle.checked = false;
     if (pixSplitMode) pixSplitMode.value = "equal";
     if (pixSplitConfig) pixSplitConfig.hidden = true;
+    if (pixSplitMembers) pixSplitMembers.innerHTML = "";
+    if (pixSplitSummary) pixSplitSummary.innerHTML = "";
     if (reservationPolicyText) reservationPolicyText.textContent = `Usuário: cancelamento até ${state.settings.cancellationHours}h antes pode gerar voucher. Mensalista: prazo contado da primeira ocorrência. Parceiro ou Tâmo On: reembolso integral. Fora do prazo não há crédito automático.`;
     populateVoucherOptions();
     updateMonthlyReservationPreview();
