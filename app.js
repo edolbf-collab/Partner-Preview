@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.20";
+  const VERSION = "0.1.21";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -65,6 +65,14 @@
   const cancellationAcknowledge = document.getElementById("cancellationAcknowledge");
   const cancellationAcknowledgeText = document.getElementById("cancellationAcknowledgeText");
   const cancellationSubmit = document.getElementById("cancellationSubmit");
+  const chatDialog = document.getElementById("chatDialog");
+  const chatTitle = document.getElementById("chatTitle");
+  const chatSubtitle = document.getElementById("chatSubtitle");
+  const chatMessages = document.getElementById("chatMessages");
+  const chatForm = document.getElementById("chatForm");
+  const chatInput = document.getElementById("chatInput");
+  const chatSend = document.getElementById("chatSend");
+  const chatStatus = document.getElementById("chatStatus");
 
   let formHandler = null;
   let confirmHandler = null;
@@ -73,6 +81,7 @@
   let detailReturnContext = null;
   let reservationReturnContext = null;
   let selectedCancellation = null;
+  let selectedChatReservationId = null;
   const allowAutomaticFieldFocus = window.matchMedia("(min-width: 701px) and (pointer: fine)").matches;
 
   const menus = {
@@ -166,6 +175,12 @@
       paymentWebhookLog: [
         { id:"WH-0001", provider:"ASAAS", event:"PAYMENT_CONFIRMED", reservationId:"R-0008", status:"Processado", createdAt:"07/08/2026 18:02" },
         { id:"WH-0002", provider:"SICOOB", event:"PIX_RECEIVED", reservationId:"R-0006", status:"Processado", createdAt:"06/08/2026 18:56" }
+      ],
+      chatThreads: [
+        { id:"CHAT-R-0008", reservationId:"R-0008", partnerReservationId:"RP-103", venueId:"arena-central", venue:"Arena Central", user:"Eduardo Batista", createdAt:"07/08/2026 18:03", unlockedAt:"07/08/2026 18:02", status:"active", messages:[
+          { id:"MSG-0001", senderType:"partner", senderName:"Arena Central", text:"Olá! Sua reserva está confirmada. Se precisar combinar algum detalhe sobre acesso ou estrutura da quadra, pode falar por aqui.", createdAt:"07/08/2026 18:05" },
+          { id:"MSG-0002", senderType:"user", senderName:"Eduardo Batista", text:"Perfeito. Vamos chegar alguns minutos antes para organizar o grupo.", createdAt:"07/08/2026 18:07" }
+        ] }
       ],
       favorites: ["arena-central"],
       appliedVouchers: [],
@@ -366,6 +381,7 @@
       if (!(saved && saved.activePage && saved.venues)) return initialState();
       saved.ui = saved.ui || {};
       saved.ui.selectedAvailabilityKeys = Array.isArray(saved.ui.selectedAvailabilityKeys) ? saved.ui.selectedAvailabilityKeys : [];
+      saved.chatThreads = Array.isArray(saved.chatThreads) ? saved.chatThreads : [];
       return saved;
     } catch (_error) {
       return initialState();
@@ -1442,6 +1458,8 @@
       Object.assign(reservation,{ statusKey:"confirmed", status:"Confirmada — rateio quitado", endpoint:"bank_pix.split.settled", paymentStatus:`Rateio Pix quitado · ${collection.paidCount} de ${collection.memberCount} cotas`, accountingRecognizedValue:collection.amount, fiscalObligationValue:collection.amount, accountingMonth:accountingMonth() });
       state.accountingLedger.unshift({ id:nextId("LED-",state.accountingLedger), type:"service_payment", reservationId:reservation.id, venueId:reservation.venueId, venue:reservation.venue, amount:collection.amount, fiscalAmount:collection.amount, accountingMonth:reservation.accountingMonth, description:"Reserva quitada por rateio Pix direto ao parceiro" });
       publishStandbyEventForReservation(reservation,"event.publish_after_pix_split");
+      syncPartnerReservationFromUser(reservation);
+      ensureChatThread(reservation);
       showToast(`Rateio quitado: ${collection.paidCount} de ${collection.memberCount} cotas confirmadas.`);
     } else {
       reservation.paymentStatus=`Rateio Pix · ${collection.paidCount} de ${collection.memberCount} cotas pagas`;
@@ -1451,6 +1469,148 @@
     if (detailDialog.open) {
       detailBody.innerHTML=pixSplitDetailsBody(reservation);
     }
+  }
+
+  function syncPartnerReservationFromUser(reservation) {
+    if (!reservation || reservation.venueId !== state.partnerProfile.venueId) return null;
+    let item = state.partnerReservations.find((entry) => entry.userReservationId === reservation.id);
+    const normalized = {
+      client: reservation.groupName || reservation.user,
+      date: reservation.date,
+      time: reservation.time,
+      endTime: reservation.endTime || "",
+      space: reservation.space || state.partnerSpaces[0]?.name || "Espaço principal",
+      value: Number(reservation.value || 0),
+      monthly: Boolean(reservation.monthly),
+      occurrenceCount: Number(reservation.occurrenceCount || 0),
+      occurrences: Array.isArray(reservation.occurrences) ? reservation.occurrences : [],
+      status: reservation.statusKey === "confirmed" ? "Confirmada" : reservation.statusKey === "cancelled" ? "Cancelada" : "Pendente",
+      payment: reservation.paymentStatus || "Não iniciado",
+      userReservationId: reservation.id,
+      groupName: reservation.groupName || "",
+      eventId: reservation.eventId || "",
+      accountingRecognizedValue: Number(reservation.accountingRecognizedValue || 0),
+      accountingMonth: reservation.accountingMonth || ""
+    };
+    if (item) Object.assign(item, normalized);
+    else {
+      item = { id: nextId("RP-", state.partnerReservations), ...normalized };
+      state.partnerReservations.unshift(item);
+    }
+    const thread = chatThreadForReservation(reservation.id);
+    if (thread && !thread.partnerReservationId) thread.partnerReservationId = item.id;
+    return item;
+  }
+
+  function reservationPaymentConfirmed(reservation) {
+    if (!reservation || reservation.statusKey !== "confirmed") return false;
+    if (String(reservation.paymentStatus || "").toLowerCase().includes("pendente")) return false;
+    return Number(reservation.accountingRecognizedValue || 0) > 0 || ["voucher.redeemed","bank_pix.split.settled","asaas.webhook.payment_confirmed","bank_pix.webhook.received"].includes(reservation.endpoint);
+  }
+
+  function chatThreadForReservation(reservationId) {
+    return state.chatThreads.find((thread) => thread.reservationId === reservationId) || null;
+  }
+
+  function partnerReservationForUserReservation(reservationId) {
+    return state.partnerReservations.find((item) => item.userReservationId === reservationId) || null;
+  }
+
+  function ensureChatThread(reservation) {
+    if (!reservation || !reservationPaymentConfirmed(reservation)) return null;
+    let thread = chatThreadForReservation(reservation.id);
+    if (thread) return thread;
+    const partnerReservation = partnerReservationForUserReservation(reservation.id);
+    thread = {
+      id: `CHAT-${reservation.id}`,
+      reservationId: reservation.id,
+      partnerReservationId: partnerReservation?.id || "",
+      venueId: reservation.venueId,
+      venue: reservation.venue,
+      user: reservation.user,
+      createdAt: new Date().toLocaleString("pt-BR"),
+      unlockedAt: new Date().toLocaleString("pt-BR"),
+      status: "active",
+      messages: []
+    };
+    state.chatThreads.unshift(thread);
+    return thread;
+  }
+
+  function chatAvailableForReservation(reservation) {
+    return Boolean(reservationPaymentConfirmed(reservation) || chatThreadForReservation(reservation?.id));
+  }
+
+  function chatCanSendForReservation(reservation) {
+    return Boolean(reservationPaymentConfirmed(reservation) && reservation.statusKey === "confirmed");
+  }
+
+  function chatButtonForUser(reservation) {
+    if (!chatAvailableForReservation(reservation)) return "";
+    const label = reservation.statusKey === "confirmed" ? "Falar com parceiro" : "Ver conversa";
+    return `<button class="button secondary small" data-action="open-reservation-chat" data-id="${esc(reservation.id)}">${label}</button>`;
+  }
+
+  function chatButtonForPartner(item) {
+    const reservation = state.reservations.find((entry) => entry.id === item.userReservationId);
+    if (!reservation || !chatAvailableForReservation(reservation)) return "";
+    const label = reservation.statusKey === "confirmed" ? "Chat com usuário" : "Ver conversa";
+    return `<button class="button secondary small" data-action="open-reservation-chat" data-id="${esc(reservation.id)}">${label}</button>`;
+  }
+
+  function chatMessagesMarkup(thread, viewerRole) {
+    if (!thread.messages.length) return `<div class="chat-empty"><strong>Conversa liberada</strong><p>A reserva foi paga. Usuário e parceiro já podem trocar mensagens sobre acesso, estrutura, horário e demais detalhes da reserva.</p></div>`;
+    return thread.messages.map((message) => {
+      const mine = (viewerRole === "user" && message.senderType === "user") || (viewerRole === "partner" && message.senderType === "partner");
+      return `<div class="chat-message ${mine ? "mine" : "theirs"}"><div class="chat-bubble"><strong>${esc(message.senderName)}</strong><p>${esc(message.text)}</p><small>${esc(message.createdAt)}</small></div></div>`;
+    }).join("");
+  }
+
+  function renderOpenChat() {
+    if (!selectedChatReservationId || !chatDialog?.open) return;
+    const reservation = state.reservations.find((item) => item.id === selectedChatReservationId);
+    const thread = reservation ? chatThreadForReservation(reservation.id) : null;
+    if (!reservation || !thread) return;
+    const canSend = chatCanSendForReservation(reservation);
+    chatTitle.textContent = state.role === "partner" ? thread.user : thread.venue;
+    chatSubtitle.textContent = `${reservation.id} · ${reservation.date} · ${timeRange(reservation.time,reservation.endTime)}`;
+    chatMessages.innerHTML = chatMessagesMarkup(thread, state.role);
+    chatStatus.textContent = canSend ? "Reserva paga · conversa ativa" : "Reserva encerrada · conversa somente para consulta";
+    chatStatus.className = `status ${canSend ? "status-ok" : "status-neutral"}`;
+    chatInput.disabled = !canSend;
+    chatSend.disabled = !canSend;
+    chatInput.placeholder = canSend ? "Digite uma mensagem..." : "Conversa encerrada";
+    requestAnimationFrame(() => { chatMessages.scrollTop = chatMessages.scrollHeight; });
+  }
+
+  function openReservationChat(reservationId) {
+    const reservation = state.reservations.find((item) => item.id === reservationId);
+    if (!reservation || !chatAvailableForReservation(reservation)) {
+      showToast("O chat é liberado somente após a confirmação do pagamento da reserva.");
+      return;
+    }
+    const thread = ensureChatThread(reservation) || chatThreadForReservation(reservation.id);
+    if (!thread) return;
+    selectedChatReservationId = reservation.id;
+    saveState();
+    if (!chatDialog.open) chatDialog.showModal();
+    renderOpenChat();
+    if (chatCanSendForReservation(reservation) && allowAutomaticFieldFocus) setTimeout(() => chatInput.focus({ preventScroll:true }), 40);
+  }
+
+  function sendChatMessage(text) {
+    const reservation = state.reservations.find((item) => item.id === selectedChatReservationId);
+    if (!reservation || !chatCanSendForReservation(reservation)) return;
+    const thread = ensureChatThread(reservation);
+    const clean = String(text || "").trim();
+    if (!thread || !clean) return;
+    const senderType = state.role === "partner" ? "partner" : "user";
+    const senderName = senderType === "partner" ? state.partnerProfile.tradeName : state.userProfile.name;
+    thread.messages.push({ id: nextId("MSG-", thread.messages), senderType, senderName, text: clean.slice(0,1000), createdAt: new Date().toLocaleString("pt-BR") });
+    thread.updatedAt = new Date().toLocaleString("pt-BR");
+    saveState();
+    chatInput.value = "";
+    renderOpenChat();
   }
 
   function userReservations() {
@@ -1468,7 +1628,7 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
+        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${chatButtonForUser(reservation)}${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -1545,7 +1705,7 @@
     const items = state.partnerReservations.filter((item) => filter === "Todos" || item.status === filter);
     return `${pageHeader("Portal do parceiro", "Reservas", "Aceite solicitações, registre reservas manuais e acompanhe os pagamentos externos.", `<button class="button primary" data-action="new-partner-reservation">Nova reserva manual</button>`)}
       <div class="toolbar"><select class="filter-select" id="partnerReservationFilter"><option>Todos</option><option>Pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-partner-reservations">Exportar CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(timeRange(item.time,item.endTime))}${item.monthly ? ` · Mensalista (${esc(item.occurrenceCount || 0)} datas)` : ""}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar e reembolsar</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
+      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(timeRange(item.time,item.endTime))}${item.monthly ? ` · Mensalista (${esc(item.occurrenceCount || 0)} datas)` : ""}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${chatButtonForPartner(item)}${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar e reembolsar</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   function partnerSpaces() {
@@ -1787,6 +1947,8 @@
         state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "service_payment", reservationId: reservation.id, venueId: reservation.venueId, venue: reservation.venue, amount: reservation.value, fiscalAmount: reservation.value, accountingMonth: reservation.accountingMonth, description: "Pagamento da reserva" });
       }
       const published = publishStandbyEventForReservation(reservation, complement > 0 ? "event.publish_after_complement" : "event.publish_after_payment");
+      syncPartnerReservationFromUser(reservation);
+      ensureChatThread(reservation);
       saveState(); render();
       showToast(published ? `${id}: pagamento confirmado, evento publicado e push registrado.` : `${id}: pagamento confirmado.`);
       return;
@@ -1816,7 +1978,9 @@
     const action = button.dataset.action;
     const id = button.dataset.id;
 
-    if (action === "pix-split-details") {
+    if (action === "open-reservation-chat") {
+      openReservationChat(id);
+    } else if (action === "pix-split-details") {
       openPixSplitDetails(id);
     } else if (action === "simulate-pix-share-paid") {
       simulatePixSharePaid(id);
@@ -2327,6 +2491,7 @@
       accountingOriginMonth:selectedCancellationVoucher?.accountingOriginMonth || ""
     };
     state.reservations.unshift(newReservation);
+    syncPartnerReservationFromUser(newReservation);
     const pixCollection = paymentDue > 0 && newReservation.paymentMethod === "pix_direct_partner" && pixSplitEnabled() ? createPixSplitCollection(newReservation, splitValidation.shares) : null;
     const paymentIntent = paymentDue > 0 && !pixCollection ? createPaymentIntentForReservation(newReservation, paymentDue) : null;
     if (pixCollection) {
@@ -2349,6 +2514,8 @@
         Object.assign(selectedCancellationVoucher, { status:"used", usedAt:new Date().toLocaleString("pt-BR"), usedReservationId:id, consumedValue:selectedCancellationVoucher.value });
         state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type:"voucher_redeemed", reservationId:id, voucherId:selectedCancellationVoucher.id, venueId:newReservation.venueId, venue:newReservation.venue, amount:selectedCancellationVoucher.value, fiscalAmount:0, accountingMonth:accountingMonth(), description:"Voucher consumido integralmente sem nova obrigação" });
         publishStandbyEventForReservation(newReservation, "event.publish_after_voucher");
+        syncPartnerReservationFromUser(newReservation);
+        ensureChatThread(newReservation);
       } else {
         Object.assign(selectedCancellationVoucher, { status:"reserved", reservedAt:new Date().toLocaleString("pt-BR"), reservedReservationId:id });
       }
@@ -2358,6 +2525,17 @@
     else if (pixCollection) showToast(`Reserva ${id} criada com rateio Pix para ${pixCollection.memberCount} membros.`);
     else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
     else showToast(createsNewEvent ? `Reserva ${id} criada; pagamento preparado por ${paymentMethodLabel(newReservation.paymentMethod)}.` : `Reserva ${id} vinculada ao evento ${title}; pagamento preparado.`);
+  });
+
+  chatForm?.addEventListener("submit", (event) => {
+    if (event.submitter?.value === "cancel") return;
+    event.preventDefault();
+    sendChatMessage(chatInput.value);
+  });
+
+  chatDialog?.addEventListener("close", () => {
+    selectedChatReservationId = null;
+    chatInput.value = "";
   });
 
   applyMarketplaceTheme(storedMarketplaceTheme(), false);

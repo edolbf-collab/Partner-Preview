@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.16
+# Tâmo On — Partners Preview 0.1.21
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
@@ -108,12 +108,12 @@ Abra `http://localhost:8080`.
 A configuração mantém `realMoney: false`, `asaas.enabled: false` e `productionWrites: false`. Não inserir chaves de produção no frontend.
 
 
-## Atualização 0.1.20
+## Atualização 0.1.17
 - Tema claro opcional exclusivo do Marketplace/Partners Preview.
 - Alternância disponível no cabeçalho para usuário, parceiro e administração.
 - Preferência persistida no navegador sem alterar o tema do aplicativo principal Tâmo On.
 
-## Atualização 0.1.20 — pagamentos multiprovedor
+## Atualização 0.1.18 — pagamentos multiprovedor
 
 A Preview passa a separar os meios de pagamento por uma camada interna de roteamento:
 
@@ -133,3 +133,11 @@ A Preview não contém credenciais, não chama APIs externas e não movimenta di
 - Seleção múltipla da agenda publicada com exclusão em lote.
 - Proteção automática de horários com reserva ativa.
 - Reorganização encadeada de horários contíguos após alteração de término, preservando a duração dos períodos seguintes.
+
+
+## Partners Preview 0.1.21 — chat da reserva
+
+- chat entre usuário e parceiro liberado após confirmação do pagamento;
+- um canal por reserva, acessível em **Minhas reservas** e **Reservas** do parceiro;
+- histórico preservado após encerramento/cancelamento, em modo consulta;
+- Preview usa persistência local; produção deverá usar backend autenticado e sincronização em tempo real.

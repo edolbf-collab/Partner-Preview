@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.20</title>
+  <title>Tâmo On — Partners Preview 0.1.21</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.20</div>
+          <div class="brand-subtitle">Partners Preview 0.1.21</div>
         </div>
       </div>
       <div class="header-actions">
@@ -215,6 +215,29 @@
     </form>
   </dialog>
 
+  <dialog id="chatDialog" class="dialog chat-dialog" tabindex="-1">
+    <form method="dialog" id="chatForm" class="chat-form">
+      <div class="dialog-header chat-header">
+        <div>
+          <span class="eyebrow">Chat da reserva</span>
+          <h2 id="chatTitle">Conversa</h2>
+          <p class="dialog-description" id="chatSubtitle"></p>
+        </div>
+        <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar chat">×</button>
+      </div>
+      <div class="chat-meta-row">
+        <span id="chatStatus" class="status status-ok">Reserva paga · conversa ativa</span>
+        <small>Canal exclusivo entre o usuário da reserva e o parceiro.</small>
+      </div>
+      <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+      <div class="chat-composer">
+        <label for="chatInput" class="sr-only">Mensagem</label>
+        <textarea id="chatInput" maxlength="1000" rows="2" placeholder="Digite uma mensagem..."></textarea>
+        <button id="chatSend" type="submit" class="button primary">Enviar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="confirmDialog" class="dialog compact" tabindex="-1">
     <form method="dialog" id="confirmForm">
       <div class="dialog-header">
@@ -237,7 +260,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.20</h2>
+          <h2>Partners Preview 0.1.21</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
@@ -251,7 +274,8 @@
         <li>Reservas, agenda, espaços, equipe, clientes, vouchers e controles administrativos funcionais.</li>
         <li>Fluxo local de grupo, evento em espera, confirmação simulada, publicação e registro de push.</li>
         <li>Cancelamento pós-pagamento conforme o responsável: voucher para o usuário elegível, reembolso integral para cancelamento do parceiro ou Tâmo On e ausência de crédito automático fora do prazo.</li>
-        <li>Sem Supabase ou transação real; adaptadores Pix e Asaas permanecem em modo de arquitetura/sandbox, sem credenciais.</li>
+        <li>Chat da reserva liberado somente após confirmação financeira, demonstrado localmente entre usuário e parceiro.</li>
+        <li>Sem Supabase ou transação real; adaptadores Pix, Asaas e chat em tempo real permanecem em modo de arquitetura/sandbox, sem credenciais.</li>
       </ul>
       <button class="button primary full" value="cancel" formnovalidate>Entendi</button>
     </form>
