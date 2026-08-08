@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -11,10 +11,8 @@
   "real_money": false,
   "released_at": "2026-08-08",
   "notes": [
-    "A Agenda do parceiro passa a ter uma única tabela para disponibilidade, reservas e bloqueios.",
-    "A tabela única reúne detalhes, edição, bloqueio/desbloqueio, exclusão individual e exclusão em lote.",
-    "Novo bloqueio passa a listar somente horários já criados e livres na agenda, sem criar períodos paralelos.",
-    "Bloquear um horário grava o estado diretamente no slot publicado e o retira imediatamente da disponibilidade do marketplace.",
-    "Todos os dias criados continuam acessíveis pela mesma faixa horizontal de navegação."
+    "Na agenda do parceiro, os botões de ação dos horários passam a usar duas colunas no mobile.",
+    "Até quatro ações ficam organizadas em grade 2x2, reduzindo a altura dos cards sem retirar funções.",
+    "Horários com menos ações mantêm a mesma grade compacta e responsiva."
   ]
 }

@@ -1978,3 +1978,34 @@ html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,
 @media (max-width:700px) {
   .partner-agenda-date-strip > .schedule-day { flex-basis:78px; min-width:78px; }
 }
+
+/* Partners Preview 0.1.28 — ações compactas da agenda em grade 2x2 */
+@media (max-width:700px) {
+  .public-agenda-row {
+    grid-template-columns: 24px minmax(0,1fr);
+    grid-template-areas:
+      "check primary"
+      "check secondary"
+      "actions actions";
+    align-items: center;
+  }
+  .public-agenda-row > .agenda-row-check { grid-area: check; }
+  .public-agenda-row > div:nth-of-type(1) { grid-area: primary; }
+  .public-agenda-row > div:nth-of-type(2) { grid-area: secondary; }
+  .public-agenda-row > .item-actions {
+    grid-area: actions;
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 6px;
+    width: 100%;
+    padding: 7px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .public-agenda-row > .item-actions .button {
+    width: 100%;
+    min-width: 0;
+    min-height: 32px;
+    padding: 6px 7px;
+  }
+}

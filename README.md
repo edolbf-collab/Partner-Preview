@@ -166,3 +166,6 @@ A Preview não contém credenciais, não chama APIs externas e não movimenta di
 ## Partners Preview 0.1.27 — grade única da agenda
 
 A aba Agenda do parceiro foi consolidada sobre uma única fonte de dados. A agenda publicada no marketplace e a visão de reservas/bloqueios operacionais agora leem os mesmos slots, usam o mesmo dia selecionado e navegam por todos os dias criados. Bloqueios e reservas manuais são vinculados diretamente à grade publicada, e alterações de status/cancelamentos refletem automaticamente na disponibilidade.
+
+## Partners Preview 0.1.28
+Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando todas as funções da grade operacional unificada.
