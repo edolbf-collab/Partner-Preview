@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -11,10 +11,10 @@
   "real_money": false,
   "released_at": "2026-08-07",
   "notes": [
-    "Controles de agenda removidos da Visão geral e concentrados na aba Agenda.",
-    "Agenda publicada permite seleção por checkbox, seleção total e exclusão em lote.",
-    "Horários com reserva ativa permanecem protegidos contra exclusão.",
-    "Edição pode reorganizar automaticamente a sequência contígua de horários do mesmo dia e espaço.",
-    "A reorganização preserva a duração dos horários seguintes e bloqueia conflitos ou deslocamento de reserva ativa."
+    "Chat do parceiro passou a aparecer de forma direta na aba Reservas em cards responsivos.",
+    "Mensagens não lidas geram badges no seletor de área, submenu Reservas, reserva e botão do chat.",
+    "Reservas com mensagens pendentes ficam destacadas e o parceiro recebe aviso ao acessar sua área.",
+    "Abertura do chat marca as mensagens como lidas; novas mensagens incrementam o contador da outra parte.",
+    "Preview mantém o chat local; push e tempo real entre dispositivos permanecem previstos para o backend."
   ]
 }

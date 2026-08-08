@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.21";
+  const VERSION = "0.1.22";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -177,7 +177,7 @@
         { id:"WH-0002", provider:"SICOOB", event:"PIX_RECEIVED", reservationId:"R-0006", status:"Processado", createdAt:"06/08/2026 18:56" }
       ],
       chatThreads: [
-        { id:"CHAT-R-0008", reservationId:"R-0008", partnerReservationId:"RP-103", venueId:"arena-central", venue:"Arena Central", user:"Eduardo Batista", createdAt:"07/08/2026 18:03", unlockedAt:"07/08/2026 18:02", status:"active", messages:[
+        { id:"CHAT-R-0008", reservationId:"R-0008", partnerReservationId:"RP-103", venueId:"arena-central", venue:"Arena Central", user:"Eduardo Batista", createdAt:"07/08/2026 18:03", unlockedAt:"07/08/2026 18:02", status:"active", unread:{user:0,partner:1}, lastReadAt:{user:"07/08/2026 18:07",partner:"07/08/2026 18:05"}, messages:[
           { id:"MSG-0001", senderType:"partner", senderName:"Arena Central", text:"Olá! Sua reserva está confirmada. Se precisar combinar algum detalhe sobre acesso ou estrutura da quadra, pode falar por aqui.", createdAt:"07/08/2026 18:05" },
           { id:"MSG-0002", senderType:"user", senderName:"Eduardo Batista", text:"Perfeito. Vamos chegar alguns minutos antes para organizar o grupo.", createdAt:"07/08/2026 18:07" }
         ] }
@@ -382,6 +382,16 @@
       saved.ui = saved.ui || {};
       saved.ui.selectedAvailabilityKeys = Array.isArray(saved.ui.selectedAvailabilityKeys) ? saved.ui.selectedAvailabilityKeys : [];
       saved.chatThreads = Array.isArray(saved.chatThreads) ? saved.chatThreads : [];
+      saved.chatThreads.forEach((thread) => {
+        if (!thread.unread || typeof thread.unread !== "object") {
+          const last = Array.isArray(thread.messages) && thread.messages.length ? thread.messages[thread.messages.length - 1] : null;
+          thread.unread = { user: last?.senderType === "partner" ? 1 : 0, partner: last?.senderType === "user" ? 1 : 0 };
+        } else {
+          thread.unread.user = Number(thread.unread.user || 0);
+          thread.unread.partner = Number(thread.unread.partner || 0);
+        }
+        thread.lastReadAt = thread.lastReadAt || { user:"", partner:"" };
+      });
       return saved;
     } catch (_error) {
       return initialState();
@@ -1335,6 +1345,8 @@
     saveState();
     roleButtons.forEach((button) => button.classList.toggle("active", button.dataset.role === role));
     render();
+    const unread = totalUnreadForRole(role);
+    if (unread > 0) showToast(`Você tem ${unread} mensagem${unread === 1 ? " nova" : "s novas"} em reservas.`);
   }
 
   function nav(role, page) {
@@ -1350,7 +1362,10 @@
       <div class="role-layout">
         <nav class="subnav" aria-label="Menu da área ${role}">
           <div class="subnav-title">Navegação</div>
-          ${menu.map(([id, icon, label]) => `<button type="button" class="subnav-button ${state.activePage[role] === id ? "active" : ""}" data-nav="${id}"><span class="subnav-icon">${icon}</span>${label}</button>`).join("")}
+          ${menu.map(([id, icon, label]) => {
+            const unread = id === "reservations" && ["user","partner"].includes(role) ? totalUnreadForRole(role) : 0;
+            return `<button type="button" class="subnav-button ${state.activePage[role] === id ? "active" : ""} ${unread ? "has-unread" : ""}" data-nav="${id}"><span class="subnav-icon">${icon}</span><span class="subnav-label">${label}</span>${messageBadge(unread)}</button>`;
+          }).join("")}
         </nav>
         <section class="content">${content}</section>
       </div>`;
@@ -1531,6 +1546,8 @@
       createdAt: new Date().toLocaleString("pt-BR"),
       unlockedAt: new Date().toLocaleString("pt-BR"),
       status: "active",
+      unread: { user:0, partner:0 },
+      lastReadAt: { user:"", partner:"" },
       messages: []
     };
     state.chatThreads.unshift(thread);
@@ -1547,15 +1564,64 @@
 
   function chatButtonForUser(reservation) {
     if (!chatAvailableForReservation(reservation)) return "";
+    const unread = unreadForReservation(reservation.id, "user");
     const label = reservation.statusKey === "confirmed" ? "Falar com parceiro" : "Ver conversa";
-    return `<button class="button secondary small" data-action="open-reservation-chat" data-id="${esc(reservation.id)}">${label}</button>`;
+    return `<button class="button secondary small chat-entry-button ${unread ? "has-unread" : ""}" data-action="open-reservation-chat" data-id="${esc(reservation.id)}"><span>${label}</span>${messageBadge(unread)}</button>`;
   }
 
   function chatButtonForPartner(item) {
     const reservation = state.reservations.find((entry) => entry.id === item.userReservationId);
     if (!reservation || !chatAvailableForReservation(reservation)) return "";
+    const unread = unreadForReservation(reservation.id, "partner");
     const label = reservation.statusKey === "confirmed" ? "Chat com usuário" : "Ver conversa";
-    return `<button class="button secondary small" data-action="open-reservation-chat" data-id="${esc(reservation.id)}">${label}</button>`;
+    return `<button class="button secondary small chat-entry-button ${unread ? "has-unread" : ""}" data-action="open-reservation-chat" data-id="${esc(reservation.id)}"><span>${label}</span>${messageBadge(unread)}</button>`;
+  }
+
+  function chatUnreadCount(thread, role) {
+    if (!thread || !["user","partner"].includes(role)) return 0;
+    thread.unread = thread.unread || { user:0, partner:0 };
+    return Number(thread.unread[role] || 0);
+  }
+
+  function unreadForReservation(reservationId, role) {
+    return chatUnreadCount(chatThreadForReservation(reservationId), role);
+  }
+
+  function totalUnreadForRole(role) {
+    return state.chatThreads.reduce((total, thread) => total + chatUnreadCount(thread, role), 0);
+  }
+
+  function markChatRead(thread, role) {
+    if (!thread || !["user","partner"].includes(role)) return;
+    thread.unread = thread.unread || { user:0, partner:0 };
+    thread.unread[role] = 0;
+    thread.lastReadAt = thread.lastReadAt || { user:"", partner:"" };
+    thread.lastReadAt[role] = new Date().toLocaleString("pt-BR");
+  }
+
+  function messageBadge(count) {
+    return count > 0 ? `<span class="message-badge" aria-label="${esc(count)} mensagem(ns) nova(s)">${esc(count)}</span>` : "";
+  }
+
+  function updateRoleUnreadIndicators() {
+    roleButtons.forEach((button) => {
+      const role = button.dataset.role;
+      const count = ["user","partner"].includes(role) ? totalUnreadForRole(role) : 0;
+      let badge = button.querySelector(".role-unread-badge");
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "role-unread-badge";
+          button.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? "99+" : String(count);
+        badge.setAttribute("aria-label", `${count} mensagem(ns) não lida(s)`);
+        button.classList.add("has-unread");
+      } else {
+        badge?.remove();
+        button.classList.remove("has-unread");
+      }
+    });
   }
 
   function chatMessagesMarkup(thread, viewerRole) {
@@ -1592,7 +1658,9 @@
     const thread = ensureChatThread(reservation) || chatThreadForReservation(reservation.id);
     if (!thread) return;
     selectedChatReservationId = reservation.id;
+    markChatRead(thread, state.role);
     saveState();
+    render();
     if (!chatDialog.open) chatDialog.showModal();
     renderOpenChat();
     if (chatCanSendForReservation(reservation) && allowAutomaticFieldFocus) setTimeout(() => chatInput.focus({ preventScroll:true }), 40);
@@ -1605,12 +1673,17 @@
     const clean = String(text || "").trim();
     if (!thread || !clean) return;
     const senderType = state.role === "partner" ? "partner" : "user";
+    const receiverType = senderType === "partner" ? "user" : "partner";
     const senderName = senderType === "partner" ? state.partnerProfile.tradeName : state.userProfile.name;
     thread.messages.push({ id: nextId("MSG-", thread.messages), senderType, senderName, text: clean.slice(0,1000), createdAt: new Date().toLocaleString("pt-BR") });
     thread.updatedAt = new Date().toLocaleString("pt-BR");
+    thread.unread = thread.unread || { user:0, partner:0 };
+    thread.unread[senderType] = 0;
+    thread.unread[receiverType] = Number(thread.unread[receiverType] || 0) + 1;
     saveState();
     chatInput.value = "";
     renderOpenChat();
+    updateRoleUnreadIndicators();
   }
 
   function userReservations() {
@@ -1628,7 +1701,8 @@
         const visual = reservationStatus(reservation.statusKey);
         const badge = reservationDateBadge(reservation.date);
         const eventVisual = eventPublicationLabel(reservation.eventPublicationStatus);
-        return `<article class="reservation-card"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div><div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${chatButtonForUser(reservation)}${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
+        const unread = unreadForReservation(reservation.id,"user");
+        return `<article class="reservation-card ${unread ? "has-unread" : ""}"><div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div><div class="reservation-card-main"><div class="reservation-card-heading"><div><h2>${esc(reservation.venue)}</h2><p>${esc(timeRange(reservation.time,reservation.endTime))} · ${money(reservation.value)}${reservation.monthly ? ` · Mensalista (${esc(reservation.occurrenceCount)} datas)` : ""}${Number(reservation.paymentDue||0)>0 ? ` · Diferença ${money(reservation.paymentDue)}` : ""}${reservation.paymentMethodLabel ? ` · ${esc(reservation.paymentMethodLabel)}` : ""}${reservation.pixSplit ? ` · Rateio ${esc(pixCollectionForReservation(reservation.id)?.paidCount || 0)}/${esc(reservation.pixSplitMemberCount || 0)}` : ""}</p></div><span class="status ${visual.status}">${visual.label}</span></div><div class="reservation-group-line"><strong>${esc(reservation.groupName || "Grupo não informado")}</strong><span>${esc(reservation.groupRole || "")}</span></div><div class="reservation-card-meta"><span>${esc(reservation.event || "Evento não informado")}</span><span class="status ${eventVisual.className}">${eventVisual.label}</span></div>${unread ? `<div class="inline-message-notice"><span class="message-badge">${esc(unread)}</span><strong>${unread === 1 ? "Nova mensagem do parceiro" : `${unread} novas mensagens do parceiro`}</strong></div>` : ""}<div class="reservation-card-actions"><button class="button ghost small" data-action="reservation-details" data-id="${esc(reservation.id)}">Detalhes</button>${chatButtonForUser(reservation)}${reservation.pixSplit ? `<button class="button secondary small" data-action="pix-split-details" data-id="${esc(reservation.id)}">Acompanhar rateio</button>` : ""}${reservation.statusKey === "pending" ? `${reservation.pixSplit ? "" : `<button class="button secondary small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="confirmed">Simular pagamento</button>`}<button class="button danger small" data-action="reservation-status" data-id="${esc(reservation.id)}" data-status="cancelled">Cancelar</button>` : reservation.statusKey === "confirmed" ? userCancellationAction(reservation) : reservation.statusKey === "cancelled" && reservation.outsideDeadline && !reservation.exceptionReviewId ? `<button class="button ghost small" data-action="request-cancellation-exception" data-id="${esc(reservation.id)}">Solicitar análise excepcional</button>` : ""}</div></div></article>`;
       }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
@@ -1701,11 +1775,27 @@
   }
 
   function partnerReservations() {
+    state.reservations.filter((reservation) => reservation.venueId === state.partnerProfile.venueId).forEach((reservation) => syncPartnerReservationFromUser(reservation));
     const filter = state.filters.partnerReservationStatus;
     const items = state.partnerReservations.filter((item) => filter === "Todos" || item.status === filter);
-    return `${pageHeader("Portal do parceiro", "Reservas", "Aceite solicitações, registre reservas manuais e acompanhe os pagamentos externos.", `<button class="button primary" data-action="new-partner-reservation">Nova reserva manual</button>`)}
+    const unreadTotal = totalUnreadForRole("partner");
+    return `${pageHeader("Portal do parceiro", "Reservas", "Aceite solicitações, acompanhe pagamentos e converse com o usuário após a confirmação financeira.", `<button class="button primary" data-action="new-partner-reservation">Nova reserva manual</button>`)}
+      ${unreadTotal ? `<div class="message-alert-banner" role="status"><span class="message-alert-icon">●</span><div><strong>${esc(unreadTotal)} mensagem${unreadTotal === 1 ? " nova" : "s novas"}</strong><small>As reservas com conversa pendente estão destacadas abaixo.</small></div></div>` : ""}
       <div class="toolbar"><select class="filter-select" id="partnerReservationFilter"><option>Todos</option><option>Pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-partner-reservations">Exportar CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Cliente</th><th>Data e hora</th><th>Espaço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${items.map((item) => `<tr><td>${esc(item.id)}</td><td>${esc(item.client)}</td><td>${esc(item.date)} · ${esc(timeRange(item.time,item.endTime))}${item.monthly ? ` · Mensalista (${esc(item.occurrenceCount || 0)} datas)` : ""}</td><td>${esc(item.space)}</td><td>${money(item.value)}</td><td><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></td><td><div class="item-actions"><button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${chatButtonForPartner(item)}${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar e reembolsar</button>` : ""}</div></td></tr>`).join("")}</tbody></table></div>`;
+      <section class="partner-reservation-list">${items.map((item) => {
+        const reservation = item.userReservationId ? state.reservations.find((entry) => entry.id === item.userReservationId) : null;
+        const unread = reservation ? unreadForReservation(reservation.id,"partner") : 0;
+        const badge = reservationDateBadge(item.date);
+        return `<article class="partner-reservation-card ${unread ? "has-unread" : ""}">
+          <div class="reservation-date"><strong>${esc(badge.day)}</strong><span>${esc(badge.month)}</span></div>
+          <div class="partner-reservation-main">
+            <div class="partner-reservation-heading"><div><h2>${esc(item.client)}</h2><p>${esc(item.space)} · ${esc(timeRange(item.time,item.endTime))}${item.monthly ? ` · Mensalista (${esc(item.occurrenceCount || 0)} datas)` : ""}</p></div><span class="status ${statusClass(item.status)}">${esc(item.status)}</span></div>
+            <div class="partner-reservation-meta"><span>${esc(item.date)}</span><strong>${money(item.value)}</strong><span>${esc(item.payment || "Pagamento não informado")}</span></div>
+            ${unread ? `<div class="inline-message-notice"><span class="message-badge">${esc(unread)}</span><strong>${unread === 1 ? "Nova mensagem do usuário" : `${unread} novas mensagens do usuário`}</strong></div>` : ""}
+            <div class="reservation-card-actions">${chatButtonForPartner(item)}<button class="button ghost small" data-action="partner-reservation-details" data-id="${esc(item.id)}">Detalhes</button>${item.status === "Pendente" ? `<button class="button secondary small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Confirmada">Aceitar</button><button class="button danger small" data-action="partner-reservation-status" data-id="${esc(item.id)}" data-status="Cancelada">Recusar</button>` : item.status === "Confirmada" && item.payment === "Pago via Asaas" ? `<button class="button danger small" data-action="cancel-paid-partner-reservation" data-id="${esc(item.id)}">Cancelar e reembolsar</button>` : ""}</div>
+          </div>
+        </article>`;
+      }).join("") || emptyState("▣", "Nenhuma reserva encontrada neste filtro.")}</section>`;
   }
 
   function partnerSpaces() {
@@ -1848,6 +1938,7 @@
     if (adminPartnerFilter) adminPartnerFilter.value = state.filters.adminPartnerStatus;
     const adminReservationFilter = document.getElementById("adminReservationFilter");
     if (adminReservationFilter) adminReservationFilter.value = state.filters.adminReservationStatus;
+    updateRoleUnreadIndicators();
   }
 
   function venueScheduleBody(venue, selectedDate) {
