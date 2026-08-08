@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.25
+# Tâmo On — Partners Preview 0.1.26
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
@@ -147,17 +147,22 @@ A Preview não contém credenciais, não chama APIs externas e não movimenta di
 - Preview usa persistência local; produção deverá usar backend autenticado e sincronização em tempo real.
 
 
-## Partners Preview 0.1.25 — ajustes do balão de reserva
+## Partners Preview 0.1.26 — ajustes do balão de reserva
 
 - voucher reposicionado para o bloco superior de resumo financeiro, imediatamente antes do valor total;
 - rateio Pix inicia desmarcado em toda nova reserva e a lista de membros é removida da tela ao desmarcar;
 - ao selecionar Mensalista, o resumo passa a listar todas as datas e respectivos horários incluídos no pacote;
 - mantido o fluxo compacto da 0.1.23, sem reintroduzir textos extensos.
 
-## Partners Preview 0.1.25 — vouchers funcionais e mensalista corrido
+## Partners Preview 0.1.26 — vouchers funcionais e mensalista corrido
 
 - Exibição mensalista em texto corrido, com data por extenso e horário de cada ocorrência.
 - Vouchers promocionais com desconto real no checkout, inclusive para rateio Pix e cartão Asaas.
 - Criação de vouchers pelo parceiro, limitada ao próprio espaço.
 - Criação de vouchers pela administração, global ou por parceiro.
 - Tipos de desconto: percentual ou valor fixo; valor mínimo, validade e modalidade configuráveis.
+
+
+## Partners Preview 0.1.26 — grade única da agenda
+
+A aba Agenda do parceiro foi consolidada sobre uma única fonte de dados. A agenda publicada no marketplace e a visão de reservas/bloqueios operacionais agora leem os mesmos slots, usam o mesmo dia selecionado e navegam por todos os dias criados. Bloqueios e reservas manuais são vinculados diretamente à grade publicada, e alterações de status/cancelamentos refletem automaticamente na disponibilidade.

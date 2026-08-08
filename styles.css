@@ -1968,3 +1968,13 @@ html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,
   .voucher-management-head { display:grid; grid-template-columns:1fr; }
   .voucher-code-large { text-align:left; }
 }
+
+
+/* Partners Preview 0.1.26 — grade única da agenda do parceiro */
+.partner-agenda-date-strip { display:flex; gap:7px; margin:12px 0 14px; padding-bottom:3px; }
+.partner-agenda-date-strip > .schedule-day { flex:0 0 86px; min-width:86px; }
+.timeline-event.available { border-left-color:#74877e; background:rgba(255,255,255,.025); }
+.timeline-event.available strong { color:var(--text); }
+@media (max-width:700px) {
+  .partner-agenda-date-strip > .schedule-day { flex-basis:78px; min-width:78px; }
+}

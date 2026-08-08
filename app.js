@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.25";
+  const VERSION = "0.1.26";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -530,6 +530,77 @@
     venue.schedule = venue.schedule.filter((day) => day.slots.length);
     state.ui.selectedAvailabilityKeys = selectedAvailabilityKeys().filter((key) => !keySet.has(key));
     return removed;
+  }
+
+  function partnerScheduleDays(venue) {
+    return [...(venue?.schedule || [])].filter((day) => Array.isArray(day.slots) && day.slots.length).sort((a,b) => parsePtDateTime(a.date,"12:00") - parsePtDateTime(b.date,"12:00"));
+  }
+
+  function selectedPartnerAgendaDate(venue) {
+    state.ui = state.ui || {};
+    const days = partnerScheduleDays(venue);
+    if (!days.length) {
+      state.ui.partnerAgendaDate = "";
+      return "";
+    }
+    if (days.some((day) => day.shortDate === state.ui.partnerAgendaDate)) return state.ui.partnerAgendaDate;
+    const legacyDay = Number(state.partnerDay || 0);
+    const legacyMatch = days.find((day) => Number(String(day.shortDate).slice(0,2)) === legacyDay);
+    state.ui.partnerAgendaDate = (legacyMatch || days[0]).shortDate;
+    return state.ui.partnerAgendaDate;
+  }
+
+  function partnerAgendaDateStrip(venue, selectedDate) {
+    const days = partnerScheduleDays(venue);
+    if (!days.length) return emptyState("▦", "Nenhum dia foi criado na agenda.");
+    return `<div class="partner-agenda-date-strip schedule-days" aria-label="Dias criados na agenda">${days.map((day) => `<button type="button" class="schedule-day ${day.shortDate === selectedDate ? "active" : ""}" data-action="partner-schedule-date" data-date="${esc(day.shortDate)}"><small>${esc(day.weekday)}</small><strong>${esc(day.dayLabel)}</strong></button>`).join("")}</div>`;
+  }
+
+  function operationalSlotInfo(venue, day, slot) {
+    if (slot.blocked) {
+      return {
+        type:"blocked",
+        title:slot.blockTitle || "Bloqueio operacional",
+        detail:slot.blockDetail || "Horário indisponível no marketplace",
+        statusLabel:"Bloqueado",
+        reservation:null
+      };
+    }
+    const reservation = findReservationForSlot(venue.id, slot.time, day.shortDate, slotEndTime(slot), normalizedSlotSpace(slot));
+    if (!reservation) {
+      return {
+        type:"available",
+        title:"Disponível no marketplace",
+        detail:`${money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}`,
+        statusLabel:"Disponível",
+        reservation:null
+      };
+    }
+    const statusKey = reservation.statusKey || partnerReservationStatusKey(reservation);
+    const confirmed = statusKey === "confirmed";
+    return {
+      type:confirmed ? "confirmed" : "pending",
+      title:reservation.groupName || reservation.client || reservation.user || "Reserva",
+      detail:`${reservation.id || "Reserva"} · ${reservation.paymentStatus || reservation.payment || (confirmed ? "Confirmada" : "Pendente")}`,
+      statusLabel:confirmed ? "Reservado · confirmado" : "Reserva pendente",
+      reservation
+    };
+  }
+
+  function ensureScheduleDay(venue, meta) {
+    let day = venue.schedule.find((item) => item.shortDate === meta.shortDate);
+    if (!day) {
+      day = {...meta, slots:[]};
+      venue.schedule.push(day);
+      venue.schedule.sort((a,b) => parsePtDateTime(a.date,"12:00") - parsePtDateTime(b.date,"12:00"));
+    }
+    return day;
+  }
+
+  function slotForSchedulePeriod(venue, meta, space, startTime, endTime) {
+    const day = venue.schedule.find((item) => item.shortDate === meta.shortDate);
+    const slot = day?.slots.find((item) => normalizedSlotSpace(item) === space && item.time === startTime && slotEndTime(item) === endTime) || null;
+    return { day, slot };
   }
 
   function cascadeAvailabilityPlan(venue, editDay, editSlot, nextEndTime) {
@@ -1476,18 +1547,53 @@
     return `<div class="empty-state"><div class="empty-icon">${icon}</div>${esc(text)}</div>`;
   }
 
+  function partnerReservationStatusKey(reservation) {
+    if (!reservation) return "pending";
+    if (reservation.status === "Confirmada") return "confirmed";
+    if (reservation.status === "Cancelada") return "cancelled";
+    return "pending";
+  }
+
+  function findPartnerReservationForSlot(venueId, time, shortDate, endTime = "", space = "") {
+    if (venueId !== state.partnerProfile.venueId) return null;
+    return state.partnerReservations.find((reservation) => {
+      if (reservation.status === "Cancelada") return false;
+      const reservationSpace = reservation.space || state.partnerSpaces[0]?.name || "Espaço principal";
+      const directDate = String(reservation.date || "").slice(0,5);
+      const directSpaceMatches = !space || reservationSpace === space;
+      const direct = directSpaceMatches && reservation.time === time && directDate === shortDate && (!endTime || !reservation.endTime || reservation.endTime === endTime);
+      const recurring = Array.isArray(reservation.occurrences) && reservation.occurrences.some((item) => {
+        const occurrenceSpace = item.space || reservationSpace;
+        const occurrenceShortDate = item.shortDate || String(item.date || "").slice(0,5);
+        return (!space || occurrenceSpace === space) && item.time === time && occurrenceShortDate === shortDate && (!endTime || !item.endTime || item.endTime === endTime);
+      });
+      return direct || recurring;
+    }) || null;
+  }
+
   function findReservationForSlot(venueId, time, shortDate, endTime = "", space = "") {
-    return state.reservations.find((reservation) => {
+    const userReservation = state.reservations.find((reservation) => {
       if (reservation.venueId !== venueId || reservation.statusKey === "cancelled") return false;
       const reservationSpace = reservation.space || state.partnerSpaces[0]?.name || "Espaço principal";
       const directSpaceMatches = !space || reservationSpace === space;
       const direct = directSpaceMatches && reservation.time === time && reservation.shortDate === shortDate && (!endTime || !reservation.endTime || reservation.endTime === endTime);
       const recurring = Array.isArray(reservation.occurrences) && reservation.occurrences.some((item) => {
         const occurrenceSpace = item.space || reservationSpace;
-        return (!space || occurrenceSpace === space) && item.time === time && item.shortDate === shortDate && (!endTime || !item.endTime || item.endTime === endTime);
+        const occurrenceShortDate = item.shortDate || String(item.date || "").slice(0,5);
+        return (!space || occurrenceSpace === space) && item.time === time && occurrenceShortDate === shortDate && (!endTime || !item.endTime || item.endTime === endTime);
       });
       return direct || recurring;
     });
+    if (userReservation) return userReservation;
+
+    const partnerReservation = findPartnerReservationForSlot(venueId, time, shortDate, endTime, space);
+    if (!partnerReservation) return null;
+    return {
+      ...partnerReservation,
+      statusKey: partnerReservationStatusKey(partnerReservation),
+      endpoint: partnerReservation.payment === "Externo" ? "partner.manual_reservation" : "partner.reservation",
+      _partnerReservation: true
+    };
   }
 
   function venueCard(venue) {
@@ -1839,32 +1945,44 @@
     const pending = state.partnerReservations.filter((item) => item.status === "Pendente").length;
     const activeSpaces = state.partnerSpaces.filter((item) => item.status === "Ativo").length;
     const gross = state.partnerReservations.filter((item) => item.status === "Confirmada").reduce((sum, item) => sum + item.value, 0);
+    const venue = state.venues.find((item) => item.id === state.partnerProfile.venueId);
+    const upcoming = publicAvailabilityEntries(venue).sort((a,b) => parsePtDateTime(a.day.date,a.slot.time) - parsePtDateTime(b.day.date,b.slot.time)).slice(0,3);
     return `${pageHeader("Portal do parceiro", "Visão geral", "Resumo objetivo da operação diária da Arena Central.")}
       <section class="stats-grid compact-kpi-grid">${stat(confirmed, "confirmadas", "+1 nesta semana")}${stat(pending, "pendentes")}${stat(activeSpaces, "espaços ativos")}${stat(money(gross), "reservas confirmadas")}</section>
       <section class="grid two">
-        <article class="card"><div class="section-heading"><div><h2>Próximos horários</h2><p>Agenda de 06/08/2026</p></div><button class="button ghost small" data-nav="agenda">Ver agenda</button></div><div class="list">${state.partnerAgenda.filter((item) => item.day === 6).slice(0,3).map((item) => `<div class="list-item"><div class="avatar">${esc(item.time.slice(0,2))}</div><div class="list-item-main"><strong>${esc(item.title)}</strong><small>${esc(item.time)} · ${esc(item.space)} · ${esc(item.detail)}</small></div><span class="status ${item.type === "confirmed" ? "status-ok" : item.type === "pending" ? "status-warning" : "status-neutral"}">${item.type === "confirmed" ? "Confirmado" : item.type === "pending" ? "Pendente" : "Bloqueio"}</span></div>`).join("")}</div></article>
+        <article class="card"><div class="section-heading"><div><h2>Próximos horários</h2><p>Mesma grade publicada no marketplace</p></div><button class="button ghost small" data-nav="agenda">Ver agenda</button></div><div class="list">${upcoming.map(({day,slot}) => { const info=operationalSlotInfo(venue,day,slot); return `<div class="list-item"><div class="avatar">${esc(slot.time.slice(0,2))}</div><div class="list-item-main"><strong>${esc(info.title)}</strong><small>${esc(day.date)} · ${esc(timeRange(slot.time,slotEndTime(slot)))} · ${esc(normalizedSlotSpace(slot))}</small></div><span class="status ${info.type === "confirmed" ? "status-ok" : info.type === "pending" ? "status-warning" : "status-neutral"}">${esc(info.statusLabel)}</span></div>`; }).join("") || emptyState("▦","Nenhum horário publicado.")}</div></article>
         <article class="card"><div class="section-heading"><div><h2>Cadastro do parceiro</h2><p>Completude dos dados</p></div><button class="button ghost small" data-nav="registration">Revisar</button></div><div class="progress"><span style="width:88%"></span></div><div class="meta-row" style="margin-top:10px"><span>Dados cadastrais completos</span><span>Dados bancários em conferência</span></div><div class="callout" style="margin-top:14px"><strong>Próxima pendência</strong><p>Confirmar a titularidade da conta bancária antes da futura criação da subconta.</p></div></article>
       </section>`;
   }
 
   function partnerAgenda() {
-    const days = [["SEG",3],["TER",4],["QUA",5],["QUI",6],["SEX",7],["SÁB",8],["DOM",9]];
-    const items = state.partnerAgenda.filter((item) => item.day === state.partnerDay).sort((a,b) => a.time.localeCompare(b.time));
     const venue = state.venues.find((item) => item.id === state.partnerProfile.venueId);
-    const publicEntries = publicAvailabilityEntries(venue).sort((a,b) => parsePtDateTime(a.day.date,a.slot.time) - parsePtDateTime(b.day.date,b.slot.time));
+    if (!venue) return `${pageHeader("Portal do parceiro", "Agenda", "Agenda indisponível.")}${emptyState("▦","Parceiro sem espaço vinculado.")}`;
+    state.reservations.filter((reservation) => reservation.venueId === venue.id).forEach((reservation) => syncPartnerReservationFromUser(reservation));
+    const selectedDate = selectedPartnerAgendaDate(venue);
+    const publicEntries = publicAvailabilityEntries(venue)
+      .filter(({day}) => day.shortDate === selectedDate)
+      .sort((a,b) => a.slot.time.localeCompare(b.slot.time) || normalizedSlotSpace(a.slot).localeCompare(normalizedSlotSpace(b.slot)));
+    const operationalEntries = publicEntries.map((entry) => ({...entry, info:operationalSlotInfo(venue,entry.day,entry.slot)}));
     const selected = selectedAvailabilityKeys();
     const selectableEntries = publicEntries.filter(({day,slot}) => !availabilityHasActiveReservation(venue,day,slot));
     const selectedCount = selected.filter((key) => selectableEntries.some((entry) => entry.key === key)).length;
     const allSelectableSelected = selectableEntries.length > 0 && selectableEntries.every((entry) => selected.includes(entry.key));
-    return `${pageHeader("Portal do parceiro", "Agenda", "Publique, organize e mantenha os horários disponíveis do marketplace em um único lugar.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
-      <section class="agenda-batch-guide"><strong>Criação em lote</strong><span>Escolha o período do mês, os dias da semana e uma faixa de funcionamento. A grade automática cria todos os horários de uma vez e bloqueia qualquer sobreposição no mesmo espaço. Horários mensalistas com duração especial são mantidos com a mesma duração nas datas equivalentes do mês, reorganizando a sequência diária quando necessário.</span></section>
-      <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada no marketplace</h2><p>Selecione vários horários para excluir em lote. Horários com reserva ativa ficam protegidos.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
+    const dateStrip = partnerAgendaDateStrip(venue, selectedDate);
+    return `${pageHeader("Portal do parceiro", "Agenda", "A agenda publicada, as reservas e os bloqueios usam a mesma grade e são atualizados em conjunto.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
+      <section class="agenda-batch-guide"><strong>Grade única</strong><span>Qualquer criação, edição, bloqueio, reserva ou exclusão abaixo altera a mesma agenda que o usuário consulta no marketplace.</span></section>
+      <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada no marketplace</h2><p>Use a linha de dias para consultar toda a agenda criada. A seleção múltipla atua no dia exibido.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
+        ${dateStrip}
         <div class="public-agenda-list">${publicEntries.map(({day,slot,key}) => {
           const occupied = availabilityHasActiveReservation(venue,day,slot);
           const checked = selected.includes(key);
-          return `<div class="public-agenda-row ${checked ? "selected" : ""}"><label class="agenda-row-check" title="${occupied ? "Horário protegido por reserva ativa" : "Selecionar horário"}"><input type="checkbox" data-action="toggle-availability-selection" data-key="${esc(key)}" ${checked ? "checked" : ""} ${occupied ? "disabled" : ""}><span></span></label><div><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong><small>${esc(slot.space || "Espaço principal")}${occupied ? " · reserva ativa" : ""}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${slot.blocked ? "Bloqueado" : money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}</small></div><div class="item-actions"><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Editar</button><button class="button danger small" data-action="delete-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Excluir</button></div></div>`;
-        }).join("") || emptyState("▦", "Nenhum horário publicado.")}</div></section>
-      <section class="card"><div class="section-heading"><div><h2>Reservas e bloqueios operacionais</h2><p>Acompanhe os compromissos do período de teste.</p></div></div><div class="calendar-strip">${days.map(([label,day]) => `<button class="day ${day === state.partnerDay ? "active" : ""}" data-action="partner-day" data-day="${day}"><small>${label}</small><strong>${day}</strong></button>`).join("")}</div><div class="timeline">${items.map((item) => `<div class="timeline-row"><div class="timeline-time">${esc(timeRange(item.time,item.endTime))}</div><div class="timeline-event ${item.type === "pending" ? "warning" : item.type === "blocked" ? "blocked" : ""}"><strong>${esc(item.title)}</strong><div class="meta-row"><span>${esc(item.space)}</span><span>${esc(item.detail)}</span></div></div><div class="item-actions"><button class="button ghost small" data-action="agenda-details" data-id="${esc(item.id)}">Abrir</button><button class="button ghost small" data-action="edit-agenda" data-id="${esc(item.id)}">Editar</button></div></div>`).join("") || emptyState("▦", "Nenhum compromisso para o dia selecionado.")}</div></section>`;
+          const info = operationalSlotInfo(venue,day,slot);
+          const statusText = info.type === "available" ? `${info.statusLabel} · ${money(slot.price)}${slot.monthlyEligible ? ` · Mensalista ${money(slot.monthlyPrice)}` : ""}` : info.type === "blocked" ? `${info.statusLabel} · ${info.title}` : `${info.statusLabel} · ${info.title}`;
+          return `<div class="public-agenda-row ${checked ? "selected" : ""}"><label class="agenda-row-check" title="${occupied ? "Horário protegido por reserva ativa" : "Selecionar horário"}"><input type="checkbox" data-action="toggle-availability-selection" data-key="${esc(key)}" ${checked ? "checked" : ""} ${occupied ? "disabled" : ""}><span></span></label><div><strong>${esc(day.weekday)} · ${esc(day.dayLabel)}</strong><small>${esc(normalizedSlotSpace(slot))}${occupied ? " · reserva ativa" : ""}</small></div><div><strong>${esc(timeRange(slot.time,slotEndTime(slot)))}</strong><small>${esc(statusText)}</small></div><div class="item-actions"><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Editar</button>${slot.blocked ? `<button class="button ghost small" data-action="unblock-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Desbloquear</button>` : ""}<button class="button danger small" data-action="delete-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${occupied ? "disabled" : ""}>Excluir</button></div></div>`;
+        }).join("") || emptyState("▦", "Nenhum horário criado neste dia.")}</div></section>
+      <section class="card"><div class="section-heading"><div><h2>Reservas e bloqueios operacionais</h2><p>Esta visão é derivada da mesma grade acima. Não existem mais compromissos paralelos.</p></div></div>
+        ${dateStrip}
+        <div class="timeline">${operationalEntries.map(({day,slot,info}) => `<div class="timeline-row"><div class="timeline-time">${esc(timeRange(slot.time,slotEndTime(slot)))}</div><div class="timeline-event ${info.type === "pending" ? "warning" : info.type === "blocked" ? "blocked" : info.type === "available" ? "available" : ""}"><strong>${esc(info.title)}</strong><div class="meta-row"><span>${esc(normalizedSlotSpace(slot))}</span><span>${esc(info.detail)}</span></div></div><div class="item-actions"><button class="button ghost small" data-action="schedule-slot-details" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Abrir</button><button class="button ghost small" data-action="edit-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}" ${info.reservation ? "disabled" : ""}>Editar</button>${slot.blocked ? `<button class="button ghost small" data-action="unblock-availability" data-date="${esc(day.shortDate)}" data-time="${esc(slot.time)}" data-space="${esc(normalizedSlotSpace(slot))}">Desbloquear</button>` : ""}</div></div>`).join("") || emptyState("▦", "Nenhum horário criado neste dia.")}</div></section>`;
   }
 
   function partnerReservations() {
@@ -2270,8 +2388,11 @@
       const partnerCanManage = state.role === "partner" && promotionIssuerType(promo) === "partner" && promotionVenueId(promo) === state.partnerProfile.venueId;
       const adminCanManage = state.role === "admin";
       if (promo && (partnerCanManage || adminCanManage)) { promo.active = !promo.active; saveState(); render(); showToast(`Voucher ${promo.code} ${promo.active ? "ativado" : "desativado"}.`); }
-    } else if (action === "partner-day") {
-      state.partnerDay = Number(button.dataset.day); saveState(); render();
+    } else if (action === "partner-schedule-date") {
+      state.ui = state.ui || {};
+      state.ui.partnerAgendaDate = button.dataset.date || "";
+      state.ui.selectedAvailabilityKeys = [];
+      saveState(); render();
     } else if (action === "toggle-availability-selection") {
       const key=button.dataset.key;
       const selected=selectedAvailabilityKeys();
@@ -2279,7 +2400,8 @@
       saveState();render();
     } else if (action === "toggle-all-availability") {
       const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
-      const eligible=publicAvailabilityEntries(venue).filter(({day,slot})=>!availabilityHasActiveReservation(venue,day,slot)).map((entry)=>entry.key);
+      const selectedDate=selectedPartnerAgendaDate(venue);
+      const eligible=publicAvailabilityEntries(venue).filter(({day,slot})=>day.shortDate===selectedDate && !availabilityHasActiveReservation(venue,day,slot)).map((entry)=>entry.key);
       state.ui.selectedAvailabilityKeys=button.checked ? eligible : [];
       saveState();render();
     } else if (action === "delete-selected-availability") {
@@ -2295,6 +2417,11 @@
       if (!venue) return;
       const editDay = action === "edit-availability" ? venue.schedule.find((day) => day.shortDate === button.dataset.date) : null;
       const editSlot = editDay?.slots.find((slot) => slot.time === button.dataset.time && normalizedSlotSpace(slot) === (button.dataset.space || normalizedSlotSpace(slot))) || null;
+      if (editSlot && availabilityHasActiveReservation(venue,editDay,editSlot)) {
+        const occupied=findReservationForSlot(venue.id,editSlot.time,editDay.shortDate,slotEndTime(editSlot),normalizedSlotSpace(editSlot));
+        openDetail({eyebrow:"Agenda",title:"Horário vinculado a uma reserva",body:`<div class="cancellation-warning"><strong>Edição protegida</strong><p>O período ${esc(timeRange(editSlot.time,slotEndTime(editSlot)))} está vinculado a ${esc(occupied?.id || "uma reserva ativa")}. Altere ou cancele a reserva na área de Reservas antes de modificar a grade.</p></div>`});
+        return;
+      }
       const defaultSpace = state.partnerSpaces.find((space) => space.name === normalizedSlotSpace(editSlot)) || state.partnerSpaces[0];
       const defaultIsoDate = editDay ? `${editDay.date.slice(6)}-${editDay.date.slice(3,5)}-${editDay.date.slice(0,2)}` : "2026-08-01";
       if (editSlot) {
@@ -2338,6 +2465,7 @@
             cascadePlan.changes.forEach((change)=>{change.slot.time=change.startTime;change.slot.endTime=change.endTime;});
             editDay.slots.sort((a,b)=>a.time.localeCompare(b.time));
             const monthlyResult=syncMonthly?applyMonthlyAvailabilityPropagation(monthlyPlan,data.startTime,data.endTime,Number(data.monthlyPrice)):null;
+            state.ui.partnerAgendaDate=meta.shortDate;
             state.ui.selectedAvailabilityKeys=[];
             saveState();render();
             if(monthlyResult?.changedDays){showToast(`Horário mensalista sincronizado em ${monthlyResult.changedDays + 1} data(s); ${cascadePlan.changes.length + monthlyResult.shiftedSlots} período(s) subsequente(s) reorganizado(s).`);}
@@ -2348,10 +2476,11 @@
           if(!editDay.slots.length) venue.schedule=venue.schedule.filter((day)=>day!==editDay);
           let day=venue.schedule.find((item)=>item.shortDate===meta.shortDate);
           if(!day){day={...meta,slots:[]};venue.schedule.push(day);}
-          day.slots.push({time:data.startTime,endTime:data.endTime,price:Number(data.price),space:data.space,monthlyEligible:data.monthlyEnabled==="Sim",monthlyPrice:data.monthlyEnabled==="Sim"?Number(data.monthlyPrice):0});
+          day.slots.push({time:data.startTime,endTime:data.endTime,price:Number(data.price),space:data.space,monthlyEligible:data.monthlyEnabled==="Sim",monthlyPrice:data.monthlyEnabled==="Sim"?Number(data.monthlyPrice):0,blocked:Boolean(editSlot.blocked),blockTitle:editSlot.blockTitle||"",blockDetail:editSlot.blockDetail||""});
           day.slots.sort((a,b)=>a.time.localeCompare(b.time));
           const monthlyResult=syncMonthly?applyMonthlyAvailabilityPropagation(monthlyPlan,data.startTime,data.endTime,Number(data.monthlyPrice)):null;
           venue.schedule.sort((a,b)=>parsePtDateTime(a.date,"12:00")-parsePtDateTime(b.date,"12:00"));
+          state.ui.partnerAgendaDate=meta.shortDate;
           state.ui.selectedAvailabilityKeys=[];
           saveState();render();showToast(monthlyResult?.changedDays?`Horário atualizado e duração mensalista replicada em ${monthlyResult.changedDays} outra(s) data(s).`:"Horário atualizado.");
         }});
@@ -2399,22 +2528,81 @@
       if(occupied){openDetail({eyebrow:"Agenda",title:"Horário com reserva ativa",body:`<div class="cancellation-warning"><strong>Exclusão bloqueada</strong><p>O período ${esc(timeRange(slot.time,slotEndTime(slot)))} em ${esc(day.date)} está vinculado à reserva ${esc(occupied.id)}. Cancele ou trate a reserva antes de excluir a disponibilidade.</p></div>`});return;}
       askConfirm({title:"Excluir horário",message:`Excluir ${day.date}, ${timeRange(slot.time,slotEndTime(slot))}, em ${normalizedSlotSpace(slot)}?`,confirmLabel:"Excluir horário",onConfirm:()=>{const key=availabilityKey(day.shortDate,slot.time,normalizedSlotSpace(slot));day.slots=day.slots.filter((item)=>item!==slot);if(!day.slots.length)venue.schedule=venue.schedule.filter((item)=>item!==day);state.ui.selectedAvailabilityKeys=selectedAvailabilityKeys().filter((item)=>item!==key);saveState();render();showToast("Horário excluído da agenda.");}});
     } else if (action === "new-block") {
-      openForm({ eyebrow:"Agenda",title:"Novo bloqueio",description:"O bloqueio será salvo apenas nesta Preview.",fields:[
-        {name:"day",label:"Dia de agosto",type:"number",value:state.partnerDay,min:3,max:31,required:true},{name:"time",label:"Início",type:"time",value:"21:00",required:true},{name:"endTime",label:"Término",type:"time",value:"22:00",required:true},
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const selectedDate=selectedPartnerAgendaDate(venue);
+      const selectedDay=venue.schedule.find((day)=>day.shortDate===selectedDate);
+      const defaultIso=selectedDay?`${selectedDay.date.slice(6)}-${selectedDay.date.slice(3,5)}-${selectedDay.date.slice(0,2)}`:"2026-08-08";
+      openForm({ eyebrow:"Agenda",title:"Novo bloqueio",description:"O bloqueio usa a mesma grade publicada no marketplace e aparece imediatamente nas duas visões da agenda.",fields:[
+        {name:"date",label:"Data",type:"date",value:defaultIso,required:true},{name:"time",label:"Início",type:"time",value:"21:00",required:true},{name:"endTime",label:"Término",type:"time",value:"22:00",required:true},
         {name:"space",label:"Espaço",type:"select",value:state.partnerSpaces[0]?.name,options:state.partnerSpaces.map((item)=>item.name)},{name:"title",label:"Motivo",value:"Manutenção",required:true},
         {name:"detail",label:"Observação",type:"textarea",value:"Bloqueio interno",full:true}
-      ],submitLabel:"Criar bloqueio",onSubmit:(data)=>{state.partnerAgenda.push({id:nextId("A-",state.partnerAgenda),day:Number(data.day),time:data.time,endTime:data.endTime,title:data.title,space:data.space,type:"blocked",detail:data.detail||"Bloqueio interno"});saveState();render();showToast("Bloqueio adicionado à agenda.");} });
+      ],submitLabel:"Criar bloqueio",onSubmit:(data)=>{
+        const start=timeToMinutes(data.time),end=timeToMinutes(data.endTime);if(end<=start){showToast("O término deve ser posterior ao início.");return;}
+        const meta=scheduleDayFromDate(isoToLocalDate(data.date));
+        const {day,slot}=slotForSchedulePeriod(venue,meta,data.space,data.time,data.endTime);
+        if(slot){
+          if(availabilityHasActiveReservation(venue,day,slot)){openDetail({eyebrow:"Bloqueio",title:"Horário possui reserva ativa",body:`<div class="cancellation-warning"><strong>Bloqueio não aplicado</strong><p>O período ${esc(timeRange(slot.time,slotEndTime(slot)))} já está reservado. Trate a reserva antes de bloquear o horário.</p></div>`});return;}
+          slot.blocked=true;slot.blockTitle=data.title;slot.blockDetail=data.detail||"Bloqueio interno";
+        }else{
+          const conflict=scheduleConflict(venue,meta,data.space,data.time,data.endTime);
+          if(conflict){openDetail({eyebrow:"Conflito de agenda",title:"Período sobreposto",body:`<div class="cancellation-warning"><strong>Bloqueio não aplicado</strong><p>O período informado sobrepõe ${esc(timeRange(conflict.time,slotEndTime(conflict)))}. Para bloquear um horário existente, informe exatamente o mesmo início e término.</p></div>`});return;}
+          const scheduleDay=ensureScheduleDay(venue,meta);
+          const baseSpace=state.partnerSpaces.find((item)=>item.name===data.space);
+          scheduleDay.slots.push({time:data.time,endTime:data.endTime,price:Number(baseSpace?.price||0),space:data.space,monthlyEligible:false,monthlyPrice:0,blocked:true,blockTitle:data.title,blockDetail:data.detail||"Bloqueio interno"});
+          scheduleDay.slots.sort((a,b)=>a.time.localeCompare(b.time));
+        }
+        state.ui.partnerAgendaDate=meta.shortDate;state.ui.selectedAvailabilityKeys=[];saveState();render();showToast("Bloqueio aplicado na grade única da agenda.");
+      } });
     } else if (action === "new-partner-reservation") {
-      openForm({ eyebrow:"Reservas",title:"Nova reserva manual",fields:[
-        {name:"client",label:"Cliente ou grupo",value:"",required:true},{name:"date",label:"Data inicial",type:"date",value:"2026-08-13",required:true},
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const selectedDate=selectedPartnerAgendaDate(venue);
+      const selectedDay=venue.schedule.find((day)=>day.shortDate===selectedDate);
+      const defaultIso=selectedDay?`${selectedDay.date.slice(6)}-${selectedDay.date.slice(3,5)}-${selectedDay.date.slice(0,2)}`:"2026-08-13";
+      openForm({ eyebrow:"Reservas",title:"Nova reserva manual",description:"A reserva será vinculada à mesma grade exibida no marketplace. Se o horário ainda não existir e não houver conflito, ele será criado automaticamente.",fields:[
+        {name:"client",label:"Cliente ou grupo",value:"",required:true},{name:"date",label:"Data inicial",type:"date",value:defaultIso,required:true},
         {name:"time",label:"Início",type:"time",value:"18:00",required:true},{name:"endTime",label:"Término",type:"time",value:"19:00",required:true},{name:"space",label:"Espaço",type:"select",options:state.partnerSpaces.map((item)=>item.name)},
         {name:"bookingMode",label:"Modalidade",type:"select",value:"Avulsa",options:["Avulsa","Mensalista"]},{name:"value",label:"Valor avulso",type:"number",step:"0.01",value:120,required:true},{name:"monthlyValue",label:"Valor mensalista",type:"number",step:"0.01",value:440},{name:"status",label:"Status",type:"select",value:"Pendente",options:["Pendente","Confirmada"]}
-      ],submitLabel:"Salvar reserva",onSubmit:(data)=>{const start=timeToMinutes(data.time),end=timeToMinutes(data.endTime);if(end<=start){showToast("O término deve ser posterior ao início.");return;}const monthly=data.bookingMode==="Mensalista";const base=isoToLocalDate(data.date);const occurrences=[];if(monthly){for(let date=new Date(base);date.getMonth()===base.getMonth();date.setDate(date.getDate()+7)){const meta=scheduleDayFromDate(date);occurrences.push({...meta,time:data.time,endTime:data.endTime});}}else{const meta=scheduleDayFromDate(base);occurrences.push({...meta,time:data.time,endTime:data.endTime});}state.partnerReservations.unshift({id:nextId("RP-",state.partnerReservations),client:data.client,date:occurrences[0].date,time:data.time,endTime:data.endTime,space:data.space,value:Number(monthly?data.monthlyValue:data.value),monthly,occurrenceCount:occurrences.length,occurrences,status:data.status,payment:"Externo"});saveState();render();showToast(monthly?`Reserva mensalista criada para ${occurrences.length} datas.`:"Reserva manual criada.");} });
-    } else if (action === "agenda-details") {
-      const item = state.partnerAgenda.find((entry)=>entry.id===id); if(item) openDetail({eyebrow:"Agenda",title:item.title,body:`<div class="summary-card"><strong>${esc(timeRange(item.time,item.endTime))} · ${esc(item.space)}</strong><div class="meta-row" style="margin-top:7px"><span>Dia ${esc(item.day)}/08/2026</span><span>${esc(item.detail)}</span></div></div>`});
-    } else if (action === "edit-agenda") {
-      const item=state.partnerAgenda.find((entry)=>entry.id===id); if(!item)return;
-      openForm({eyebrow:"Agenda",title:"Editar compromisso",fields:[{name:"day",label:"Dia",type:"number",value:item.day,min:3,max:31},{name:"time",label:"Início",type:"time",value:item.time},{name:"endTime",label:"Término",type:"time",value:item.endTime||minutesToTime(timeToMinutes(item.time)+60)},{name:"title",label:"Título",value:item.title},{name:"space",label:"Espaço",type:"select",value:item.space,options:state.partnerSpaces.map((s)=>s.name)},{name:"type",label:"Tipo",type:"select",value:item.type,options:[{value:"confirmed",label:"Confirmado"},{value:"pending",label:"Pendente"},{value:"blocked",label:"Bloqueio"}]},{name:"detail",label:"Observação",type:"textarea",value:item.detail,full:true}],onSubmit:(data)=>{Object.assign(item,data,{day:Number(data.day)});saveState();render();showToast("Agenda atualizada.");}});
+      ],submitLabel:"Salvar reserva",onSubmit:(data)=>{
+        const start=timeToMinutes(data.time),end=timeToMinutes(data.endTime);if(end<=start){showToast("O término deve ser posterior ao início.");return;}
+        const monthly=data.bookingMode==="Mensalista";const base=isoToLocalDate(data.date);const occurrences=[];
+        if(monthly){for(let date=new Date(base);date.getMonth()===base.getMonth();date.setDate(date.getDate()+7)){const meta=scheduleDayFromDate(date);occurrences.push({...meta,time:data.time,endTime:data.endTime,space:data.space});}}
+        else{const meta=scheduleDayFromDate(base);occurrences.push({...meta,time:data.time,endTime:data.endTime,space:data.space});}
+        const problems=[];
+        occurrences.forEach((occ)=>{
+          const meta={date:occ.date,shortDate:occ.shortDate,weekday:occ.weekday,dayLabel:occ.dayLabel};
+          const exact=slotForSchedulePeriod(venue,meta,data.space,data.time,data.endTime);
+          if(exact.slot){
+            if(exact.slot.blocked) problems.push(`${occ.date} · horário bloqueado`);
+            else if(availabilityHasActiveReservation(venue,exact.day,exact.slot)) problems.push(`${occ.date} · horário já reservado`);
+          }else{
+            const conflict=scheduleConflict(venue,meta,data.space,data.time,data.endTime);
+            if(conflict) problems.push(`${occ.date} · sobreposição com ${timeRange(conflict.time,slotEndTime(conflict))}`);
+          }
+        });
+        if(problems.length){openDetail({eyebrow:"Reserva manual",title:"Não foi possível vincular a reserva",body:`<div class="cancellation-warning"><strong>Conflitos encontrados</strong><ul>${problems.slice(0,10).map((item)=>`<li>${esc(item)}</li>`).join("")}</ul></div>`});return;}
+        occurrences.forEach((occ)=>{
+          const meta={date:occ.date,shortDate:occ.shortDate,weekday:occ.weekday,dayLabel:occ.dayLabel};
+          const exact=slotForSchedulePeriod(venue,meta,data.space,data.time,data.endTime);
+          if(!exact.slot){const day=ensureScheduleDay(venue,meta);day.slots.push({time:data.time,endTime:data.endTime,price:Number(data.value),space:data.space,monthlyEligible:monthly,monthlyPrice:monthly?Number(data.monthlyValue):0});day.slots.sort((a,b)=>a.time.localeCompare(b.time));}
+        });
+        state.partnerReservations.unshift({id:nextId("RP-",state.partnerReservations),client:data.client,date:occurrences[0].date,time:data.time,endTime:data.endTime,space:data.space,value:Number(monthly?data.monthlyValue:data.value),monthly,occurrenceCount:occurrences.length,occurrences,status:data.status,payment:"Externo"});
+        state.ui.partnerAgendaDate=occurrences[0].shortDate;state.ui.selectedAvailabilityKeys=[];saveState();render();showToast(monthly?`Reserva mensalista vinculada à grade em ${occurrences.length} datas.`:"Reserva manual vinculada à grade publicada.");
+      } });
+    } else if (action === "schedule-slot-details") {
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const day=venue.schedule.find((item)=>item.shortDate===button.dataset.date);
+      const slot=day?.slots.find((item)=>item.time===button.dataset.time && normalizedSlotSpace(item)===(button.dataset.space||normalizedSlotSpace(item)));
+      if(!day||!slot)return;
+      const info=operationalSlotInfo(venue,day,slot);
+      openDetail({eyebrow:"Grade única da agenda",title:`${day.date} · ${timeRange(slot.time,slotEndTime(slot))}`,body:`<div class="summary-card"><strong>${esc(info.statusLabel)}</strong><div class="meta-row" style="margin-top:7px"><span>${esc(normalizedSlotSpace(slot))}</span><span>${esc(info.title)}</span></div><p class="dialog-description">${esc(info.detail)}</p></div><div class="detail-list" style="margin-top:12px"><div class="detail-line"><span>Marketplace</span><strong>${slot.blocked ? "Indisponível" : info.reservation ? info.statusLabel : `Disponível por ${money(slot.price)}`}</strong></div><div class="detail-line"><span>Mensalista</span><strong>${slot.monthlyEligible ? `Elegível · ${money(slot.monthlyPrice)}` : "Não elegível"}</strong></div><div class="detail-line"><span>Fonte dos dados</span><strong>Agenda publicada do parceiro</strong></div></div>`});
+    } else if (action === "unblock-availability") {
+      const venue=state.venues.find((item)=>item.id===state.partnerProfile.venueId);if(!venue)return;
+      const day=venue.schedule.find((item)=>item.shortDate===button.dataset.date);
+      const slot=day?.slots.find((item)=>item.time===button.dataset.time && normalizedSlotSpace(item)===(button.dataset.space||normalizedSlotSpace(item)));
+      if(!day||!slot||!slot.blocked)return;
+      slot.blocked=false;delete slot.blockTitle;delete slot.blockDetail;
+      if(Number(slot.price||0)<=0){const baseSpace=state.partnerSpaces.find((item)=>item.name===normalizedSlotSpace(slot));slot.price=Number(baseSpace?.price||0);}
+      saveState();render();showToast("Horário desbloqueado e disponibilizado na mesma grade do marketplace.");
     } else if (action === "partner-reservation-details") {
       const item=state.partnerReservations.find((r)=>r.id===id); if(item)openDetail({eyebrow:"Reserva do parceiro",title:item.id,body:`<div class="details-grid"><div class="detail-group"><h3>Reserva</h3><div class="detail-list"><div class="detail-line"><span>Cliente</span><strong>${esc(item.client)}</strong></div><div class="detail-line"><span>Data</span><strong>${esc(item.date)} · ${esc(timeRange(item.time,item.endTime))}${item.monthly ? ` · Mensalista (${esc(item.occurrenceCount)} datas)` : ""}</strong></div><div class="detail-line"><span>Espaço</span><strong>${esc(item.space)}</strong></div></div></div><div class="detail-group"><h3>Financeiro</h3><div class="detail-list"><div class="detail-line"><span>Valor</span><strong>${money(item.value)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(item.status)}</strong></div><div class="detail-line"><span>Pagamento</span><strong>${esc(item.payment)}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(item.voucherGeneratedCode || "Não gerado")}</strong></div></div></div>${item.cancellationSource ? `<div class="detail-group"><h3>Cancelamento</h3><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(cancellationSourceLabel(item.cancellationSource))}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${item.cancellationMode === "voucher" ? "Voucher" : item.cancellationMode === "refund" ? "Reembolso integral" : "Sem compensação"}</strong></div><div class="detail-line"><span>Motivo</span><strong>${esc(item.cancellationReason || "Não informado")}</strong></div><div class="detail-line"><span>Voucher</span><strong>${esc(item.voucherGeneratedCode || "Não gerado")}</strong></div><div class="detail-line"><span>Reembolso</span><strong>${money(item.refundValue || 0)}</strong></div><div class="detail-line"><span>Taxas suportadas por</span><strong>${item.refundFeePayer ? esc(cancellationSourceLabel(item.refundFeePayer)) : "Não aplicável"}</strong></div></div></div>` : ""}</div>`});
     } else if (action === "cancel-paid-partner-reservation") {

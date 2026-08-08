@@ -1,6 +1,6 @@
 window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
   appName: "Tâmo On Partners Preview",
-  version: "0.1.25",
+  version: "0.1.26",
   environment: "partners_preview",
   realMoney: false,
   payments: {
