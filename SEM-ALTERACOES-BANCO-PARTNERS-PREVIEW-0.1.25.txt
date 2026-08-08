@@ -1,0 +1,5 @@
+Partners Preview 0.1.25
+
+Nenhuma alteração de banco de dados foi aplicada.
+A criação e o uso de vouchers nesta Preview utilizam apenas o estado local do navegador.
+Na implementação produtiva serão necessárias estruturas persistentes para vouchers, regras de elegibilidade, resgates e auditoria.

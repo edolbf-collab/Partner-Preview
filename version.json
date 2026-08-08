@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -11,9 +11,11 @@
   "real_money": false,
   "released_at": "2026-08-08",
   "notes": [
-    "Voucher movido para o resumo financeiro da reserva, imediatamente antes do valor total.",
-    "Rateio Pix inicia desmarcado e limpa completamente a lista de membros ao ser desativado.",
-    "Mensalista selecionado exibe todas as datas e horários que compõem a reserva recorrente.",
-    "Fluxo compacto da 0.1.23 foi preservado sem reintroduzir textos extensos."
+    "Mensalista selecionado volta a exibir todas as datas e horários em texto corrido e por extenso.",
+    "Vouchers promocionais agora calculam e aplicam efetivamente descontos fixos ou percentuais no valor da reserva.",
+    "Valor descontado passa a refletir no total a pagar, no rateio Pix e no pagamento por cartão Asaas.",
+    "Parceiro ganhou área própria para criar e gerenciar vouchers vinculados ao seu espaço.",
+    "Administração ganhou área própria para criar vouchers globais ou específicos de um parceiro.",
+    "Vouchers criados suportam valor mínimo, validade e restrição por modalidade avulsa/mensalista."
   ]
 }

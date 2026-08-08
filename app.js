@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.24";
+  const VERSION = "0.1.25";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -101,6 +101,7 @@
       ["spaces", "◇", "Espaços"],
       ["clients", "◎", "Clientes"],
       ["team", "♙", "Equipe"],
+      ["vouchers", "%", "Vouchers"],
       ["finance", "$", "Financeiro"],
       ["registration", "≡", "Cadastro"]
     ],
@@ -110,6 +111,7 @@
       ["reservations", "▣", "Reservas"],
       ["users", "◎", "Usuários"],
       ["finance", "$", "Financeiro"],
+      ["vouchers", "%", "Vouchers"],
       ["settings", "⚙", "Configurações"]
     ]
   };
@@ -227,9 +229,9 @@
         }
       ],
       promotions: [
-        { id: "P-01", title: "Primeira reserva", code: "BEMVINDO10", benefit: "10% de desconto", venue: "Todos os parceiros", validUntil: "31/08/2026", active: true },
-        { id: "P-02", title: "Fora do horário de pico", code: "FORADEPICO", benefit: "R$ 15,00 de desconto", venue: "Cancha Horizonte", validUntil: "20/08/2026", active: true },
-        { id: "P-03", title: "Grupo recorrente", code: "GRUPO4X", benefit: "4ª reserva com 20%", venue: "Arena Central", validUntil: "30/09/2026", active: true }
+        { id: "P-01", title: "Primeira reserva", code: "BEMVINDO10", benefit: "10% de desconto", discountType:"percentage", discountValue:10, minimumReservationValue:0, bookingMode:"any", venueId:"all", venue: "Todos os parceiros", validUntil: "31/08/2026", active: true, issuerType:"admin", issuerName:"Tâmo On" },
+        { id: "P-02", title: "Fora do horário de pico", code: "FORADEPICO", benefit: "R$ 15,00 de desconto", discountType:"fixed", discountValue:15, minimumReservationValue:15, bookingMode:"any", venueId:"cancha-horizonte", venue: "Cancha Horizonte", validUntil: "20/08/2026", active: true, issuerType:"partner", issuerName:"Cancha Horizonte" },
+        { id: "P-03", title: "Grupo recorrente", code: "GRUPO4X", benefit: "20% de desconto", discountType:"percentage", discountValue:20, minimumReservationValue:0, bookingMode:"any", venueId:"arena-central", venue: "Arena Central", validUntil: "30/09/2026", active: true, issuerType:"partner", issuerName:"Arena Central" }
       ],
       reservations: [
         { id: "R-0007", venueId: "arena-central", venue: "Arena Central", user: "Eduardo Batista", date: "06/08/2026", shortDate: "06/08", time: "20:00", value: 120, statusKey: "pending", status: "Reserva pendente", endpoint: "reservation.created", groupId: "G-001", groupName: "Quinta sem Falta", groupRole: "Administrador", eventId: "EV-0201", event: "Arena Central · 06/08 às 20:00", eventMode: "new", eventPublicationStatus: "standby_payment", pushStatus: "Aguardando pagamento", voucher: "" },
@@ -759,6 +761,83 @@
     return { items, count: items.length, value: items.reduce((sum, voucher) => sum + Number(voucher.value || 0), 0) };
   }
 
+  function promotionByValue(value) {
+    if (!String(value || "").startsWith("PROMO:")) return null;
+    const code = String(value).slice(6);
+    return state.promotions.find((promo) => promo.code === code) || null;
+  }
+
+  function promotionDiscountType(promo) {
+    if (promo?.discountType) return promo.discountType;
+    return /%/.test(String(promo?.benefit || "")) ? "percentage" : "fixed";
+  }
+
+  function promotionDiscountValue(promo) {
+    const explicit = Number(promo?.discountValue);
+    if (Number.isFinite(explicit) && explicit > 0) return explicit;
+    const benefit = String(promo?.benefit || "");
+    if (promotionDiscountType(promo) === "percentage") {
+      const match = benefit.match(/(\d+(?:[,.]\d+)?)\s*%/);
+      return match ? Number(match[1].replace(",", ".")) : 0;
+    }
+    const match = benefit.match(/R\$\s*([\d.]+(?:,\d+)?)/i);
+    return match ? Number(match[1].replace(/\./g, "").replace(",", ".")) : 0;
+  }
+
+  function promotionBenefitLabel(promo) {
+    const type = promotionDiscountType(promo);
+    const value = promotionDiscountValue(promo);
+    return type === "percentage" ? `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(value)}% de desconto` : `${money(value)} de desconto`;
+  }
+
+  function promotionVenueId(promo) {
+    if (promo?.venueId) return promo.venueId;
+    if (promo?.venue === "Todos os parceiros") return "all";
+    return state.venues.find((venue) => venue.name === promo?.venue)?.id || "all";
+  }
+
+  function promotionValid(promo) {
+    if (!promo?.active) return false;
+    const expiry = parsePtDateTime(promo.validUntil || "31/12/2099", "23:59");
+    return Number.isFinite(expiry.getTime()) && expiry.getTime() >= Date.now();
+  }
+
+  function promotionEligibleForSelection(promo) {
+    if (!selectedReservation || !promotionValid(promo)) return false;
+    const venueId = promotionVenueId(promo);
+    if (venueId !== "all" && venueId !== selectedReservation.venue.id) return false;
+    const bookingMode = promo.bookingMode || "any";
+    if (bookingMode === "monthly" && !isMonthlySelection()) return false;
+    if (bookingMode === "single" && isMonthlySelection()) return false;
+    if (currentReservationValue() < Number(promo.minimumReservationValue || 0)) return false;
+    return promotionDiscountValue(promo) > 0;
+  }
+
+  function promotionalDiscountAmount(promo, total = currentReservationValue()) {
+    if (!promo || !promotionEligibleForSelection(promo)) return 0;
+    const value = promotionDiscountValue(promo);
+    const discount = promotionDiscountType(promo) === "percentage" ? Number(total || 0) * (value / 100) : value;
+    return Math.max(0, Math.min(Number(total || 0), Math.round(discount * 100) / 100));
+  }
+
+  function selectedVoucherFinancials() {
+    const total = currentReservationValue();
+    const cancellation = cancellationVoucherByValue(voucherSelect?.value);
+    if (cancellation) return { kind:"cancellation", item:cancellation, code:cancellation.code, amount:Math.min(total, Number(cancellation.value || 0)), label:`${cancellation.code} · crédito ${money(cancellation.value)}` };
+    const promotion = promotionByValue(voucherSelect?.value);
+    if (promotion && promotionEligibleForSelection(promotion)) {
+      const amount = promotionalDiscountAmount(promotion, total);
+      return { kind:"promotion", item:promotion, code:promotion.code, amount, label:`${promotion.code} · ${promotionBenefitLabel(promotion)}` };
+    }
+    return { kind:"none", item:null, code:"", amount:0, label:"" };
+  }
+
+  function dateLongPt(dateText) {
+    const date = parsePtDateTime(dateText, "12:00");
+    if (!Number.isFinite(date.getTime())) return String(dateText || "");
+    return new Intl.DateTimeFormat("pt-BR", { weekday:"long", day:"numeric", month:"long", year:"numeric" }).format(date);
+  }
+
   function cancellationVoucherByValue(value) {
     if (!String(value || "").startsWith("CANCEL:")) return null;
     const id = String(value).slice(7);
@@ -780,10 +859,12 @@
 
   function populateVoucherOptions() {
     const eligible = eligibleCancellationVouchersForReservation();
-    const promoOptions = state.promotions.filter((promo) => promo.active).map((promo) => `<option value="PROMO:${esc(promo.code)}">${esc(promo.code)} · ${esc(promo.benefit)}</option>`).join("");
+    const eligiblePromotions = state.promotions.filter(promotionEligibleForSelection);
+    const promoOptions = eligiblePromotions.map((promo) => `<option value="PROMO:${esc(promo.code)}">${esc(promo.code)} · ${esc(promotionBenefitLabel(promo))}</option>`).join("");
     const cancellationOptions = eligible.map((voucher) => `<option value="CANCEL:${esc(voucher.id)}">${esc(voucher.code)} · crédito ${money(voucher.value)}${voucher.eligibleBookingMode === "monthly" ? " · somente mensalista" : ""}</option>`).join("");
     voucherSelect.innerHTML = `<option value="">Não utilizar voucher</option>${cancellationOptions ? `<optgroup label="Vouchers de cancelamento">${cancellationOptions}</optgroup>` : ""}${promoOptions ? `<optgroup label="Vouchers promocionais">${promoOptions}</optgroup>` : ""}`;
-    voucherSelect.value = "";
+    const preferredCode = [...state.appliedVouchers].reverse().find((code) => eligiblePromotions.some((promo) => promo.code === code));
+    voucherSelect.value = preferredCode ? `PROMO:${preferredCode}` : "";
     updateVoucherPaymentPreview();
   }
 
@@ -812,8 +893,8 @@
 
   function currentPaymentDue() {
     const total = currentReservationValue();
-    const voucher = cancellationVoucherByValue(voucherSelect.value);
-    return Math.max(0, total - Number(voucher?.value || 0));
+    const voucher = selectedVoucherFinancials();
+    return Math.max(0, total - Number(voucher.amount || 0));
   }
 
   function updatePixSplitPanel() {
@@ -922,8 +1003,8 @@
   function updatePaymentProviderPreview() {
     if (!paymentProviderPreview || !paymentMethodNote || !selectedReservation) return;
     const total = currentReservationValue();
-    const voucher = cancellationVoucherByValue(voucherSelect.value);
-    const due = Math.max(0, total - Number(voucher?.value || 0));
+    const voucher = selectedVoucherFinancials();
+    const due = Math.max(0, total - Number(voucher.amount || 0));
     if (due <= 0) {
       paymentMethodSelect.disabled = true;
       paymentMethodNote.textContent = "Voucher integral: nenhuma cobrança externa.";
@@ -978,27 +1059,26 @@
   function updateReservationPaymentSummary() {
     if (!selectedReservation) return;
     const total = currentReservationValue();
-    const voucher = cancellationVoucherByValue(voucherSelect.value);
-    const voucherValue = Number(voucher?.value || 0);
-    const complement = Math.max(0, total - voucherValue);
+    const voucher = selectedVoucherFinancials();
+    const complement = Math.max(0, total - Number(voucher.amount || 0));
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
     reservationSummaryHead.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div>`;
-    reservationSummaryTotal.innerHTML = `<div class="reservation-total-line"><span>${voucher ? `Valor ${money(total)} · voucher −${money(voucherValue)}` : "Valor total"}</span><strong>${money(complement)}</strong></div>`;
+    reservationSummaryTotal.innerHTML = `<div class="reservation-total-line"><span>${voucher.amount > 0 ? `Valor ${money(total)} · voucher −${money(voucher.amount)}` : "Valor total"}</span><strong>${money(complement)}</strong></div>`;
   }
 
   function updateVoucherPaymentPreview() {
     if (!reservationVoucherPreview || !selectedReservation) return;
     updateReservationPaymentSummary();
     const total = currentReservationValue();
-    const voucher = cancellationVoucherByValue(voucherSelect.value);
-    if (!voucher) {
+    const voucher = selectedVoucherFinancials();
+    if (!voucher.amount) {
       reservationVoucherPreview.innerHTML = "";
       updatePaymentProviderPreview();
       return;
     }
-    const complement = Math.max(0, total - Number(voucher.value));
-    reservationVoucherPreview.innerHTML = `<div class="voucher-compact-result"><span>Voucher −${money(voucher.value)}</span><strong>Restante ${money(complement)}</strong></div>`;
+    const complement = Math.max(0, total - voucher.amount);
+    reservationVoucherPreview.innerHTML = `<div class="voucher-compact-result"><span>${esc(voucher.code)} −${money(voucher.amount)}</span><strong>Restante ${money(complement)}</strong></div>`;
     updatePaymentProviderPreview();
   }
 
@@ -1019,7 +1099,7 @@
       updateVoucherPaymentPreview();
       return;
     }
-    monthlyReservationPreview.innerHTML = `<div class="monthly-preview-heading"><strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas reservadas</span></div><div class="monthly-occurrence-list">${occurrences.map((occurrence) => `<span><b>${esc(occurrence.date)}</b><small>${esc(timeRange(occurrence.time, occurrence.endTime))}</small></span>`).join("")}</div>`;
+    monthlyReservationPreview.innerHTML = `<div class="monthly-preview-heading"><strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas reservadas</span></div><p class="monthly-occurrence-text">${occurrences.map((occurrence) => `${esc(dateLongPt(occurrence.date))}, das ${esc(occurrence.time)} às ${esc(occurrence.endTime)}`).join("; ")}.</p>`;
     updateVoucherPaymentPreview();
   }
 
@@ -1729,7 +1809,7 @@
     const vouchers = state.cancellationVouchers.filter((voucher) => voucher.user === state.userProfile.name);
     return `${pageHeader("Área do usuário", "Vouchers", "Consulte créditos de cancelamento e vouchers promocionais disponíveis.")}
       <section class="section"><div class="section-heading"><div><h2>Vouchers de cancelamento</h2><p>Uso único, no mesmo parceiro, em nova reserva de valor igual ou superior.</p></div></div><div class="grid two">${vouchers.map((voucher) => `<article class="card voucher-card"><div class="section-heading"><div><span class="status ${["active", "active_extended"].includes(voucher.status) ? "status-ok" : voucher.status === "reserved" ? "status-warning" : "status-neutral"}">${esc(voucherStatusLabel(voucher))}</span><h3>${esc(voucher.code)}</h3></div><strong class="voucher-value">${money(voucher.value)}</strong></div><div class="detail-list"><div class="detail-line"><span>Parceiro</span><strong>${esc(voucher.venue)}</strong></div><div class="detail-line"><span>Validade atual</span><strong>${esc(voucher.expiresAt)}</strong></div><div class="detail-line"><span>Regra de uso</span><strong>Reserva de ${money(voucher.minimumReservationValue)} ou mais</strong></div><div class="detail-line"><span>Uso</span><strong>Integral e único</strong></div><div class="detail-line"><span>Horário original</span><strong>${esc(voucher.originalTime || "—")} · ${esc(voucher.originalPeriod || "—")}</strong></div><div class="detail-line"><span>Faixa compatível</span><strong>${esc(voucher.compatibilityWindow || "—")}</strong></div><div class="detail-line"><span>Datas compatíveis</span><strong>${esc(voucher.compatibleDatesCount || 0)} de ${esc(voucher.minimumCompatibleDates || state.settings.voucherMinimumCompatibleDates)}</strong></div>${voucher.extensionReason ? `<div class="detail-line"><span>Prorrogação</span><strong>${esc(voucher.extensionReason)}</strong></div>` : ""}${voucher.reassignedFrom ? `<div class="detail-line"><span>Realocação</span><strong>${esc(voucher.reassignmentStatus)}</strong></div>` : ""}</div></article>`).join("") || emptyState("V", "Nenhum voucher de cancelamento foi gerado para este usuário.")}</div></section>
-      <section class="section"><div class="section-heading"><div><h2>Vouchers promocionais</h2><p>Ofertas demonstrativas independentes dos créditos gerados por cancelamento.</p></div></div><div class="grid">${state.promotions.map((promo) => `<article class="card"><span class="status ${promo.active ? "status-ok" : "status-neutral"}">${promo.active ? "Disponível" : "Encerrada"}</span><h3>${esc(promo.title)}</h3><p class="meta-row"><span>${esc(promo.venue)}</span><span>Até ${esc(promo.validUntil)}</span></p><div class="promo-code"><div><strong>${esc(promo.code)}</strong><div class="meta-row">${esc(promo.benefit)}</div></div><button class="button ${state.appliedVouchers.includes(promo.code) ? "ghost" : "secondary"} small" data-action="apply-voucher" data-code="${esc(promo.code)}">${state.appliedVouchers.includes(promo.code) ? "Aplicado" : "Aplicar"}</button></div></article>`).join("")}</div></section>`;
+      <section class="section"><div class="section-heading"><div><h2>Vouchers promocionais</h2><p>Ofertas demonstrativas independentes dos créditos gerados por cancelamento.</p></div></div><div class="grid">${state.promotions.map((promo) => `<article class="card"><span class="status ${promo.active ? "status-ok" : "status-neutral"}">${promo.active ? "Disponível" : "Encerrada"}</span><h3>${esc(promo.title)}</h3><p class="meta-row"><span>${esc(promo.venue)}</span><span>Até ${esc(promo.validUntil)}</span></p><div class="promo-code"><div><strong>${esc(promo.code)}</strong><div class="meta-row">${esc(promotionBenefitLabel(promo))}</div></div><button class="button ${state.appliedVouchers.includes(promo.code) ? "ghost" : "secondary"} small" data-action="apply-voucher" data-code="${esc(promo.code)}">${state.appliedVouchers.includes(promo.code) ? "Aplicado" : "Aplicar"}</button></div></article>`).join("")}</div></section>`;
   }
 
   function userProfile() {
@@ -1826,6 +1906,34 @@
       <section class="card"><div class="list">${state.partnerTeam.map((member) => `<div class="list-item"><div class="avatar">${initials(member.name)}</div><div class="list-item-main"><strong>${esc(member.name)}</strong><small>${esc(member.role)} · ${esc(member.email)}<br>Permissão: ${esc(member.permission)}</small></div><span class="status ${statusClass(member.status)}">${esc(member.status)}</span><div class="item-actions"><button class="button ghost small" data-action="edit-team-member" data-id="${esc(member.id)}">Editar</button><button class="button ${member.status === "Ativo" ? "danger" : "secondary"} small" data-action="toggle-team-member" data-id="${esc(member.id)}">${member.status === "Ativo" ? "Desativar" : "Ativar"}</button></div></div>`).join("")}</div></section>`;
   }
 
+  function promotionIssuerType(promo) {
+    if (promo?.issuerType) return promo.issuerType;
+    return promotionVenueId(promo) === "all" ? "admin" : "partner";
+  }
+
+  function promotionStatusClass(promo) {
+    return promotionValid(promo) ? "status-ok" : "status-neutral";
+  }
+
+  function promotionBookingLabel(promo) {
+    return promo.bookingMode === "monthly" ? "Mensalista" : promo.bookingMode === "single" ? "Avulsa" : "Avulsa ou mensalista";
+  }
+
+  function promotionCard(promo, management = false) {
+    const valid = promotionValid(promo);
+    return `<article class="card voucher-management-card"><div class="voucher-management-head"><div><span class="status ${promotionStatusClass(promo)}">${valid ? "Ativo" : promo.active ? "Expirado" : "Inativo"}</span><h3>${esc(promo.title)}</h3></div><strong class="voucher-code-large">${esc(promo.code)}</strong></div><div class="detail-list"><div class="detail-line"><span>Desconto</span><strong>${esc(promotionBenefitLabel(promo))}</strong></div><div class="detail-line"><span>Parceiro</span><strong>${esc(promo.venue || "Todos os parceiros")}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${esc(promotionBookingLabel(promo))}</strong></div><div class="detail-line"><span>Reserva mínima</span><strong>${money(promo.minimumReservationValue || 0)}</strong></div><div class="detail-line"><span>Validade</span><strong>${esc(promo.validUntil)}</strong></div><div class="detail-line"><span>Criado por</span><strong>${esc(promo.issuerName || (promotionIssuerType(promo) === "partner" ? promo.venue : "Tâmo On"))}</strong></div></div>${management ? `<div class="reservation-card-actions"><button class="button ghost small" data-action="toggle-promotion" data-id="${esc(promo.id)}">${promo.active ? "Desativar" : "Ativar"}</button></div>` : ""}</article>`;
+  }
+
+  function partnerVouchers() {
+    const venueId = state.partnerProfile.venueId;
+    const items = state.promotions.filter((promo) => promotionVenueId(promo) === venueId && promotionIssuerType(promo) === "partner");
+    return `${pageHeader("Portal do parceiro", "Vouchers", "Crie descontos promocionais válidos apenas para reservas do seu espaço.", `<button class="button primary" data-action="create-partner-promotion">Criar voucher</button>`)}<section class="grid two">${items.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional criado pelo parceiro.")}</section><div class="callout section"><strong>Aplicação no checkout</strong><p>O desconto é calculado automaticamente quando o usuário seleciona o voucher em uma reserva elegível. O valor a pagar, o rateio Pix e o cartão Asaas passam a considerar o valor já descontado.</p></div>`;
+  }
+
+  function adminVouchers() {
+    return `${pageHeader("Administração", "Vouchers", "Crie vouchers globais ou vinculados a um parceiro e acompanhe as regras promocionais.", `<button class="button primary" data-action="create-admin-promotion">Criar voucher</button>`)}<section class="grid two">${state.promotions.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional cadastrado.")}</section>`;
+  }
+
   function partnerFinance() {
     const partnerReservations = state.reservations.filter((item) => item.venueId === state.partnerProfile.venueId);
     const recognized = partnerReservations.reduce((sum, item) => sum + Number(item.accountingRecognizedValue || 0), 0);
@@ -1864,7 +1972,7 @@
   }
 
   function partnerView() {
-    const views = { overview: partnerOverview, agenda: partnerAgenda, reservations: partnerReservations, spaces: partnerSpaces, clients: partnerClients, team: partnerTeam, finance: partnerFinance, registration: partnerRegistration };
+    const views = { overview: partnerOverview, agenda: partnerAgenda, reservations: partnerReservations, spaces: partnerSpaces, clients: partnerClients, team: partnerTeam, vouchers: partnerVouchers, finance: partnerFinance, registration: partnerRegistration };
     return navShell("partner", (views[state.activePage.partner] || partnerOverview)());
   }
 
@@ -1936,7 +2044,7 @@
   }
 
   function adminView() {
-    const views = { overview: adminOverview, partners: adminPartners, reservations: adminReservations, users: adminUsers, finance: adminFinance, settings: adminSettings };
+    const views = { overview: adminOverview, partners: adminPartners, reservations: adminReservations, users: adminUsers, finance: adminFinance, vouchers: adminVouchers, settings: adminSettings };
     return navShell("admin", (views[state.activePage.admin] || adminOverview)());
   }
 
@@ -2071,6 +2179,35 @@
     saveState(); render(); showToast(`${id}: reserva cancelada; o evento em espera não foi publicado.`);
   }
 
+  function openPromotionForm(issuerType) {
+    const isPartner = issuerType === "partner";
+    const venueOptions = isPartner ? [{ value:state.partnerProfile.venueId, label:state.partnerProfile.tradeName }] : [{ value:"all", label:"Todos os parceiros" }, ...state.venues.map((venue) => ({ value:venue.id, label:venue.name }))];
+    const today = new Date();
+    const expiry = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const expiryIso = `${expiry.getFullYear()}-${String(expiry.getMonth()+1).padStart(2,"0")}-${String(expiry.getDate()).padStart(2,"0")}`;
+    openForm({ eyebrow:isPartner ? "Voucher do parceiro" : "Voucher da administração", title:"Criar voucher promocional", description:"O desconto será aplicado diretamente ao valor da reserva quando o usuário selecionar este código no checkout.", fields:[
+      {name:"title",label:"Nome da campanha",value:"",required:true},
+      {name:"code",label:"Código do voucher",value:"",required:true},
+      {name:"venueId",label:"Onde pode ser usado",type:"select",value:isPartner?state.partnerProfile.venueId:"all",options:venueOptions,required:true},
+      {name:"discountType",label:"Tipo de desconto",type:"select",value:"percentage",options:[{value:"percentage",label:"Percentual (%)"},{value:"fixed",label:"Valor fixo (R$)"}],required:true},
+      {name:"discountValue",label:"Valor do desconto",type:"number",step:"0.01",value:10,required:true},
+      {name:"minimumReservationValue",label:"Valor mínimo da reserva",type:"number",step:"0.01",value:0},
+      {name:"bookingMode",label:"Modalidade",type:"select",value:"any",options:[{value:"any",label:"Avulsa ou mensalista"},{value:"single",label:"Somente avulsa"},{value:"monthly",label:"Somente mensalista"}],required:true},
+      {name:"validUntil",label:"Válido até",type:"date",value:expiryIso,required:true}
+    ], submitLabel:"Criar voucher", onSubmit:(data)=>{
+      const code=String(data.code||"").trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"");
+      if(code.length<3){showToast("Informe um código com pelo menos 3 caracteres.");return;}
+      if(state.promotions.some((promo)=>String(promo.code).toUpperCase()===code)){showToast("Já existe um voucher com esse código.");return;}
+      const discountValue=Number(data.discountValue||0);
+      if(discountValue<=0 || (data.discountType==="percentage" && discountValue>100)){showToast("Revise o valor do desconto.");return;}
+      const venueId=isPartner?state.partnerProfile.venueId:data.venueId;
+      const venue=venueId==="all"?null:state.venues.find((item)=>item.id===venueId);
+      const validDate=new Date(`${data.validUntil}T12:00:00`);
+      const promo={ id:nextId("P-",state.promotions), title:data.title, code, discountType:data.discountType, discountValue, benefit:data.discountType==="percentage"?`${discountValue}% de desconto`:`${money(discountValue)} de desconto`, minimumReservationValue:Number(data.minimumReservationValue||0), bookingMode:data.bookingMode, venueId, venue:venue?.name||"Todos os parceiros", validUntil:formatPtDate(validDate), active:true, issuerType, issuerName:isPartner?state.partnerProfile.tradeName:"Tâmo On", createdAt:new Date().toLocaleString("pt-BR"), usedCount:0 };
+      state.promotions.unshift(promo); saveState(); render(); showToast(`Voucher ${code} criado.`);
+    }});
+  }
+
   function partnerDetailsBody(partner) {
     return `<div class="details-grid">
       <div class="detail-group"><h3>Empresa</h3><div class="detail-list"><div class="detail-line"><span>Razão social</span><strong>${esc(partner.legalName)}</strong></div><div class="detail-line"><span>CNPJ</span><strong>${esc(partner.cnpj)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(partner.city)}</strong></div><div class="detail-line"><span>Atividade declarada</span><strong>${esc(partner.activity)}</strong></div><div class="detail-line"><span>Regime tributário</span><strong>${esc(partner.taxRegime)}</strong></div></div></div>
@@ -2124,6 +2261,15 @@
       saveState(); render(); showToast("Perfil principal sincronizado com o marketplace.");
     } else if (action === "manage-main-profile") {
       openDetail({ eyebrow: "Perfil principal", title: "Gerenciar dados no Tâmo On", body: `<div class="profile-central-explanation"><p>Nome e e-mail são fornecidos pela conta Google. Telefone, cidade e preferências são preenchidos uma única vez no perfil principal do Tâmo On.</p><div class="detail-list"><div class="detail-line"><span>Marketplace</span><strong>Somente leitura</strong></div><div class="detail-line"><span>Grupos</span><strong>Usa o mesmo perfil</strong></div><div class="detail-line"><span>Administração e organização</span><strong>Permissões herdadas dos grupos</strong></div></div><p class="dialog-description">Na aplicação integrada, este botão abrirá o perfil principal. A Preview não cria outro cadastro nem duplica os campos pessoais.</p></div>` });
+    } else if (action === "create-partner-promotion") {
+      openPromotionForm("partner");
+    } else if (action === "create-admin-promotion") {
+      openPromotionForm("admin");
+    } else if (action === "toggle-promotion") {
+      const promo = state.promotions.find((item) => item.id === id);
+      const partnerCanManage = state.role === "partner" && promotionIssuerType(promo) === "partner" && promotionVenueId(promo) === state.partnerProfile.venueId;
+      const adminCanManage = state.role === "admin";
+      if (promo && (partnerCanManage || adminCanManage)) { promo.active = !promo.active; saveState(); render(); showToast(`Voucher ${promo.code} ${promo.active ? "ativado" : "desativado"}.`); }
     } else if (action === "partner-day") {
       state.partnerDay = Number(button.dataset.day); saveState(); render();
     } else if (action === "toggle-availability-selection") {
@@ -2499,6 +2645,7 @@
     }
     const title = createsNewEvent ? defaultEventTitle(selectedReservation) : existingEvent.title;
     const selectedCancellationVoucher = cancellationVoucherByValue(voucherSelect.value);
+    const selectedPromotion = promotionByValue(voucherSelect.value);
     if (selectedCancellationVoucher) {
       const validVoucher = ["active", "active_extended"].includes(selectedCancellationVoucher.status) && selectedCancellationVoucher.user === state.userProfile.name && selectedCancellationVoucher.venueId === selectedReservation.venue.id && currentReservationValue() >= Number(selectedCancellationVoucher.value) && (selectedCancellationVoucher.eligibleBookingMode !== "monthly" || isMonthlySelection());
       if (!validVoucher) {
@@ -2507,14 +2654,20 @@
         return;
       }
     }
+    if (selectedPromotion && !promotionEligibleForSelection(selectedPromotion)) {
+      showToast("Este voucher promocional não é válido para o parceiro, modalidade, valor ou período desta reserva.");
+      populateVoucherOptions();
+      return;
+    }
     const splitValidation = validatePixSplit();
     if (!splitValidation.valid) {
       showToast("Revise o rateio: selecione ao menos dois membros e faça a soma das cotas coincidir com o valor a pagar.");
       return;
     }
     const id=nextId("R-",state.reservations);
-    const promoVoucher = String(voucherSelect.value || "").startsWith("PROMO:") ? String(voucherSelect.value).slice(6) : "";
-    const voucherAppliedValue = Number(selectedCancellationVoucher?.value || 0);
+    const promoVoucher = selectedPromotion?.code || "";
+    const selectedVoucher = selectedVoucherFinancials();
+    const voucherAppliedValue = Number(selectedVoucher.amount || 0);
     const reservationValue = currentReservationValue();
     const monthly = isMonthlySelection();
     const occurrences = monthly ? monthlyOccurrencesForSelection(selectedReservation) : [{ date:selectedReservation.day.date, shortDate:selectedReservation.day.shortDate, weekday:selectedReservation.day.weekday, dayLabel:selectedReservation.day.dayLabel, time:selectedReservation.time, endTime:selectedReservation.endTime, space:normalizedSlotSpace(selectedReservation.slot), value:selectedReservation.value }];
@@ -2525,8 +2678,8 @@
     let pushStatus = "Não aplicável";
     if (createsNewEvent) {
       eventId = nextId("EV-", state.groupEvents);
-      eventPublicationStatus = paymentDue === 0 && selectedCancellationVoucher ? "standby_voucher" : "standby_payment";
-      pushStatus = paymentDue === 0 && selectedCancellationVoucher ? "Aguardando resgate do voucher" : "Aguardando pagamento";
+      eventPublicationStatus = paymentDue === 0 && selectedVoucher.amount > 0 ? "standby_voucher" : "standby_payment";
+      pushStatus = paymentDue === 0 && selectedVoucher.amount > 0 ? "Aguardando aplicação do voucher" : "Aguardando pagamento";
       state.groupEvents.unshift({
         id: eventId,
         groupId: group.id,
@@ -2538,15 +2691,15 @@
         occurrences,
         venue: selectedReservation.venue.name,
         statusKey: "standby_payment",
-        status: paymentDue === 0 && selectedCancellationVoucher ? "Aguardando resgate do voucher" : "Aguardando pagamento",
+        status: paymentDue === 0 && selectedVoucher.amount > 0 ? "Aguardando aplicação do voucher" : "Aguardando pagamento",
         published: false,
         source: "reservation",
         sourceReservationId: id,
-        publicationEndpoint: selectedCancellationVoucher ? "waiting.voucher_or_complement" : "waiting.payment.confirmed",
+        publicationEndpoint: selectedVoucher.amount > 0 ? "waiting.voucher_or_complement" : "waiting.payment.confirmed",
         pushStatus: "Aguardando publicação"
       });
     }
-    const fullyCovered = Boolean(selectedCancellationVoucher && paymentDue === 0);
+    const fullyCovered = Boolean(selectedVoucher.amount > 0 && paymentDue === 0);
     const newReservation = {
       id,
       venueId:selectedReservation.venue.id,
@@ -2565,9 +2718,9 @@
       regularUnitValue:Number(selectedReservation.value),
       monthlyPackageValue:monthly?reservationValue:0,
       statusKey: fullyCovered ? "confirmed" : "pending",
-      status: fullyCovered ? "Confirmada com voucher" : selectedCancellationVoucher ? "Reserva pendente — complemento" : "Reserva pendente",
-      endpoint: fullyCovered ? "voucher.redeemed" : selectedCancellationVoucher ? "payment.complement.pending" : "reservation.created",
-      paymentStatus: fullyCovered ? "Pago com voucher" : selectedCancellationVoucher ? "Complemento pendente" : "Pagamento pendente",
+      status: fullyCovered ? "Confirmada com voucher" : selectedVoucher.amount > 0 ? "Reserva pendente — valor com desconto" : "Reserva pendente",
+      endpoint: fullyCovered ? (selectedPromotion ? "promotion.redeemed" : "voucher.redeemed") : selectedVoucher.amount > 0 ? "payment.discounted.pending" : "reservation.created",
+      paymentStatus: fullyCovered ? "Coberta por voucher" : selectedVoucher.amount > 0 ? "Pagamento do valor com desconto pendente" : "Pagamento pendente",
       paymentDue,
       paymentMethod: paymentDue > 0 ? selectedPaymentMethod() : "voucher",
       paymentMethodLabel: paymentDue > 0 ? paymentMethodLabel() : "Voucher integral",
@@ -2576,7 +2729,9 @@
       pixSplitMemberCount: paymentDue > 0 && pixSplitEnabled() ? splitValidation.shares.length : 0,
       voucherAppliedValue,
       cancellationVoucherId:selectedCancellationVoucher?.id || "",
-      voucher:selectedCancellationVoucher?.code || promoVoucher,
+      promotionalVoucherId:selectedPromotion?.id || "",
+      voucher:selectedVoucher.code || promoVoucher,
+      voucherType:selectedVoucher.kind,
       groupId:group.id,
       groupName:group.name,
       groupRole:group.role,
@@ -2602,7 +2757,7 @@
     } else if (paymentIntent) {
       if (newReservation.paymentMethod === "credit_card_asaas") {
         newReservation.endpoint = "asaas.card.checkout.created";
-        newReservation.paymentStatus = selectedCancellationVoucher ? "Complemento aguardando cartão Asaas" : "Aguardando cartão Asaas";
+        newReservation.paymentStatus = selectedVoucher.amount > 0 ? "Valor com desconto aguardando cartão Asaas" : "Aguardando cartão Asaas";
       } else if (paymentIntent.route === "pix_direct_partner_manual") {
         newReservation.endpoint = "bank_pix.manual.pending";
         newReservation.paymentStatus = "Pix direto · confirmação manual";
@@ -2622,10 +2777,22 @@
         Object.assign(selectedCancellationVoucher, { status:"reserved", reservedAt:new Date().toLocaleString("pt-BR"), reservedReservationId:id });
       }
     }
+    if (selectedPromotion) {
+      state.appliedVouchers = state.appliedVouchers.filter((code) => code !== selectedPromotion.code);
+      selectedPromotion.usedCount = Number(selectedPromotion.usedCount || 0) + 1;
+      selectedPromotion.lastUsedAt = new Date().toLocaleString("pt-BR");
+      selectedPromotion.lastUsedReservationId = id;
+      state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type:"promotional_discount", reservationId:id, promotionId:selectedPromotion.id, venueId:newReservation.venueId, venue:newReservation.venue, amount:voucherAppliedValue, fiscalAmount:0, accountingMonth:accountingMonth(), description:`Desconto promocional ${selectedPromotion.code} aplicado à reserva` });
+      if (fullyCovered) {
+        publishStandbyEventForReservation(newReservation, "event.publish_after_promotion");
+        syncPartnerReservationFromUser(newReservation);
+        ensureChatThread(newReservation);
+      }
+    }
     saveState();reservationDialog.close();render();
     if (fullyCovered) showToast(`Reserva ${id} confirmada com voucher; evento publicado automaticamente.`);
     else if (pixCollection) showToast(`Reserva ${id} criada com rateio Pix para ${pixCollection.memberCount} membros.`);
-    else if (selectedCancellationVoucher) showToast(`Reserva ${id} criada; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
+    else if (selectedVoucher.amount > 0) showToast(`Reserva ${id} criada com desconto de ${money(voucherAppliedValue)}; falta pagar ${money(paymentDue)} por ${paymentMethodLabel(newReservation.paymentMethod)}.`);
     else showToast(createsNewEvent ? `Reserva ${id} criada; pagamento preparado por ${paymentMethodLabel(newReservation.paymentMethod)}.` : `Reserva ${id} vinculada ao evento ${title}; pagamento preparado.`);
   });
 

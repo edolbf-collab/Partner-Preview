@@ -1952,3 +1952,19 @@ html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,
   .monthly-occurrence-list { grid-template-columns:1fr; }
   .reservation-summary-card { gap:7px; }
 }
+
+/* Partners Preview 0.1.25 — mensalista corrido e gestão de vouchers */
+.monthly-occurrence-text {
+  margin:7px 0 0;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.55;
+}
+.voucher-management-card { display:grid; gap:12px; }
+.voucher-management-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.voucher-management-head h3 { margin:6px 0 0; }
+.voucher-code-large { color:var(--green); font-size:14px; letter-spacing:.04em; overflow-wrap:anywhere; text-align:right; }
+@media (max-width:520px) {
+  .voucher-management-head { display:grid; grid-template-columns:1fr; }
+  .voucher-code-large { text-align:left; }
+}
