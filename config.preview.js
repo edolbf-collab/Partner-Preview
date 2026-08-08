@@ -1,26 +1,13 @@
 window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
   appName: "Tâmo On Partners Preview",
-  version: "0.1.19",
+  version: "0.1.17",
   environment: "partners_preview",
   realMoney: false,
-  payments: {
-    routingEnabled: true,
-    defaultMethod: "pix_direct_partner",
-    bankPix: {
-      enabled: true,
-      networkEnabled: false,
-      webhookBasePath: "/api/webhooks/pix",
-      supportedAdapters: ["SICOOB", "SICREDI", "BB", "INTER", "GENERIC_MANUAL"]
-    }
-  },
   asaas: {
     enabled: false,
     environment: "sandbox",
     baseUrl: "https://api-sandbox.asaas.com/v3",
-    checkoutMode: "hosted",
-    cardEnabled: true,
-    splitEnabled: true,
-    webhookPath: "/api/webhooks/asaas"
+    checkoutMode: "hosted"
   },
   features: {
     venueDiscovery: true,
@@ -60,13 +47,8 @@ window.TAMO_ON_PARTNERS_CONFIG = Object.freeze({
     increasedDescriptionReadability: true,
     marketplaceLightTheme: true,
     persistentMarketplaceTheme: true,
-    paymentProviderRouter: true,
-    multiBankPixAdapters: true,
-    directPartnerPix: true,
-    automaticBankPixReconciliation: true,
-    asaasCreditCardHostedCheckout: true,
-    asaasCardSplitPrepared: true,
-    providerWebhookNormalization: true,
+    asaasCheckout: false,
+    split: false,
     productionWrites: false
   }
 });
