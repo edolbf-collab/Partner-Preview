@@ -1850,3 +1850,85 @@ html[data-theme="light"] .message-alert-banner { background:rgba(211,142,18,.08)
   .partner-reservation-meta span:last-child { grid-column:1 / -1; }
   .partner-reservation-card .reservation-card-actions { gap:5px; }
 }
+
+/* Partners Preview 0.1.23 — reserva mais leve e progressiva */
+#reservationDialog .summary-card { margin-bottom:10px; padding:11px 12px; }
+#reservationDialog .payment-summary-title small { margin-top:2px; }
+.reservation-total-line {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:9px;
+  padding-top:9px;
+  border-top:1px solid var(--line);
+}
+.reservation-total-line span { color:var(--muted); font-size:11px; }
+.reservation-total-line strong { font-size:17px; }
+.compact-reservation-section { margin-bottom:10px; }
+.compact-reservation-grid { margin-bottom:10px; gap:9px; }
+.compact-reservation-grid .field-help { line-height:1.35; }
+.compact-voucher-field { margin-bottom:8px; }
+.inline-hint { color:var(--muted); font-weight:500; }
+.voucher-payment-preview:empty { display:none; }
+.voucher-compact-result {
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 9px;
+  padding:8px 10px;
+  border:1px solid rgba(30,209,122,.22);
+  border-radius:11px;
+  background:rgba(30,209,122,.06);
+  font-size:11px;
+}
+.voucher-compact-result span { color:var(--muted); }
+.compact-payment-panel { gap:8px; margin:9px 0; padding:10px 11px; border-radius:13px; }
+.compact-payment-panel .payment-method-heading strong { font-size:13px; }
+.compact-provider-preview { padding:8px 10px; }
+.compact-provider-preview:empty { display:none; }
+.compact-payment-panel .pix-split-panel { margin-top:4px; }
+.reservation-rules {
+  margin-top:8px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.02);
+}
+.reservation-rules summary {
+  cursor:pointer;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  list-style-position:inside;
+}
+.reservation-rules p { margin:8px 0 0; color:var(--muted); font-size:11px; line-height:1.45; }
+.reservation-terms-compact {
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid rgba(30,209,122,.18);
+  border-radius:11px;
+  background:rgba(30,209,122,.045);
+}
+.reservation-terms-compact span strong { font-size:11px; }
+.reservation-outcome-note {
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.4;
+}
+.reservation-outcome-note strong { color:var(--text); white-space:nowrap; font-size:10px; }
+#reservationDialog .dialog-actions { margin-top:10px; }
+html[data-theme="light"] .reservation-rules { background:rgba(14,86,59,.025); }
+html[data-theme="light"] .reservation-terms-compact { background:rgba(15,164,99,.045); }
+@media (max-width:700px) {
+  #reservationDialog form { gap:0; }
+  #reservationDialog .dialog-header { margin-bottom:8px; }
+  .compact-reservation-grid { gap:7px; }
+  .compact-payment-panel { padding:9px; }
+  .reservation-outcome-note { display:block; }
+  .reservation-outcome-note strong { margin-right:4px; }
+}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.22</title>
+  <title>Tâmo On — Partners Preview 0.1.23</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.22</div>
+          <div class="brand-subtitle">Partners Preview 0.1.23</div>
         </div>
       </div>
       <div class="header-actions">
@@ -61,64 +61,56 @@
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
       <div class="summary-card" id="reservationSummary"></div>
-      <div class="monthly-reservation-panel" id="monthlyReservationPanel" hidden>
+      <div class="monthly-reservation-panel compact-reservation-section" id="monthlyReservationPanel" hidden>
         <label class="cancellation-acknowledge monthly-toggle-row">
           <input id="monthlyReservationToggle" type="checkbox">
-          <span><strong>Reservar como mensalista</strong><small>Reserva o mesmo dia e período nas demais semanas disponíveis do mês, pelo valor definido pelo parceiro.</small></span>
+          <span><strong>Mensalista</strong><small>Repete este mesmo período nas semanas disponíveis do mês.</small></span>
         </label>
         <div class="monthly-reservation-preview" id="monthlyReservationPreview"></div>
       </div>
-      <div class="reservation-link-grid">
+      <div class="reservation-link-grid compact-reservation-grid">
         <label class="field">
-          <span>Grupo responsável pela reserva</span>
+          <span>Grupo</span>
           <select id="groupSelect" required aria-describedby="groupPermissionNote"></select>
-          <small class="field-help" id="groupPermissionNote">Selecione um grupo em que você possa criar e alterar eventos.</small>
+          <small class="field-help" id="groupPermissionNote">Escolha um grupo em que você gerencie eventos.</small>
         </label>
         <label class="field">
-          <span>Evento do grupo</span>
+          <span>Evento</span>
           <select id="eventSelect" required disabled></select>
-          <small class="field-help">Você pode vincular um evento já existente ou criar outro com os dados da reserva.</small>
+          <small class="field-help">Novo evento usa os dados da reserva e pode ser editado depois na Comunidade.</small>
         </label>
       </div>
-      <div class="new-event-panel" id="newEventPanel" hidden>
-        <label class="field">
-          <span>Nome do novo evento</span>
-          <input id="newEventTitle" maxlength="80" autocomplete="off">
-          <small class="field-help">O evento será criado em espera e só ficará visível no grupo depois da confirmação do pagamento.</small>
-        </label>
+      <div class="new-event-panel" id="newEventPanel" hidden aria-hidden="true">
+        <input id="newEventTitle" type="hidden">
       </div>
-      <label class="field">
-        <span>Voucher</span>
+      <label class="field compact-voucher-field">
+        <span>Voucher <small class="inline-hint">opcional</small></span>
         <select id="voucherSelect">
           <option value="">Não utilizar voucher</option>
         </select>
-        <small class="field-help">Os vouchers elegíveis aparecem quando forem válidos para o parceiro e para uma reserva de valor igual ou superior. A diferença fica explícita antes do pagamento.</small>
       </label>
       <div class="voucher-payment-preview" id="reservationVoucherPreview"></div>
-      <section class="payment-method-panel" aria-labelledby="paymentMethodTitle">
+      <section class="payment-method-panel compact-payment-panel" aria-labelledby="paymentMethodTitle">
         <div class="payment-method-heading">
-          <div>
-            <strong id="paymentMethodTitle">Forma de pagamento</strong>
-            <small>Escolha como pagar o valor restante desta reserva.</small>
-          </div>
+          <strong id="paymentMethodTitle">Pagamento</strong>
         </div>
         <label class="field">
-          <span>Meio de pagamento</span>
+          <span>Forma</span>
           <select id="paymentMethodSelect">
             <option value="pix_direct_partner">Pix direto ao parceiro</option>
             <option value="credit_card_asaas">Cartão de crédito · Asaas</option>
           </select>
           <small class="field-help" id="paymentMethodNote"></small>
         </label>
-        <div id="paymentProviderPreview" class="payment-provider-preview"></div>
+        <div id="paymentProviderPreview" class="payment-provider-preview compact-provider-preview"></div>
         <section id="pixSplitPanel" class="pix-split-panel" hidden>
           <label class="cancellation-acknowledge pix-split-toggle-row">
             <input id="pixSplitToggle" type="checkbox">
-            <span><strong>Ratear o pagamento entre membros do grupo</strong><small>Gera uma pendência Pix individual para cada membro selecionado, mas todos os pagamentos vão diretamente para a conta bancária do parceiro.</small></span>
+            <span><strong>Ratear entre membros</strong><small>Cria uma cota Pix para cada participante selecionado.</small></span>
           </label>
           <div id="pixSplitConfig" class="pix-split-config" hidden>
             <label class="field">
-              <span>Forma de divisão</span>
+              <span>Divisão</span>
               <select id="pixSplitMode">
                 <option value="equal">Dividir igualmente</option>
                 <option value="custom">Definir valores individualmente</option>
@@ -129,18 +121,18 @@
           </div>
         </section>
       </section>
-      <div class="cancellation-policy-acceptance" role="note">
-        <strong>Política de cancelamento e voucher</strong>
-        <p id="reservationPolicyText">Reservas avulsas canceladas pelo usuário dentro do prazo geram voucher. Pacotes mensalistas só podem ser cancelados até 24 horas antes da primeira ocorrência; o voucher integral gerado será exclusivo para outra reserva mensalista de valor igual ou superior. Depois desse prazo, o usuário não poderá cancelar o pacote. Cancelamentos pelo parceiro ou pelo Tâmo On seguem a regra de reembolso integral atribuída ao responsável.</p>
-        <label class="cancellation-acknowledge">
-          <input id="reservationPolicyAcknowledge" type="checkbox">
-          <span><strong>Aceito os termos de reserva e cancelamentos.</strong> Estou ciente das regras de cancelamento, voucher, reembolso, mensalista e disponibilidade antes do pagamento.</span>
-        </label>
-      </div>
-      <div class="automation-preview" id="reservationAutomationPreview">
-        <div class="automation-step active"><b>1</b><span><strong>Reserva pendente</strong><small>Horário bloqueado temporariamente</small></span></div>
-        <div class="automation-step"><b>2</b><span><strong>Pagamento</strong><small id="automationPaymentText">Aguardando confirmação do provedor</small></span></div>
-        <div class="automation-step"><b>3</b><span><strong>Publicação e push</strong><small>Automáticos após o pagamento</small></span></div>
+      <details class="reservation-rules" id="reservationRules">
+        <summary>Ver regras de cancelamento e voucher</summary>
+        <p id="reservationPolicyText">Cancelamento dentro do prazo pode gerar voucher; cancelamentos do parceiro ou do Tâmo On geram reembolso integral.</p>
+      </details>
+      <label class="cancellation-acknowledge reservation-terms-compact">
+        <input id="reservationPolicyAcknowledge" type="checkbox">
+        <span><strong>Aceito os termos da reserva e cancelamento.</strong></span>
+      </label>
+      <div class="reservation-outcome-note" id="reservationAutomationPreview">
+        <strong>Após o pagamento</strong>
+        <span>A reserva é confirmada e, se for novo, o evento é publicado automaticamente no grupo.</span>
+        <small id="automationPaymentText" hidden>Aguardando confirmação</small>
       </div>
       <div class="dialog-actions">
         <button class="button ghost" value="cancel" formnovalidate>Voltar</button>
@@ -260,7 +252,7 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.22</h2>
+          <h2>Partners Preview 0.1.23</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>

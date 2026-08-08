@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.22";
+  const VERSION = "0.1.23";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -918,8 +918,8 @@
     const due = Math.max(0, total - Number(voucher?.value || 0));
     if (due <= 0) {
       paymentMethodSelect.disabled = true;
-      paymentMethodNote.textContent = "O voucher cobre integralmente esta reserva; não haverá cobrança externa.";
-      paymentProviderPreview.innerHTML = `<span class="status status-ok">Sem cobrança</span><p>O evento poderá ser publicado após o resgate integral do voucher.</p>`;
+      paymentMethodNote.textContent = "Voucher integral: nenhuma cobrança externa.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status status-ok">Quitado por voucher</span><strong>${money(total)}</strong></div>`;
       if (automationPaymentText) automationPaymentText.textContent = "Reserva coberta integralmente por voucher";
       if (pixSplitPanel) { pixSplitPanel.hidden = true; pixSplitToggle.checked = false; pixSplitConfig.hidden = true; }
       return;
@@ -927,15 +927,15 @@
     paymentMethodSelect.disabled = false;
     const method = selectedPaymentMethod();
     if (method === "credit_card_asaas") {
-      paymentMethodNote.textContent = "O cartão será processado pelo Asaas em checkout hospedado; o Tâmo On não precisa armazenar os dados do cartão.";
-      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status status-warning">Sandbox preparado</span><strong>Asaas · cartão</strong></div><p>${money(due)} será enviado ao checkout hospedado. A cobrança ficará vinculada à reserva e preparada para split entre parceiro e Tâmo On.</p>`;
+      paymentMethodNote.textContent = "Pagamento seguro pelo checkout Asaas.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status status-warning">Sandbox</span><strong>Asaas · ${money(due)}</strong></div>`;
       if (automationPaymentText) automationPaymentText.textContent = "Aguardando confirmação do cartão pelo webhook Asaas";
     } else {
       const providerId = selectedReservation?.venue?.bankProviderId || state.partnerProfile.bankProviderId || "GENERIC_MANUAL";
       const provider = window.TamoOnBankPix?.provider(providerId) || { label: state.partnerProfile.bank || "Banco do parceiro", mode: "manual" };
       const automatic = provider.mode === "api";
-      paymentMethodNote.textContent = automatic ? "O Pix será gerado pela API do banco do parceiro e creditado diretamente na conta dele." : "O Pix será enviado diretamente ao parceiro; enquanto o banco não estiver integrado, a baixa será manual.";
-      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status ${automatic ? "status-ok" : "status-warning"}">${automatic ? "Baixa automática preparada" : "Confirmação manual"}</span><strong>${esc(provider.label)}</strong></div><p>${money(due)} vai diretamente para a conta do parceiro. O Tâmo On apenas concilia a reserva pelo identificador da cobrança.</p>`;
+      paymentMethodNote.textContent = automatic ? "Pix direto ao parceiro com baixa bancária automática." : "Pix direto ao parceiro com confirmação manual.";
+      paymentProviderPreview.innerHTML = `<div class="provider-status-line"><span class="status ${automatic ? "status-ok" : "status-warning"}">${automatic ? "Baixa automática" : "Confirmação manual"}</span><strong>${esc(provider.label)} · ${money(due)}</strong></div>`;
       if (automationPaymentText) automationPaymentText.textContent = automatic ? `Aguardando confirmação Pix do ${provider.label}` : "Aguardando confirmação do parceiro";
     }
     updatePixSplitPanel();
@@ -976,7 +976,7 @@
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
     const paymentLabel = complement <= 0 ? "Sem cobrança externa" : paymentMethodLabel();
-    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="payment-breakdown prominent"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher aplicado <b>${voucher ? `− ${money(voucherValue)}` : money(0)}</b></span><span class="voucher-total">Valor a pagar · ${esc(paymentLabel)} <b>${money(complement)}</b></span></div>`;
+    reservationSummary.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div><div class="reservation-total-line"><span>${voucher ? `Total ${money(total)} · voucher −${money(voucherValue)}` : "Valor da reserva"}</span><strong>${money(complement)}</strong></div>`;
   }
 
   function updateVoucherPaymentPreview() {
@@ -985,12 +985,12 @@
     const total = currentReservationValue();
     const voucher = cancellationVoucherByValue(voucherSelect.value);
     if (!voucher) {
-      reservationVoucherPreview.innerHTML = `<strong>Pagamento da reserva</strong><div class="voucher-calculation"><span>Valor total <b>${money(total)}</b></span><span>Voucher aplicado <b>${money(0)}</b></span><span class="voucher-total">Total a pagar <b>${money(total)}</b></span></div><p>Escolha Pix direto ao parceiro ou cartão de crédito pelo Asaas.</p>`;
+      reservationVoucherPreview.innerHTML = "";
       updatePaymentProviderPreview();
       return;
     }
     const complement = Math.max(0, total - Number(voucher.value));
-    reservationVoucherPreview.innerHTML = `<strong>Pagamento com voucher</strong><div class="voucher-calculation"><span>Valor total da reserva <b>${money(total)}</b></span><span>Voucher consumido integralmente <b>− ${money(voucher.value)}</b></span><span class="voucher-total">Diferença a pagar <b>${money(complement)}</b></span></div><p>O voucher é de uso único. Apenas a diferença, quando houver, seguirá para o meio de pagamento selecionado e gerará nova obrigação fiscal e contábil.</p>`;
+    reservationVoucherPreview.innerHTML = `<div class="voucher-compact-result"><span>Voucher −${money(voucher.value)}</span><strong>Restante ${money(complement)}</strong></div>`;
     updatePaymentProviderPreview();
   }
 
@@ -1006,7 +1006,7 @@
       return;
     }
     const occurrences = monthlyOccurrencesForSelection(selectedReservation);
-    monthlyReservationPreview.innerHTML = `<strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} ocorrência(s): ${occurrences.map((item) => `${item.shortDate} · ${timeRange(item.time,item.endTime)}`).join("; ") || "nenhuma data compatível disponível"}</span><small>O pacote mensalista é uma única aquisição. O usuário só pode cancelá-lo até ${state.settings.cancellationHours} horas antes da primeira ocorrência. O voucher gerado será exclusivo para outra reserva mensalista de valor igual ou superior.</small>`;
+    monthlyReservationPreview.innerHTML = `<strong>${money(selectedReservation.slot.monthlyPrice)}</strong><span>${occurrences.length} datas · ${timeRange(selectedReservation.time, selectedReservation.endTime)}</span>`;
     updateVoucherPaymentPreview();
   }
 
@@ -1084,7 +1084,7 @@
   function updateReservationEventOptions() {
     const group = userGroup(groupSelect.value);
     const allowed = canManageGroupEvents(group);
-    groupPermissionNote.textContent = !group ? "Selecione um grupo pertencente ao usuário." : allowed ? `${group.role}: autorizado a criar e alterar eventos neste grupo.` : `${group.role}: sem privilégio para criar ou alterar eventos.`;
+    groupPermissionNote.textContent = !group ? "Selecione um grupo." : allowed ? `${group.role} · autorizado` : `${group.role} · sem permissão para eventos`;
     groupPermissionNote.classList.toggle("permission-denied", Boolean(group && !allowed));
     eventSelect.disabled = !allowed;
     if (!allowed) {
@@ -1094,7 +1094,7 @@
       return;
     }
     const events = state.groupEvents.filter((event) => event.groupId === group.id && event.published);
-    eventSelect.innerHTML = `<option value="__new__">Criar novo evento com esta reserva</option>${events.map((event) => `<option value="${esc(event.id)}">${esc(event.title)} · ${esc(event.date)} ${esc(event.time)}</option>`).join("")}`;
+    eventSelect.innerHTML = `<option value="__new__">Criar novo evento automaticamente</option>${events.map((event) => `<option value="${esc(event.id)}">${esc(event.title)} · ${esc(event.date)} ${esc(event.time)}</option>`).join("")}`;
     eventSelect.value = "__new__";
     newEventTitle.value = selectedReservation ? defaultEventTitle(selectedReservation) : "";
     updateNewEventPanel();
@@ -1103,18 +1103,18 @@
 
   function updateNewEventPanel() {
     const createsNew = eventSelect.value === "__new__";
-    newEventPanel.hidden = !createsNew;
-    if (createsNew && !newEventTitle.value && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation);
+    newEventPanel.hidden = true;
+    if (createsNew && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation);
     reservationAutomationPreview.classList.toggle("existing-event", !createsNew);
-    const lastStep = reservationAutomationPreview.querySelector(".automation-step:last-child small");
-    if (lastStep) lastStep.textContent = createsNew ? "Evento publicado e push enviado automaticamente" : "Reserva vinculada ao evento já publicado";
+    const outcome = reservationAutomationPreview.querySelector("span");
+    if (outcome) outcome.textContent = createsNew ? "A reserva é confirmada e o novo evento é publicado automaticamente no grupo." : "A reserva é confirmada e vinculada ao evento selecionado.";
     updateReservationSubmitState();
   }
 
   function updateReservationSubmitState() {
     const group = userGroup(groupSelect.value);
     const validGroup = canManageGroupEvents(group);
-    const validEvent = Boolean(eventSelect.value) && (eventSelect.value !== "__new__" || newEventTitle.value.trim());
+    const validEvent = Boolean(eventSelect.value);
     const validPolicy = Boolean(reservationPolicyAcknowledge?.checked);
     const splitValidation = validatePixSplit();
     const submit = document.getElementById("confirmReservation");
@@ -1997,7 +1997,7 @@
     if (pixSplitToggle) pixSplitToggle.checked = false;
     if (pixSplitMode) pixSplitMode.value = "equal";
     if (pixSplitConfig) pixSplitConfig.hidden = true;
-    if (reservationPolicyText) reservationPolicyText.textContent = `Cancelamento pelo usuário até ${state.settings.cancellationHours} horas antes gera voucher de uso único. Cancelamento pelo parceiro ou pelo Tâmo On gera reembolso integral, com taxas suportadas pelo responsável. Fora do prazo não há crédito automático. O voucher tem prazo nominal de ${state.settings.voucherValidityDays} dias, mas só expira normalmente se houver ao menos ${state.settings.voucherMinimumCompatibleDates} datas em faixa compatível de ±${state.settings.voucherCompatibilityWindowHours} horas e no mesmo período do dia.`;
+    if (reservationPolicyText) reservationPolicyText.textContent = `Usuário: cancelamento até ${state.settings.cancellationHours}h antes pode gerar voucher. Mensalista: prazo contado da primeira ocorrência. Parceiro ou Tâmo On: reembolso integral. Fora do prazo não há crédito automático.`;
     populateVoucherOptions();
     updateMonthlyReservationPreview();
     populateReservationGroups();
@@ -2482,11 +2482,7 @@
       showToast("Selecione um evento válido do grupo.");
       return;
     }
-    const title = createsNewEvent ? newEventTitle.value.trim() : existingEvent.title;
-    if (!title) {
-      if (allowAutomaticFieldFocus) newEventTitle.focus({ preventScroll: true });
-      return;
-    }
+    const title = createsNewEvent ? defaultEventTitle(selectedReservation) : existingEvent.title;
     const selectedCancellationVoucher = cancellationVoucherByValue(voucherSelect.value);
     if (selectedCancellationVoucher) {
       const validVoucher = ["active", "active_extended"].includes(selectedCancellationVoucher.status) && selectedCancellationVoucher.user === state.userProfile.name && selectedCancellationVoucher.venueId === selectedReservation.venue.id && currentReservationValue() >= Number(selectedCancellationVoucher.value) && (selectedCancellationVoucher.eligibleBookingMode !== "monthly" || isMonthlySelection());

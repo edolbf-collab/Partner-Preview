@@ -1,0 +1,4 @@
+Partners Preview 0.1.23
+
+Nenhuma alteração de banco de dados.
+A versão permanece como protótipo local com persistência no navegador.

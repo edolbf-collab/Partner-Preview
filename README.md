@@ -1,4 +1,4 @@
-# Tâmo On — Partners Preview 0.1.22
+# Tâmo On — Partners Preview 0.1.23
 
 Protótipo operacional isolado do marketplace de espaços esportivos do Tâmo On. Os dados são fictícios e persistidos apenas no navegador. Não há integração real com Supabase, Asaas, emissão fiscal, webhooks ou push.
 
@@ -35,6 +35,10 @@ O parceiro pode publicar agenda com início e término livres, inclusive horári
 - Usuários;
 - Financeiro;
 - Configurações.
+
+## Fluxo compacto de reserva
+
+A tela de confirmação do horário prioriza apenas as decisões necessárias para concluir a reserva: modalidade, grupo/evento, voucher opcional, forma de pagamento e aceite. As regras de cancelamento e voucher ficam recolhidas por padrão. Ao escolher criar um novo evento, o Marketplace usa automaticamente os dados da reserva; qualquer ajuste posterior do evento é feito na Comunidade, dentro do grupo.
 
 ## Pagamento com voucher
 
@@ -135,7 +139,7 @@ A Preview não contém credenciais, não chama APIs externas e não movimenta di
 - Reorganização encadeada de horários contíguos após alteração de término, preservando a duração dos períodos seguintes.
 
 
-## Partners Preview 0.1.22 — chat da reserva
+## Partners Preview 0.1.23 — chat da reserva
 
 - chat entre usuário e parceiro liberado após confirmação do pagamento;
 - um canal por reserva, acessível em **Minhas reservas** e **Reservas** do parceiro;
