@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.28";
+  const VERSION = "0.1.29";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -1974,7 +1974,7 @@
     const selectedCount = selected.filter((key) => selectableEntries.some((entry) => entry.key === key)).length;
     const allSelectableSelected = selectableEntries.length > 0 && selectableEntries.every((entry) => selected.includes(entry.key));
     const dateStrip = partnerAgendaDateStrip(venue, selectedDate);
-    return `${pageHeader("Portal do parceiro", "Agenda", "Uma única grade controla publicação, reservas e bloqueios do marketplace.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-block">Novo bloqueio</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
+    return `${pageHeader("Portal do parceiro", "Agenda", "Uma única grade controla publicação, reservas e bloqueios do marketplace.", `<button class="button primary" data-action="new-availability">Criar agenda</button><button class="button ghost" data-action="new-partner-reservation">Reserva manual</button>`)}
       <section class="agenda-batch-guide"><strong>Grade única</strong><span>Todas as ações abaixo alteram imediatamente a mesma agenda consultada pelo usuário no marketplace.</span></section>
       <section class="card"><div class="section-heading agenda-published-heading"><div><h2>Agenda publicada e operacional</h2><p>Navegue por todos os dias criados e gerencie disponibilidade, reservas e bloqueios no mesmo local.</p></div><div class="agenda-bulk-actions"><label class="agenda-select-all"><input type="checkbox" data-action="toggle-all-availability" ${allSelectableSelected ? "checked" : ""} ${!selectableEntries.length ? "disabled" : ""}><span>Selecionar todos</span></label><button type="button" class="button danger small" data-action="delete-selected-availability" ${selectedCount ? "" : "disabled"}>Excluir selecionados${selectedCount ? ` (${selectedCount})` : ""}</button></div></div>
         ${dateStrip}

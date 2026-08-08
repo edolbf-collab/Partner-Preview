@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -11,8 +11,8 @@
   "real_money": false,
   "released_at": "2026-08-08",
   "notes": [
-    "Na agenda do parceiro, os botões de ação dos horários passam a usar duas colunas no mobile.",
-    "Até quatro ações ficam organizadas em grade 2x2, reduzindo a altura dos cards sem retirar funções.",
-    "Horários com menos ações mantêm a mesma grade compacta e responsiva."
+    "Os quatro comandos da agenda passam a usar grade 2x2 em desktop e mobile: Abrir/Editar e Bloquear/Excluir.",
+    "O botão Novo bloqueio foi removido do cabeçalho da Agenda; o bloqueio permanece disponível diretamente em cada horário livre.",
+    "A alteração corrige a regra CSS anterior que só aplicava a grade 2x2 abaixo de 700 px."
   ]
 }
