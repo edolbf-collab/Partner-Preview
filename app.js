@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.29";
+  const VERSION = "0.1.30";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -119,7 +119,7 @@
   function initialState() {
     return {
       role: "user",
-      activePage: { user: "discover", partner: "overview", admin: "overview" },
+      activePage: { user: "discover", partner: "overview", admin: "overview", candidate: "apply" },
       search: { venue: "", adminPartner: "", adminUser: "" },
       filters: { userReservationStatus: "Todas", adminPartnerStatus: "Todos", adminReservationStatus: "Todos", partnerReservationStatus: "Todos" },
       partnerDay: 6,
@@ -314,10 +314,11 @@
         ]
       },
       adminPartners: [
-        { id: 1, venueId: "arena-central", tradeName: "Arena Central", legalName: "Arena Central Espaços Esportivos Ltda.", cnpj: "12.345.678/0001-90", city: "Curitiba", spaces: 2, types: "Futsal · Society", status: "Aprovado", responsible: "Lucas Ferreira", email: "contato@arenacentral.exemplo", phone: "(41) 3333-4455", taxRegime: "Simples Nacional", activity: "Gestão e locação de espaços esportivos", contract: "Assinado", fiscal: "Parceiro emite ao usuário", banking: "Em conferência", commission: 6, score: 92 },
-        { id: 2, venueId: "cancha-horizonte", tradeName: "Cancha Horizonte", legalName: "Horizonte Esportes e Eventos Ltda.", cnpj: "23.456.789/0001-01", city: "São José dos Pinhais", spaces: 2, types: "Society", status: "Em análise", responsible: "Fernanda Ribeiro", email: "financeiro@horizonte.exemplo", phone: "(41) 3344-7788", taxRegime: "Simples Nacional", activity: "Locação de espaços esportivos", contract: "Enviado", fiscal: "A validar", banking: "Pendente", commission: 6, score: 68 },
-        { id: 3, venueId: "vale-verde", tradeName: "Complexo Vale Verde", legalName: "Vale Verde Centro Esportivo Ltda.", cnpj: "34.567.890/0001-12", city: "Colombo", spaces: 4, types: "Futsal · Campo", status: "Pendente", responsible: "Gustavo Almeida", email: "gestao@valeverde.exemplo", phone: "(41) 3656-2010", taxRegime: "Lucro Presumido", activity: "Centro esportivo e eventos", contract: "Não enviado", fiscal: "A validar", banking: "Não informado", commission: 6, score: 41 }
+        { id: 1, venueId: "arena-central", tradeName: "Arena Central", legalName: "Arena Central Espaços Esportivos Ltda.", cnpj: "12.345.678/0001-90", city: "Curitiba", spaces: 2, types: "Futsal · Society", status: "Aprovado", responsible: "Lucas Ferreira", email: "contato@arenacentral.exemplo", phone: "(41) 3333-4455", taxRegime: "Simples Nacional", activity: "Gestão e locação de espaços esportivos", contract: "Assinado", terms:"Aceitos", privacy:"Aceita", fiscal: "Parceiro emite ao usuário", banking: "Em conferência", commission: 6, score: 92, source:"Administração" },
+        { id: 2, venueId: "cancha-horizonte", tradeName: "Cancha Horizonte", legalName: "Horizonte Esportes e Eventos Ltda.", cnpj: "23.456.789/0001-01", city: "São José dos Pinhais", spaces: 2, types: "Society", status: "Em análise", responsible: "Fernanda Ribeiro", email: "financeiro@horizonte.exemplo", phone: "(41) 3344-7788", taxRegime: "Simples Nacional", activity: "Locação de espaços esportivos", contract: "Enviado", terms:"Pendente", privacy:"Pendente", fiscal: "A validar", banking: "Pendente", commission: 6, score: 68, source:"Administração" },
+        { id: 3, venueId: "vale-verde", tradeName: "Complexo Vale Verde", legalName: "Vale Verde Centro Esportivo Ltda.", cnpj: "34.567.890/0001-12", city: "Colombo", spaces: 4, types: "Futsal · Campo", status: "Pendente", responsible: "Gustavo Almeida", email: "gestao@valeverde.exemplo", phone: "(41) 3656-2010", taxRegime: "Lucro Presumido", activity: "Centro esportivo e eventos", contract: "Não enviado", terms:"Pendente", privacy:"Pendente", fiscal: "A validar", banking: "Não informado", commission: 6, score: 41, source:"Administração" }
       ],
+      partnerApplications: [],
       adminUsers: [
         { id: "U-1001", name: "Eduardo Batista", email: "eduardo.teste@exemplo.com", city: "Curitiba", groups: 3, reservations: 4, status: "Ativo", createdAt: "14/06/2026" },
         { id: "U-1002", name: "Marcos Lima", email: "marcos.lima@exemplo.com", city: "São José dos Pinhais", groups: 1, reservations: 2, status: "Ativo", createdAt: "20/06/2026" },
@@ -385,6 +386,16 @@
       if (!(saved && saved.activePage && saved.venues)) return initialState();
       saved.ui = saved.ui || {};
       saved.ui.selectedAvailabilityKeys = Array.isArray(saved.ui.selectedAvailabilityKeys) ? saved.ui.selectedAvailabilityKeys : [];
+      saved.activePage = saved.activePage || { user:"discover", partner:"overview", admin:"overview", candidate:"apply" };
+      saved.activePage.candidate = saved.activePage.candidate || "apply";
+      saved.partnerApplications = Array.isArray(saved.partnerApplications) ? saved.partnerApplications : [];
+      saved.adminPartners = Array.isArray(saved.adminPartners) ? saved.adminPartners : [];
+      saved.adminPartners.forEach((partner) => {
+        partner.source = partner.source || "Administração";
+        partner.terms = partner.terms || (partner.venueId === "arena-central" ? "Aceitos" : "Pendente");
+        partner.privacy = partner.privacy || (partner.venueId === "arena-central" ? "Aceita" : "Pendente");
+        partner.requestedAt = partner.requestedAt || "";
+      });
       saved.chatThreads = Array.isArray(saved.chatThreads) ? saved.chatThreads : [];
       saved.chatThreads.forEach((thread) => {
         if (!thread.unread || typeof thread.unread !== "object") {
@@ -402,7 +413,233 @@
     }
   }
 
+
   let state = loadState();
+
+  function splitPartnerTypes(value) {
+    const items = Array.isArray(value) ? value : String(value || "").split(/[·,;/|]+/);
+    return [...new Set(items.map((item) => String(item).trim()).filter(Boolean))];
+  }
+
+  function adminPartnerForVenue(venueId) {
+    return state.adminPartners.find((partner) => partner.venueId === venueId) || null;
+  }
+
+  function partnerVisibleInMarketplace(venue) {
+    if (!venue) return false;
+    const partner = adminPartnerForVenue(venue.id);
+    return partner ? partner.status === "Aprovado" : true;
+  }
+
+  function partnerApplicationForAdminPartner(partner) {
+    if (!partner) return null;
+    return state.partnerApplications.find((application) =>
+      (partner.applicationId && application.id === partner.applicationId) ||
+      (application.adminPartnerId && String(application.adminPartnerId) === String(partner.id))
+    ) || null;
+  }
+
+  function uniqueVenueId(label, currentId = "") {
+    const base = String(label || "novo-parceiro")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "novo-parceiro";
+    let candidate = base;
+    let suffix = 2;
+    const used = (id) => id !== currentId && (state.venues.some((venue) => venue.id === id) || state.adminPartners.some((partner) => partner.venueId === id));
+    while (used(candidate)) candidate = `${base}-${suffix++}`;
+    return candidate;
+  }
+
+  function syncVenueNameReferences(venueId, oldName, newName) {
+    if (!venueId || !newName || oldName === newName) return;
+    state.reservations.forEach((item) => { if (item.venueId === venueId) item.venue = newName; });
+    state.cancellationVouchers.forEach((item) => { if (item.venueId === venueId) item.venue = newName; });
+    state.promotions.forEach((item) => { if (item.venueId === venueId) item.venue = newName; });
+    state.chatThreads.forEach((item) => { if (item.venueId === venueId) item.venue = newName; });
+    state.accountingLedger.forEach((item) => { if (item.venueId === venueId) item.venue = newName; });
+  }
+
+  function defaultVenueForPartner(partner) {
+    return {
+      id: partner.venueId,
+      name: partner.tradeName,
+      city: partner.city || "",
+      neighborhood: "A cadastrar",
+      distance: "—",
+      rating: 0,
+      reviews: 0,
+      ratingSource: "users",
+      types: splitPartnerTypes(partner.types),
+      price: 0,
+      address: "Endereço a cadastrar",
+      facadeImage: "assets/preview-icon.svg",
+      facadeSource: "partner_upload_pending",
+      amenities: [],
+      bankProviderId: "GENERIC_MANUAL",
+      bankLabel: "Banco a configurar",
+      pixKey: "Chave Pix a configurar",
+      asaasWalletId: "",
+      schedule: [],
+      partnerStatus: partner.status,
+      marketplacePublished: partner.status === "Aprovado"
+    };
+  }
+
+  function updateApplicationFromAdminPartner(partner) {
+    const application = partnerApplicationForAdminPartner(partner);
+    if (!application) return;
+    Object.assign(application, {
+      tradeName: partner.tradeName,
+      legalName: partner.legalName,
+      cnpj: partner.cnpj,
+      city: partner.city,
+      spaces: partner.spaces,
+      types: partner.types,
+      responsible: partner.responsible,
+      email: partner.email,
+      phone: partner.phone,
+      status: partner.status,
+      adminPartnerId: partner.id,
+      venueId: partner.venueId
+    });
+    if (["Aprovado","Rejeitado","Suspenso","Encerrado"].includes(partner.status)) {
+      application.reviewedAt = new Date().toLocaleString("pt-BR");
+    }
+  }
+
+  function syncCurrentPartnerSpacesFromAdmin(partner) {
+    if (!partner || state.partnerProfile?.venueId !== partner.venueId) return;
+    const venue = state.venues.find((item) => item.id === partner.venueId);
+    const desiredCount = Math.max(0, Number(partner.spaces || 0));
+    const desiredTypes = splitPartnerTypes(partner.types);
+    while (state.partnerSpaces.length < desiredCount) {
+      const index = state.partnerSpaces.length;
+      const type = desiredTypes[index % Math.max(1, desiredTypes.length)] || desiredTypes[0] || "Espaço esportivo";
+      state.partnerSpaces.push({ id:nextId("E-",state.partnerSpaces), name:`Espaço ${index + 1}`, type, floor:"A cadastrar", capacity:0, price:0, monthlyPrice:0, status:"Ativo", lights:"A informar", covered:"A informar", maintenance:"A definir" });
+    }
+    while (state.partnerSpaces.length > desiredCount) {
+      const removed = state.partnerSpaces.pop();
+      if (venue && removed) {
+        venue.schedule.forEach((day) => { day.slots = day.slots.filter((slot) => normalizedSlotSpace(slot) !== removed.name); });
+        venue.schedule = venue.schedule.filter((day) => day.slots.length);
+      }
+    }
+    state.partnerSpaces.forEach((space,index) => {
+      if (desiredTypes.length && !desiredTypes.includes(space.type)) space.type = desiredTypes[index % desiredTypes.length];
+    });
+  }
+
+  function syncAdminPartnerToConnectedAreas(partner) {
+    if (!partner) return;
+    partner.venueId = partner.venueId || uniqueVenueId(partner.tradeName);
+    partner.source = partner.source || "Administração";
+    partner.terms = partner.terms || "Pendente";
+    partner.privacy = partner.privacy || "Pendente";
+
+    let venue = state.venues.find((item) => item.id === partner.venueId);
+    if (!venue && partner.status === "Aprovado") {
+      venue = defaultVenueForPartner(partner);
+      state.venues.push(venue);
+    }
+    if (venue) {
+      const oldName = venue.name;
+      venue.name = partner.tradeName;
+      venue.city = partner.city || venue.city || "";
+      venue.types = splitPartnerTypes(partner.types);
+      venue.partnerStatus = partner.status;
+      venue.marketplacePublished = partner.status === "Aprovado";
+      syncVenueNameReferences(partner.venueId, oldName, venue.name);
+    }
+
+    if (state.partnerProfile?.venueId === partner.venueId) {
+      syncCurrentPartnerSpacesFromAdmin(partner);
+      const profile = state.partnerProfile;
+      profile.tradeName = partner.tradeName;
+      profile.legalName = partner.legalName;
+      profile.cnpj = partner.cnpj;
+      profile.city = partner.city;
+      profile.responsibleName = partner.responsible;
+      profile.email = partner.email;
+      profile.phone = partner.phone;
+      profile.taxRegime = partner.taxRegime;
+      profile.declaredActivity = partner.activity;
+      profile.contractStatus = partner.contract;
+      profile.fiscalIssuer = partner.fiscal;
+      profile.commissionRate = Number(partner.commission || profile.commissionRate || state.settings.defaultCommission);
+      profile.termsStatus = partner.terms || profile.termsStatus;
+      profile.privacyStatus = partner.privacy || profile.privacyStatus;
+      profile.adminStatus = partner.status;
+    }
+    updateApplicationFromAdminPartner(partner);
+  }
+
+  function syncCurrentPartnerToConnectedAreas() {
+    const profile = state.partnerProfile;
+    if (!profile?.venueId) return;
+    const partner = adminPartnerForVenue(profile.venueId);
+    const venue = state.venues.find((item) => item.id === profile.venueId);
+    const types = [...new Set(state.partnerSpaces.filter((space) => space.status !== "Inativo").map((space) => space.type).filter(Boolean))];
+
+    if (partner) {
+      partner.tradeName = profile.tradeName;
+      partner.legalName = profile.legalName;
+      partner.cnpj = profile.cnpj;
+      partner.city = profile.city;
+      partner.spaces = state.partnerSpaces.length;
+      partner.types = types.join(" · ") || partner.types;
+      partner.responsible = profile.responsibleName;
+      partner.email = profile.email;
+      partner.phone = profile.phone;
+      partner.taxRegime = profile.taxRegime;
+      partner.activity = profile.declaredActivity;
+      partner.contract = profile.contractStatus;
+      partner.fiscal = profile.fiscalIssuer;
+      partner.banking = profile.bank ? `${profile.bank} · ${profile.pixApiStatus || "Configuração pendente"}` : partner.banking;
+      partner.commission = Number(profile.commissionRate || state.settings.defaultCommission);
+      partner.terms = profile.termsStatus;
+      partner.privacy = profile.privacyStatus;
+      updateApplicationFromAdminPartner(partner);
+    }
+
+    if (venue) {
+      const oldName = venue.name;
+      venue.name = profile.tradeName;
+      venue.city = profile.city;
+      venue.neighborhood = profile.neighborhood;
+      venue.address = profile.address;
+      venue.types = types.length ? types : venue.types;
+      venue.bankProviderId = profile.bankProviderId || venue.bankProviderId;
+      venue.bankLabel = profile.bank || venue.bankLabel;
+      venue.pixKey = profile.pixKey || venue.pixKey;
+      venue.asaasWalletId = profile.asaasWalletId || venue.asaasWalletId;
+      if (state.partnerSpaces.length) venue.price = Math.min(...state.partnerSpaces.map((space) => Number(space.price || 0)).filter((value) => value > 0)) || venue.price;
+      syncVenueNameReferences(profile.venueId, oldName, venue.name);
+    }
+  }
+
+  function currentPartnerAccessStatus() {
+    const partner = adminPartnerForVenue(state.partnerProfile?.venueId);
+    if (!partner) return { allowed:false, status:"Cadastro removido", partner:null };
+    return { allowed:partner.status === "Aprovado", status:partner.status, partner };
+  }
+
+  function removePartnerFromConnectedAreas(partner) {
+    if (!partner) return;
+    const liability = activeVoucherLiability(partner.venueId);
+    if (liability.count > 0) return { ok:false, liability };
+    const application = partnerApplicationForAdminPartner(partner);
+    if (application) {
+      application.status = "Excluído pela administração";
+      application.reviewedAt = new Date().toLocaleString("pt-BR");
+    }
+    state.adminPartners = state.adminPartners.filter((item) => String(item.id) !== String(partner.id));
+    state.venues = state.venues.filter((venue) => venue.id !== partner.venueId);
+    state.favorites = state.favorites.filter((venueId) => venueId !== partner.venueId);
+    state.promotions.forEach((promotion) => {
+      if (promotion.venueId === partner.venueId) promotion.active = false;
+    });
+    return { ok:true, liability:{count:0,value:0} };
+  }
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1203,7 +1440,7 @@
     const value = String(status || "").toLowerCase();
     if (value.includes("aprov") || value.includes("confirm") || value === "ativo" || value.includes("valid") || value.includes("assinado") || value.includes("aceit")) return "status-ok";
     if (value.includes("pend") || value.includes("análise") || value.includes("enviado") || value.includes("conferência")) return "status-warning";
-    if (value.includes("cancel") || value.includes("bloque") || value.includes("rejeit") || value.includes("suspens") || value.includes("não")) return "status-danger";
+    if (value.includes("cancel") || value.includes("bloque") || value.includes("rejeit") || value.includes("suspens") || value.includes("encerr") || value.includes("exclu") || value.includes("não")) return "status-danger";
     return "status-neutral";
   }
 
@@ -1624,7 +1861,7 @@
   }
 
   function userDiscover() {
-    const filtered = state.venues.filter((venue) => `${venue.name} ${venue.city}`.toLowerCase().includes(state.search.venue.toLowerCase()));
+    const filtered = state.venues.filter((venue) => partnerVisibleInMarketplace(venue) && `${venue.name} ${venue.city}`.toLowerCase().includes(state.search.venue.toLowerCase()));
     const activePromotions = state.promotions.filter((item) => item.active).length;
     const activeUserVouchers = state.cancellationVouchers.filter((item) => item.user === state.userProfile.name && ["active","active_extended","reserved"].includes(item.status)).length;
     return `<div class="discover-toolbar"><label class="search discover-search"><span>⌕</span><input id="venueSearch" value="${esc(state.search.venue)}" placeholder="Buscar por quadra ou cidade" aria-label="Buscar por quadra ou cidade"></label><button class="promo-menu-button" data-nav="promotions"><span class="promo-menu-icon">V</span><span><strong>Voucher</strong><small>${activeUserVouchers} crédito(s) · ${activePromotions} promocional(is)</small></span><b>›</b></button></div>
@@ -1912,7 +2149,7 @@
   }
 
   function userFavorites() {
-    const favoriteVenues = state.venues.filter((venue) => state.favorites.includes(venue.id));
+    const favoriteVenues = state.venues.filter((venue) => partnerVisibleInMarketplace(venue) && state.favorites.includes(venue.id));
     return `${pageHeader("Área do usuário", "Favoritos", "Acesse rapidamente os locais que você marcou.", `<button class="button ghost" data-nav="discover">Buscar mais quadras</button>`)}<section class="grid">${favoriteVenues.map(venueCard).join("") || emptyState("♡", "Nenhuma quadra foi adicionada aos favoritos.")}</section>`;
   }
 
@@ -2077,8 +2314,10 @@
   function partnerRegistration() {
     const p = state.partnerProfile;
     const bankProvider = window.TamoOnBankPix?.provider(p.bankProviderId || "GENERIC_MANUAL") || { label:p.bank, mode:"manual" };
+    const adminRecord = adminPartnerForVenue(p.venueId);
     const group = (title, lines, action) => `<article class="detail-group"><div class="section-heading"><div><h2>${esc(title)}</h2></div><button class="button ghost small" data-action="${action}">Editar</button></div><div class="detail-list">${lines.map(([label,value]) => `<div class="detail-line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("")}</div></article>`;
     return `${pageHeader("Portal do parceiro", "Cadastro", "Dados cadastrais, operacionais, contratuais, fiscais e financeiros definidos para a homologação do parceiro.")}
+      <div class="callout"><strong>Status administrativo: ${esc(adminRecord?.status || "Não localizado")}</strong><p>Alterações realizadas pela Administração neste cadastro são sincronizadas com este Portal e com os dados públicos aplicáveis.</p></div>
       <section class="details-grid">
         ${group("Empresa", [["Nome fantasia",p.tradeName],["Razão social",p.legalName],["CNPJ",p.cnpj],["Natureza jurídica",p.legalNature],["Regime tributário",p.taxRegime],["Atividade declarada",p.declaredActivity],["Inscrição municipal",p.municipalRegistration]], "edit-company-data")}
         ${group("Responsável", [["Nome",p.responsibleName],["CPF",p.responsibleCpf],["Função",p.responsibleRole],["E-mail",p.email],["Telefone",p.phone],["WhatsApp",p.whatsapp]], "edit-responsible-data")}
@@ -2091,27 +2330,83 @@
       </section>`;
   }
 
+  function partnerRestrictedView(access) {
+    const status = access?.status || "Cadastro indisponível";
+    return `${pageHeader("Portal do parceiro", "Acesso ao parceiro", "O acesso operacional acompanha o status definido pela Administração.")}
+      <section class="card partner-access-card"><span class="status ${statusClass(status)}">${esc(status)}</span><h2 style="margin-top:12px">${status === "Suspenso" ? "Operação temporariamente suspensa" : status === "Encerrado" ? "Parceria encerrada" : "Cadastro indisponível"}</h2><p>${status === "Suspenso" ? "O estabelecimento deixa de aparecer no marketplace e o portal fica somente indisponível até a reativação administrativa." : "Este cadastro não está liberado para operar no Marketplace Tâmo On."}</p></section>`;
+  }
+
   function partnerView() {
+    const access = currentPartnerAccessStatus();
+    if (!access.allowed) return partnerRestrictedView(access);
     const views = { overview: partnerOverview, agenda: partnerAgenda, reservations: partnerReservations, spaces: partnerSpaces, clients: partnerClients, team: partnerTeam, vouchers: partnerVouchers, finance: partnerFinance, registration: partnerRegistration };
     return navShell("partner", (views[state.activePage.partner] || partnerOverview)());
   }
 
+  function candidateApplicationStatus(application) {
+    if (!application) return "";
+    const notes = application.status === "Aprovado"
+      ? "Solicitação aprovada. No produto final, a liberação do Portal do parceiro ocorrerá após a conclusão da homologação e dos documentos."
+      : application.status === "Rejeitado"
+        ? "A solicitação foi encerrada. É possível enviar uma nova solicitação com dados atualizados."
+        : application.status === "Excluído pela administração"
+          ? "O cadastro foi removido pela Administração. Uma nova solicitação pode ser enviada."
+          : "A equipe do Tâmo On recebeu os dados. O estabelecimento ainda não aparece no marketplace enquanto a análise não for concluída.";
+    return `<section class="card partner-application-status"><div class="section-heading"><div><span class="eyebrow">Solicitação ${esc(application.id)}</span><h2>${esc(application.tradeName)}</h2><p>${esc(application.requestedAt || "")}</p></div><span class="status ${statusClass(application.status)}">${esc(application.status)}</span></div><p>${esc(notes)}</p><div class="detail-list"><div class="detail-line"><span>Responsável</span><strong>${esc(application.responsible)}</strong></div><div class="detail-line"><span>Contato</span><strong>${esc(application.email)} · ${esc(application.phone)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(application.city)}</strong></div></div></section>`;
+  }
+
+  function candidateView() {
+    const application = state.partnerApplications[0] || null;
+    const canSubmit = state.settings.newPartners && (!application || ["Rejeitado","Excluído pela administração","Encerrado"].includes(application.status));
+    return `<div class="candidate-area">
+      ${pageHeader("Parceria Tâmo On", "Quero ser parceiro", "O estabelecimento informa os dados básicos pelo próprio aplicativo. A Administração recebe a solicitação para análise antes de qualquer publicação no marketplace.")}
+      ${application ? candidateApplicationStatus(application) : ""}
+      ${canSubmit ? `<section class="card section partner-interest-card"><div class="section-heading"><div><h2>Solicitar inclusão</h2><p>Preencha apenas os dados iniciais. Contratos, documentos fiscais, dados bancários e integrações de pagamento são tratados depois da aprovação preliminar.</p></div></div>
+        <form id="partnerInterestForm" class="form-grid partner-interest-form">
+          <label class="field"><span>Nome fantasia</span><input name="tradeName" required></label>
+          <label class="field"><span>Razão social</span><input name="legalName" required></label>
+          <label class="field"><span>CNPJ</span><input name="cnpj" required></label>
+          <label class="field"><span>Cidade</span><input name="city" required></label>
+          <label class="field"><span>Número de espaços</span><input type="number" min="1" name="spaces" value="1" required></label>
+          <label class="field"><span>Tipos de espaço</span><input name="types" placeholder="Ex.: Society, Futsal" required></label>
+          <label class="field"><span>Responsável</span><input name="responsible" required></label>
+          <label class="field"><span>E-mail</span><input type="email" name="email" required></label>
+          <label class="field"><span>Telefone / WhatsApp</span><input name="phone" required></label>
+          <label class="field full"><span>Observação</span><textarea name="notes" placeholder="Conte brevemente sobre o espaço ou deixe uma informação para a equipe."></textarea></label>
+          <label class="cancellation-acknowledge full partner-interest-consent"><input type="checkbox" name="contactConsent" value="yes" required><span><strong>Autorizo o Tâmo On a entrar em contato sobre esta solicitação de parceria.</strong></span></label>
+          <div class="dialog-actions full"><button class="button primary" type="submit">Enviar solicitação</button></div>
+        </form>
+      </section>` : ""}
+      ${!state.settings.newPartners ? `<div class="callout section"><strong>Novas solicitações temporariamente desativadas</strong><p>A Administração desativou novos cadastros nesta Preview.</p></div>` : ""}
+      <div class="callout section"><strong>Fluxo previsto</strong><p>A solicitação cria uma pendência em Administração → Parceiros. Somente após aprovação o estabelecimento pode ser publicado para usuários e ter acesso operacional liberado.</p></div>
+    </div>`;
+  }
+
   function adminOverview() {
-    const pendingPartners = state.adminPartners.filter((item) => item.status !== "Aprovado").length;
+    const pendingPartners = state.adminPartners.filter((item) => ["Pendente","Em análise"].includes(item.status)).length;
+    const appRequests = state.partnerApplications.filter((item) => ["Pendente","Em análise"].includes(item.status)).length;
     const activeUsers = state.adminUsers.filter((item) => item.status === "Ativo").length;
     const pendingReservations = state.reservations.filter((item) => item.statusKey === "pending").length;
     return `${pageHeader("Administração", "Visão geral", "Acompanhe pendências e acesse os cadastros sem excesso de informações na tela.", `<button class="button primary" data-action="review-next-partner">Analisar parceiro</button><button class="button ghost" data-action="export-admin-overview">Exportar resumo</button>`)}
-      <section class="stats-grid">${stat(state.adminPartners.length, "parceiros")}${stat(pendingPartners, "em homologação")}${stat(activeUsers, "usuários ativos")}${stat(pendingReservations, "reservas pendentes")}</section>
-      <section class="grid two"><article class="card"><div class="section-heading"><div><h2>Fila de parceiros</h2><p>Prioridade por completude cadastral</p></div><button class="button ghost small" data-nav="partners">Ver todos</button></div><div class="list">${state.adminPartners.filter((item) => item.status !== "Aprovado").map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.city)} · completude ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Abrir</button></div>`).join("")}</div></article><article class="card"><div class="section-heading"><div><h2>Segurança da Preview</h2><p>Integrações críticas isoladas</p></div><button class="button ghost small" data-nav="settings">Configurar</button></div><div class="toggle-row"><div class="toggle-copy"><strong>Pagamentos reais</strong><small>Bloqueado no código</small></div><span class="status status-danger">Desativado</span></div><div class="toggle-row"><div class="toggle-copy"><strong>Banco de produção</strong><small>Nenhuma conexão configurada</small></div><span class="status status-danger">Isolado</span></div><div class="toggle-row"><div class="toggle-copy"><strong>Dados locais</strong><small>Persistência apenas no navegador</small></div><span class="status status-ok">Ativo</span></div></article></section>`;
+      <section class="stats-grid">${stat(state.adminPartners.length, "parceiros")}${stat(pendingPartners, "em homologação", `${appRequests} pelo app`)}${stat(activeUsers, "usuários ativos")}${stat(pendingReservations, "reservas pendentes")}</section>
+      <section class="grid two"><article class="card"><div class="section-heading"><div><h2>Fila de parceiros</h2><p>Solicitações pelo app e cadastros em homologação</p></div><button class="button ghost small" data-nav="partners">Ver todos</button></div><div class="list">${state.adminPartners.filter((item) => ["Pendente","Em análise"].includes(item.status)).map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.city)} · ${esc(partner.source || "Administração")} · completude ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Abrir</button></div>`).join("") || emptyState("◇", "Nenhum parceiro aguardando análise.")}</div></article><article class="card"><div class="section-heading"><div><h2>Segurança da Preview</h2><p>Integrações críticas isoladas</p></div><button class="button ghost small" data-nav="settings">Configurar</button></div><div class="toggle-row"><div class="toggle-copy"><strong>Pagamentos reais</strong><small>Bloqueado no código</small></div><span class="status status-danger">Desativado</span></div><div class="toggle-row"><div class="toggle-copy"><strong>Banco de produção</strong><small>Nenhuma conexão configurada</small></div><span class="status status-danger">Isolado</span></div><div class="toggle-row"><div class="toggle-copy"><strong>Dados locais</strong><small>Persistência apenas no navegador</small></div><span class="status status-ok">Ativo</span></div></article></section>`;
+  }
+
+  function adminPartnerActions(partner) {
+    const base = `<button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Dossiê</button><button class="button ghost small" data-action="edit-admin-partner" data-id="${partner.id}">Editar</button>`;
+    if (partner.status === "Aprovado") return `${base}<button class="button danger small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Suspenso">Suspender</button><button class="button ghost small" data-action="request-admin-partner-closure" data-id="${partner.id}">Encerramento</button><button class="button danger small" data-action="delete-admin-partner" data-id="${partner.id}">Excluir</button>`;
+    if (partner.status === "Suspenso") return `${base}<button class="button secondary small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Aprovado">Reativar</button><button class="button ghost small" data-action="request-admin-partner-closure" data-id="${partner.id}">Encerramento</button><button class="button danger small" data-action="delete-admin-partner" data-id="${partner.id}">Excluir</button>`;
+    if (partner.status === "Encerrado") return `${base}<button class="button danger small" data-action="delete-admin-partner" data-id="${partner.id}">Excluir</button>`;
+    return `${base}<button class="button secondary small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Aprovado">Aprovar</button><button class="button ghost small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Em análise">Em análise</button><button class="button danger small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Rejeitado">Rejeitar</button><button class="button danger small" data-action="delete-admin-partner" data-id="${partner.id}">Excluir</button>`;
   }
 
   function adminPartners() {
     const query = state.search.adminPartner.toLowerCase();
     const filter = state.filters.adminPartnerStatus;
     const items = state.adminPartners.filter((partner) => `${partner.tradeName} ${partner.legalName} ${partner.city} ${partner.cnpj}`.toLowerCase().includes(query) && (filter === "Todos" || partner.status === filter));
-    return `${pageHeader("Administração", "Parceiros", "Homologação cadastral, documental, contratual, fiscal e financeira.", `<button class="button primary" data-action="new-admin-partner">Cadastrar parceiro</button>`)}
-      <div class="toolbar"><label class="search"><span>⌕</span><input id="adminPartnerSearch" value="${esc(state.search.adminPartner)}" placeholder="Buscar nome, CNPJ ou cidade"></label><select class="filter-select" id="adminPartnerFilter"><option>Todos</option><option>Aprovado</option><option>Em análise</option><option>Pendente</option><option>Suspenso</option></select><button class="button ghost" data-action="export-admin-partners">Exportar CSV</button></div>
-      <section class="card"><div class="list">${items.map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.legalName)} · ${esc(partner.cnpj)}<br>${esc(partner.city)} · ${esc(partner.spaces)} espaços · cadastro ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><div class="item-actions"><button class="button ghost small" data-action="admin-partner-details" data-id="${partner.id}">Dossiê</button><button class="button ghost small" data-action="edit-admin-partner" data-id="${partner.id}">Editar</button>${partner.status !== "Aprovado" ? `<button class="button secondary small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Aprovado">Aprovar</button>` : `<button class="button danger small" data-action="admin-partner-status" data-id="${partner.id}" data-status="Suspenso">Suspender</button><button class="button ghost small" data-action="request-admin-partner-closure" data-id="${partner.id}">Encerramento</button>`}</div></div>`).join("") || emptyState("◇", "Nenhum parceiro corresponde aos filtros.")}</div></section>`;
+    return `${pageHeader("Administração", "Parceiros", "Este cadastro é a referência administrativa. Aprovações, suspensões, exclusões e edições são refletidas no marketplace e, quando aplicável, no Portal do parceiro.", `<button class="button primary" data-action="new-admin-partner">Cadastrar parceiro</button>`)}
+      <div class="toolbar"><label class="search"><span>⌕</span><input id="adminPartnerSearch" value="${esc(state.search.adminPartner)}" placeholder="Buscar nome, CNPJ ou cidade"></label><select class="filter-select" id="adminPartnerFilter"><option>Todos</option><option>Aprovado</option><option>Em análise</option><option>Pendente</option><option>Suspenso</option><option>Rejeitado</option><option>Encerrado</option></select><button class="button ghost" data-action="export-admin-partners">Exportar CSV</button></div>
+      <section class="card"><div class="list">${items.map((partner) => `<div class="list-item"><div class="avatar">${initials(partner.tradeName)}</div><div class="list-item-main"><strong>${esc(partner.tradeName)}</strong><small>${esc(partner.legalName)} · ${esc(partner.cnpj)}<br>${esc(partner.city)} · ${esc(partner.spaces)} espaços · ${esc(partner.source || "Administração")} · cadastro ${esc(partner.score)}%</small></div><span class="status ${statusClass(partner.status)}">${esc(partner.status)}</span><div class="item-actions">${adminPartnerActions(partner)}</div></div>`).join("") || emptyState("◇", "Nenhum parceiro corresponde aos filtros.")}</div></section>`;
   }
 
   function adminReservations() {
@@ -2169,7 +2464,7 @@
   }
 
   function render() {
-    app.innerHTML = state.role === "user" ? userView() : state.role === "partner" ? partnerView() : adminView();
+    app.innerHTML = state.role === "user" ? userView() : state.role === "partner" ? partnerView() : state.role === "candidate" ? candidateView() : adminView();
     roleButtons.forEach((button) => button.classList.toggle("active", button.dataset.role === state.role));
     const userReservationFilter = document.getElementById("userReservationFilter");
     if (userReservationFilter) userReservationFilter.value = state.filters.userReservationStatus || "Todas";
@@ -2183,6 +2478,13 @@
   }
 
   function venueScheduleBody(venue, selectedDate) {
+    venue.schedule = Array.isArray(venue.schedule) ? venue.schedule : [];
+    if (!venue.schedule.length) {
+      selectedVenueSchedule = { venueId: venue.id, shortDate: "" };
+      return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}"><div class="venue-detail-overlay"><span class="rating-badge">Novo parceiro</span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood || "Localização a completar")}</strong><small>${esc(venue.address || "Endereço a cadastrar")}</small></div></div></div>
+        <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc((venue.types || []).join(" · ") || "A cadastrar")}</span><span><b>Estrutura</b>${esc((venue.amenities || []).join(" · ") || "A cadastrar")}</span></div>
+        <section class="schedule-section">${emptyState("▦", "Este parceiro ainda não publicou horários no marketplace.")}</section>`;
+    }
     const day = venue.schedule.find((item) => item.shortDate === selectedDate) || venue.schedule[0];
     selectedVenueSchedule = { venueId: venue.id, shortDate: day.shortDate };
     return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}"><div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood)}</strong><small>${esc(venue.address)} · ${esc(venue.distance)}</small></div></div></div>
@@ -2203,7 +2505,7 @@
     if (!venue) return;
     detailEyebrow.textContent = "Espaço parceiro";
     detailTitle.textContent = venue.name;
-    detailBody.innerHTML = venueScheduleBody(venue, shortDate || venue.schedule[0].shortDate);
+    detailBody.innerHTML = venueScheduleBody(venue, shortDate || venue.schedule?.[0]?.shortDate || "");
     if (!detailDialog.open) {
       detailDialog.showModal();
       focusDialog(detailDialog);
@@ -2301,7 +2603,7 @@
 
   function openPromotionForm(issuerType) {
     const isPartner = issuerType === "partner";
-    const venueOptions = isPartner ? [{ value:state.partnerProfile.venueId, label:state.partnerProfile.tradeName }] : [{ value:"all", label:"Todos os parceiros" }, ...state.venues.map((venue) => ({ value:venue.id, label:venue.name }))];
+    const venueOptions = isPartner ? [{ value:state.partnerProfile.venueId, label:state.partnerProfile.tradeName }] : [{ value:"all", label:"Todos os parceiros" }, ...state.venues.filter(partnerVisibleInMarketplace).map((venue) => ({ value:venue.id, label:venue.name }))];
     const today = new Date();
     const expiry = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
     const expiryIso = `${expiry.getFullYear()}-${String(expiry.getMonth()+1).padStart(2,"0")}-${String(expiry.getDate()).padStart(2,"0")}`;
@@ -2329,11 +2631,15 @@
   }
 
   function partnerDetailsBody(partner) {
+    const currentProfile = state.partnerProfile?.venueId === partner.venueId ? state.partnerProfile : null;
+    const application = partnerApplicationForAdminPartner(partner);
+    const docs = currentProfile?.documents || [];
     return `<div class="details-grid">
       <div class="detail-group"><h3>Empresa</h3><div class="detail-list"><div class="detail-line"><span>Razão social</span><strong>${esc(partner.legalName)}</strong></div><div class="detail-line"><span>CNPJ</span><strong>${esc(partner.cnpj)}</strong></div><div class="detail-line"><span>Cidade</span><strong>${esc(partner.city)}</strong></div><div class="detail-line"><span>Atividade declarada</span><strong>${esc(partner.activity)}</strong></div><div class="detail-line"><span>Regime tributário</span><strong>${esc(partner.taxRegime)}</strong></div></div></div>
       <div class="detail-group"><h3>Responsável</h3><div class="detail-list"><div class="detail-line"><span>Nome</span><strong>${esc(partner.responsible)}</strong></div><div class="detail-line"><span>E-mail</span><strong>${esc(partner.email)}</strong></div><div class="detail-line"><span>Telefone</span><strong>${esc(partner.phone)}</strong></div><div class="detail-line"><span>Tipos de espaço</span><strong>${esc(partner.types)}</strong></div></div></div>
-      <div class="detail-group"><h3>Contrato e fiscal</h3><div class="detail-list"><div class="detail-line"><span>Contrato</span><strong>${esc(partner.contract)}</strong></div><div class="detail-line"><span>Documento fiscal</span><strong>${esc(partner.fiscal)}</strong></div><div class="detail-line"><span>Comissão</span><strong>${esc(partner.commission)}%</strong></div></div></div>
-      <div class="detail-group"><h3>Financeiro e homologação</h3><div class="detail-list"><div class="detail-line"><span>Dados bancários</span><strong>${esc(partner.banking)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(partner.status)}</strong></div><div class="detail-line"><span>Completude</span><strong>${esc(partner.score)}%</strong></div><div class="detail-line"><span>Vouchers ativos</span><strong>${esc(activeVoucherLiability(partner.venueId).count)} · ${money(activeVoucherLiability(partner.venueId).value)}</strong></div><div class="progress"><span style="width:${Math.min(100,partner.score)}%"></span></div></div></div>
+      <div class="detail-group"><h3>Contrato e aceites</h3><div class="detail-list"><div class="detail-line"><span>Contrato</span><strong>${esc(partner.contract)}</strong></div><div class="detail-line"><span>Termos</span><strong>${esc(partner.terms || "Pendente")}</strong></div><div class="detail-line"><span>Privacidade</span><strong>${esc(partner.privacy || "Pendente")}</strong></div><div class="detail-line"><span>Documento fiscal</span><strong>${esc(partner.fiscal)}</strong></div><div class="detail-line"><span>Comissão</span><strong>${esc(partner.commission)}%</strong></div></div></div>
+      <div class="detail-group"><h3>Homologação</h3><div class="detail-list"><div class="detail-line"><span>Origem</span><strong>${esc(partner.source || "Administração")}</strong></div>${application ? `<div class="detail-line"><span>Solicitação</span><strong>${esc(application.id)} · ${esc(application.requestedAt || "")}</strong></div>` : ""}<div class="detail-line"><span>Dados bancários</span><strong>${esc(partner.banking)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(partner.status)}</strong></div><div class="detail-line"><span>Completude</span><strong>${esc(partner.score)}%</strong></div><div class="detail-line"><span>Vouchers ativos</span><strong>${esc(activeVoucherLiability(partner.venueId).count)} · ${money(activeVoucherLiability(partner.venueId).value)}</strong></div><div class="progress"><span style="width:${Math.min(100,partner.score)}%"></span></div></div></div>
+      ${docs.length ? `<div class="detail-group"><h3>Documentos do Portal</h3><div class="detail-list">${docs.map((doc) => `<div class="detail-line"><span>${esc(doc.name)}</span><strong>${esc(doc.status)}</strong></div>`).join("")}</div></div>` : ""}
     </div>`;
   }
 
@@ -2618,9 +2924,9 @@
       exportCsv(`reservas-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Data","Hora","Espaço","Valor","Status"],...state.partnerReservations.map((r)=>[r.id,r.client,r.date,r.time,r.space,r.value,r.status])]);
     } else if (action === "new-space" || action === "edit-space") {
       const item=action==="edit-space"?state.partnerSpaces.find((s)=>s.id===id):null;
-      openForm({eyebrow:"Espaços",title:item?"Editar espaço":"Cadastrar espaço",fields:[{name:"name",label:"Nome",value:item?.name||"",required:true},{name:"type",label:"Tipo",type:"select",value:item?.type||"Society",options:["Futsal","Society","Campo"]},{name:"floor",label:"Piso",value:item?.floor||"Grama sintética"},{name:"capacity",label:"Capacidade",type:"number",value:item?.capacity||14},{name:"price",label:"Preço-base",type:"number",step:"0.01",value:item?.price||120},{name:"monthlyPrice",label:"Preço mensalista padrão",type:"number",step:"0.01",value:item?.monthlyPrice||440},{name:"status",label:"Status",type:"select",value:item?.status||"Ativo",options:["Ativo","Inativo"]},{name:"lights",label:"Iluminação",type:"select",value:item?.lights||"Sim",options:["Sim","Não"]},{name:"covered",label:"Coberta",type:"select",value:item?.covered||"Não",options:["Sim","Não"]},{name:"maintenance",label:"Próxima manutenção",value:item?.maintenance||"",full:true}],onSubmit:(data)=>{const normalized={...data,capacity:Number(data.capacity),price:Number(data.price),monthlyPrice:Number(data.monthlyPrice)};if(item)Object.assign(item,normalized);else state.partnerSpaces.push({id:nextId("E-",state.partnerSpaces),...normalized});saveState();render();showToast(item?"Espaço atualizado.":"Espaço cadastrado.");}});
+      openForm({eyebrow:"Espaços",title:item?"Editar espaço":"Cadastrar espaço",fields:[{name:"name",label:"Nome",value:item?.name||"",required:true},{name:"type",label:"Tipo",type:"select",value:item?.type||"Society",options:["Futsal","Society","Campo"]},{name:"floor",label:"Piso",value:item?.floor||"Grama sintética"},{name:"capacity",label:"Capacidade",type:"number",value:item?.capacity||14},{name:"price",label:"Preço-base",type:"number",step:"0.01",value:item?.price||120},{name:"monthlyPrice",label:"Preço mensalista padrão",type:"number",step:"0.01",value:item?.monthlyPrice||440},{name:"status",label:"Status",type:"select",value:item?.status||"Ativo",options:["Ativo","Inativo"]},{name:"lights",label:"Iluminação",type:"select",value:item?.lights||"Sim",options:["Sim","Não"]},{name:"covered",label:"Coberta",type:"select",value:item?.covered||"Não",options:["Sim","Não"]},{name:"maintenance",label:"Próxima manutenção",value:item?.maintenance||"",full:true}],onSubmit:(data)=>{const normalized={...data,capacity:Number(data.capacity),price:Number(data.price),monthlyPrice:Number(data.monthlyPrice)};if(item)Object.assign(item,normalized);else state.partnerSpaces.push({id:nextId("E-",state.partnerSpaces),...normalized});syncCurrentPartnerToConnectedAreas();saveState();render();showToast(item?"Espaço atualizado e sincronizado.":"Espaço cadastrado e sincronizado.");}});
     } else if (action === "toggle-space") {
-      const item=state.partnerSpaces.find((s)=>s.id===id);if(item){item.status=item.status==="Ativo"?"Inativo":"Ativo";saveState();render();showToast(`${item.name}: ${item.status}.`);}
+      const item=state.partnerSpaces.find((s)=>s.id===id);if(item){item.status=item.status==="Ativo"?"Inativo":"Ativo";syncCurrentPartnerToConnectedAreas();saveState();render();showToast(`${item.name}: ${item.status}.`);}
     } else if (action === "new-client" || action === "edit-client") {
       const item=action==="edit-client"?state.partnerClients.find((c)=>c.id===id):null;
       openForm({eyebrow:"Clientes",title:item?"Editar cliente":"Cadastrar cliente",fields:[{name:"name",label:"Grupo ou cliente",value:item?.name||"",required:true},{name:"contact",label:"Responsável",value:item?.contact||"",required:true},{name:"phone",label:"Telefone",value:item?.phone||""},{name:"frequency",label:"Frequência",type:"select",value:item?.frequency||"Semanal",options:["Semanal","Quinzenal","Mensal","Eventual"]},{name:"lastBooking",label:"Última reserva",value:item?.lastBooking||""},{name:"notes",label:"Observações",type:"textarea",value:item?.notes||"",full:true}],onSubmit:(data)=>{if(item)Object.assign(item,data);else state.partnerClients.push({id:nextId("C-",state.partnerClients),...data});saveState();render();showToast(item?"Cliente atualizado.":"Cliente cadastrado.");}});
@@ -2634,25 +2940,80 @@
     } else if (action === "export-partner-finance") {
       exportCsv(`financeiro-parceiro-${VERSION}.csv`,[["Reserva","Cliente","Valor","Status","Pagamento","Voucher","Reconhecido"],...state.partnerReservations.map((r)=>[r.id,r.client,r.value,r.status,r.payment,r.voucherGeneratedCode||"",r.accountingRecognizedValue||0])]);
     } else if (action === "edit-bank-data") {
-      const p=state.partnerProfile;openForm({eyebrow:"Financeiro",title:"Editar dados bancários",fields:[{name:"bank",label:"Banco",value:p.bank},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount,full:true}],onSubmit:(data)=>{Object.assign(p,data);saveState();render();showToast("Dados bancários atualizados localmente.");}});
+      const p=state.partnerProfile;openForm({eyebrow:"Financeiro",title:"Editar dados bancários",fields:[{name:"bank",label:"Banco",value:p.bank},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount,full:true}],onSubmit:(data)=>{Object.assign(p,data);syncCurrentPartnerToConnectedAreas();saveState();render();showToast("Dados bancários atualizados e sincronizados.");}});
     } else if (["edit-company-data","edit-responsible-data","edit-address-data","edit-contract-data","edit-fiscal-data","edit-payment-integrations"].includes(action)) {
       editPartnerProfileSection(action);
     } else if (action === "add-document" || action === "edit-document") {
       const index=Number(button.dataset.index);const item=action==="edit-document"?state.partnerProfile.documents[index]:null;
       openForm({eyebrow:"Documentos",title:item?"Alterar documento":"Adicionar documento",fields:[{name:"name",label:"Documento",value:item?.name||"",required:true},{name:"status",label:"Status",type:"select",value:item?.status||"Pendente",options:["Pendente","Enviado","Em análise","Validado","Rejeitado","Assinado"]}],onSubmit:(data)=>{if(item)Object.assign(item,data);else state.partnerProfile.documents.push(data);saveState();render();showToast("Lista de documentos atualizada.");}});
     } else if (action === "review-next-partner") {
-      const partner=state.adminPartners.find((p)=>p.status!=="Aprovado");if(partner)openDetail({eyebrow:"Próximo parceiro",title:partner.tradeName,body:partnerDetailsBody(partner)});else showToast("Não há parceiros pendentes.");
+      const partner=state.adminPartners.find((p)=>["Pendente","Em análise"].includes(p.status));if(partner)openDetail({eyebrow:"Próximo parceiro",title:partner.tradeName,body:partnerDetailsBody(partner)});else showToast("Não há parceiros pendentes.");
     } else if (action === "export-admin-overview") {
       exportCsv(`resumo-administrativo-${VERSION}.csv`,[["Indicador","Valor"],["Parceiros",state.adminPartners.length],["Usuários",state.adminUsers.length],["Reservas",state.reservations.length]]);
     } else if (action === "new-admin-partner" || action === "edit-admin-partner") {
       const item=action==="edit-admin-partner"?state.adminPartners.find((p)=>String(p.id)===String(id)):null;
-      openForm({eyebrow:"Parceiros",title:item?"Editar parceiro":"Cadastrar parceiro",description:"Dados de teste para validar a homologação.",fields:[{name:"tradeName",label:"Nome fantasia",value:item?.tradeName||"",required:true},{name:"legalName",label:"Razão social",value:item?.legalName||"",required:true},{name:"cnpj",label:"CNPJ",value:item?.cnpj||"",required:true},{name:"city",label:"Cidade",value:item?.city||"Curitiba"},{name:"spaces",label:"Número de espaços",type:"number",value:item?.spaces||1},{name:"types",label:"Tipos de espaço",value:item?.types||"Society"},{name:"responsible",label:"Responsável",value:item?.responsible||""},{name:"email",label:"E-mail",type:"email",value:item?.email||""},{name:"phone",label:"Telefone",value:item?.phone||""},{name:"taxRegime",label:"Regime tributário",value:item?.taxRegime||"Simples Nacional"},{name:"activity",label:"Atividade declarada",value:item?.activity||"Gestão de espaços esportivos",full:true},{name:"status",label:"Status",type:"select",value:item?.status||"Pendente",options:["Pendente","Em análise","Aprovado","Suspenso"]},{name:"contract",label:"Contrato",type:"select",value:item?.contract||"Não enviado",options:["Não enviado","Enviado","Assinado"]},{name:"fiscal",label:"Emissão fiscal",value:item?.fiscal||"A validar"},{name:"banking",label:"Dados bancários",value:item?.banking||"Pendente"},{name:"commission",label:"Comissão (%)",type:"number",step:"0.1",value:item?.commission||state.settings.defaultCommission},{name:"score",label:"Completude (%)",type:"number",min:0,max:100,value:item?.score||30}],onSubmit:(data)=>{const normalized={...data,spaces:Number(data.spaces),commission:Number(data.commission),score:Number(data.score)};if(item)Object.assign(item,normalized);else state.adminPartners.push({id:Math.max(0,...state.adminPartners.map((p)=>Number(p.id)))+1,...normalized});saveState();render();showToast(item?"Parceiro atualizado.":"Parceiro cadastrado.");}});
+      openForm({eyebrow:"Parceiros",title:item?"Editar parceiro":"Cadastrar parceiro",description:"As alterações salvas aqui são refletidas no marketplace e, para o parceiro atual da Preview, também no Portal do parceiro.",fields:[
+        {name:"tradeName",label:"Nome fantasia",value:item?.tradeName||"",required:true},
+        {name:"legalName",label:"Razão social",value:item?.legalName||"",required:true},
+        {name:"cnpj",label:"CNPJ",value:item?.cnpj||"",required:true},
+        {name:"city",label:"Cidade",value:item?.city||"Curitiba"},
+        {name:"spaces",label:"Número de espaços",type:"number",value:item?.spaces||1},
+        {name:"types",label:"Tipos de espaço",value:item?.types||"Society"},
+        {name:"responsible",label:"Responsável",value:item?.responsible||""},
+        {name:"email",label:"E-mail",type:"email",value:item?.email||""},
+        {name:"phone",label:"Telefone",value:item?.phone||""},
+        {name:"taxRegime",label:"Regime tributário",value:item?.taxRegime||"Simples Nacional"},
+        {name:"activity",label:"Atividade declarada",value:item?.activity||"Gestão de espaços esportivos",full:true},
+        {name:"status",label:"Status",type:"select",value:item?.status||"Pendente",options:["Pendente","Em análise","Aprovado","Suspenso","Rejeitado","Encerrado"]},
+        {name:"contract",label:"Contrato",type:"select",value:item?.contract||"Não enviado",options:["Não enviado","Enviado","Assinado"]},
+        {name:"terms",label:"Termos",type:"select",value:item?.terms||"Pendente",options:["Pendente","Aceitos"]},
+        {name:"privacy",label:"Privacidade / LGPD",type:"select",value:item?.privacy||"Pendente",options:["Pendente","Aceita"]},
+        {name:"fiscal",label:"Emissão fiscal",value:item?.fiscal||"A validar"},
+        {name:"banking",label:"Dados bancários",value:item?.banking||"Pendente"},
+        {name:"commission",label:"Comissão (%)",type:"number",step:"0.1",value:item?.commission||state.settings.defaultCommission},
+        {name:"score",label:"Completude (%)",type:"number",min:0,max:100,value:item?.score||30}
+      ],onSubmit:(data)=>{
+        const normalized={...data,spaces:Number(data.spaces),commission:Number(data.commission),score:Number(data.score)};
+        let partner=item;
+        if(partner) {
+          Object.assign(partner,normalized);
+        } else {
+          const nextNumericId=Math.max(0,...state.adminPartners.map((p)=>Number(p.id)||0))+1;
+          partner={id:nextNumericId,venueId:uniqueVenueId(normalized.tradeName),source:"Administração",requestedAt:new Date().toLocaleString("pt-BR"),...normalized};
+          state.adminPartners.push(partner);
+        }
+        if(partner.status==="Aprovado") partner.score=Math.max(partner.score,90);
+        syncAdminPartnerToConnectedAreas(partner);
+        saveState();render();showToast(item?"Parceiro atualizado e sincronizado.":"Parceiro cadastrado e sincronizado.");
+      }});
     } else if (action === "admin-partner-details") {
       const partner=state.adminPartners.find((p)=>String(p.id)===String(id));if(partner)openDetail({eyebrow:"Dossiê do parceiro",title:partner.tradeName,body:partnerDetailsBody(partner)});
     } else if (action === "admin-partner-status") {
-      const partner=state.adminPartners.find((p)=>String(p.id)===String(id));if(partner){const next=button.dataset.status;askConfirm({title:`${next} parceiro`,message:`Aplicar o status ${next} a ${partner.tradeName}?`,confirmLabel:"Aplicar status",onConfirm:()=>{partner.status=next;if(next==="Aprovado")partner.score=Math.max(partner.score,90);saveState();render();showToast(`${partner.tradeName}: ${next}.`);}});}
+      const partner=state.adminPartners.find((p)=>String(p.id)===String(id));
+      if(partner){
+        const next=button.dataset.status;
+        askConfirm({title:`${next} parceiro`,message:`Aplicar o status ${next} a ${partner.tradeName}? A mudança será refletida nas demais áreas.`,confirmLabel:"Aplicar status",onConfirm:()=>{
+          partner.status=next;
+          if(next==="Aprovado") partner.score=Math.max(partner.score,90);
+          syncAdminPartnerToConnectedAreas(partner);
+          saveState();render();showToast(`${partner.tradeName}: ${next}.`);
+        }});
+      }
+    } else if (action === "delete-admin-partner") {
+      const partner=state.adminPartners.find((p)=>String(p.id)===String(id));
+      if(!partner)return;
+      const liability=activeVoucherLiability(partner.venueId);
+      if(liability.count>0){
+        openDetail({eyebrow:"Exclusão bloqueada",title:partner.tradeName,body:`<div class="cancellation-warning"><strong>${liability.count} voucher(es) ativos · ${money(liability.value)}</strong><p>O cadastro não pode ser excluído enquanto houver vouchers que ainda precisem ser honrados ou ressarcidos.</p></div>`});
+        return;
+      }
+      askConfirm({title:"Excluir parceiro",message:`Excluir ${partner.tradeName}? O espaço deixará imediatamente de aparecer no marketplace e o acesso correspondente será removido. Reservas históricas serão preservadas.`,confirmLabel:"Excluir",onConfirm:()=>{
+        const result=removePartnerFromConnectedAreas(partner);
+        if(!result.ok)return;
+        saveState();render();showToast("Parceiro excluído e removido das áreas conectadas.");
+      }});
     } else if (action === "export-admin-partners") {
-      exportCsv(`parceiros-${VERSION}.csv`,[["Nome fantasia","Razão social","CNPJ","Cidade","Status","Completude"],...state.adminPartners.map((p)=>[p.tradeName,p.legalName,p.cnpj,p.city,p.status,p.score])]);
+      exportCsv(`parceiros-${VERSION}.csv`,[["Nome fantasia","Razão social","CNPJ","Cidade","Status","Origem","Completude"],...state.adminPartners.map((p)=>[p.tradeName,p.legalName,p.cnpj,p.city,p.status,p.source||"Administração",p.score])]);
     } else if (action === "export-admin-reservations") {
       exportCsv(`reservas-administracao-${VERSION}.csv`,[["Reserva","Parceiro","Usuário","Data","Hora","Status","Endpoint"],...state.reservations.map((r)=>[r.id,r.venue,r.user,r.date,r.time,r.status,r.endpoint])]);
     } else if (action === "cancel-paid-tamo-reservation") {
@@ -2686,12 +3047,12 @@
       if (liability.count > 0) {
         openDetail({ eyebrow: "Encerramento bloqueado", title: partner.tradeName, body: `<div class="cancellation-warning"><strong>${liability.count} voucher(es) ativos · ${money(liability.value)}</strong><p>O encerramento somente poderá ser concluído depois da utilização dos vouchers ou do ressarcimento ao Tâmo On para realocação dos créditos.</p></div>` });
       } else {
-        askConfirm({ title: "Encerrar parceiro", message: `Registrar o encerramento de ${partner.tradeName}?`, confirmLabel: "Encerrar", onConfirm: () => { partner.status = "Encerrado"; saveState(); render(); showToast("Parceiro encerrado na Preview."); } });
+        askConfirm({ title: "Encerrar parceiro", message: `Registrar o encerramento de ${partner.tradeName}? O espaço será retirado do marketplace e o acesso do parceiro será bloqueado.`, confirmLabel: "Encerrar", onConfirm: () => { partner.status = "Encerrado"; syncAdminPartnerToConnectedAreas(partner); saveState(); render(); showToast("Parceiro encerrado e sincronizado nas demais áreas."); } });
       }
     } else if (action === "reassign-cancellation-voucher") {
       const voucher = state.cancellationVouchers.find((item) => item.id === id);
       if (!voucher) return;
-      const targets = state.venues.filter((venue) => venue.id !== voucher.venueId);
+      const targets = state.venues.filter((venue) => venue.id !== voucher.venueId && partnerVisibleInMarketplace(venue));
       openForm({ eyebrow: "Ressarcimento e realocação", title: voucher.code, description: "Simula o ressarcimento do parceiro original ao Tâmo On e a disponibilização do crédito em outra quadra.", fields: [{ name: "targetVenueId", label: "Novo parceiro", type: "select", options: targets.map((venue) => ({ value: venue.id, label: venue.name })), required: true }, { name: "reimbursementReference", label: "Referência do ressarcimento", value: `RESS-${voucher.id}`, required: true }], submitLabel: "Ressarcir e realocar", onSubmit: (data) => { const target = state.venues.find((venue) => venue.id === data.targetVenueId); if (!target) return; const formerVenue = voucher.venue; voucher.reassignedFrom = formerVenue; voucher.originalVenueId = voucher.venueId; voucher.venueId = target.id; voucher.venue = target.name; voucher.partnerReimbursed = true; voucher.reimbursementReference = data.reimbursementReference; voucher.reassignmentStatus = `Realocado de ${formerVenue} para ${target.name}`; state.accountingLedger.unshift({ id: nextId("LED-", state.accountingLedger), type: "partner_reimbursement", voucherId: voucher.id, venueId: voucher.originalVenueId, venue: formerVenue, amount: voucher.value, fiscalAmount: 0, accountingMonth: accountingMonth(), description: `Ressarcimento para realocação em ${target.name}` }); saveState(); render(); showToast("Voucher ressarcido e realocado para outro parceiro."); } });
     } else if (action === "reset-local-data") {
       askConfirm({title:"Restaurar dados iniciais",message:"Todas as alterações feitas nesta Preview serão apagadas do navegador.",confirmLabel:"Restaurar",onConfirm:resetState});
@@ -2709,7 +3070,7 @@
       "edit-payment-integrations":{title:"Integrações de pagamento",fields:[{name:"bankProviderId",label:"Banco / adaptador Pix",type:"select",value:p.bankProviderId||"GENERIC_MANUAL",options:(window.TamoOnBankPix?.listProviders()||[]).map((provider)=>({value:provider.id,label:provider.label}))},{name:"branch",label:"Agência",value:p.branch},{name:"account",label:"Conta",value:p.account},{name:"pixKey",label:"Chave Pix",value:p.pixKey},{name:"pixApiStatus",label:"Status da API Pix",value:p.pixApiStatus,full:true},{name:"asaasSubaccount",label:"Subconta Asaas",value:p.asaasSubaccount},{name:"asaasWalletId",label:"Wallet ID Asaas",value:p.asaasWalletId},{name:"asaasCardStatus",label:"Status do cartão Asaas",value:p.asaasCardStatus,full:true}]}
     };
     const config=configs[action];if(!config)return;
-    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);saveState();render();showToast(`${config.title} atualizado.`);}});
+    openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);syncCurrentPartnerToConnectedAreas();saveState();render();showToast(`${config.title} atualizado e sincronizado.`);}});
   }
 
   function resetState() {
@@ -2766,6 +3127,75 @@
   pixSplitMembers?.addEventListener("input", (event) => { if (event.target.matches('[data-split-value]')) updatePixSplitSummary(); });
   monthlyReservationToggle.addEventListener("change", () => { if (eventSelect.value === "__new__" && selectedReservation) newEventTitle.value = defaultEventTitle(selectedReservation); updateMonthlyReservationPreview(); populateVoucherOptions(); updateReservationSubmitState(); });
   reservationPolicyAcknowledge.addEventListener("change", updateReservationSubmitState);
+
+  app.addEventListener("submit", (event) => {
+    if (event.target.id !== "partnerInterestForm") return;
+    event.preventDefault();
+    if (!event.target.reportValidity()) return;
+    const data = Object.fromEntries(new FormData(event.target).entries());
+    if (data.contactConsent !== "yes") {
+      showToast("Autorize o contato para enviar a solicitação.");
+      return;
+    }
+    const duplicate = state.adminPartners.find((partner) => String(partner.cnpj || "").replace(/\D/g,"") === String(data.cnpj || "").replace(/\D/g,"") && !["Rejeitado","Encerrado"].includes(partner.status));
+    if (duplicate) {
+      showToast(`Já existe uma solicitação ou parceiro cadastrado para este CNPJ (${duplicate.status}).`);
+      return;
+    }
+    const requestedAt = new Date().toLocaleString("pt-BR");
+    const applicationId = nextId("APP-", state.partnerApplications);
+    const venueId = uniqueVenueId(data.tradeName);
+    const adminPartnerId = Math.max(0, ...state.adminPartners.map((partner) => Number(partner.id) || 0)) + 1;
+    const application = {
+      id: applicationId,
+      adminPartnerId,
+      venueId,
+      tradeName: data.tradeName.trim(),
+      legalName: data.legalName.trim(),
+      cnpj: data.cnpj.trim(),
+      city: data.city.trim(),
+      spaces: Number(data.spaces || 1),
+      types: data.types.trim(),
+      responsible: data.responsible.trim(),
+      email: data.email.trim(),
+      phone: data.phone.trim(),
+      notes: String(data.notes || "").trim(),
+      contactConsent: true,
+      source: "Solicitação pelo app",
+      status: "Pendente",
+      requestedAt
+    };
+    state.partnerApplications.unshift(application);
+    state.adminPartners.push({
+      id: adminPartnerId,
+      applicationId,
+      venueId,
+      tradeName: application.tradeName,
+      legalName: application.legalName,
+      cnpj: application.cnpj,
+      city: application.city,
+      spaces: application.spaces,
+      types: application.types,
+      status: "Pendente",
+      responsible: application.responsible,
+      email: application.email,
+      phone: application.phone,
+      taxRegime: "A informar",
+      activity: "A validar durante a homologação",
+      contract: "Não enviado",
+      terms: "Pendente",
+      privacy: "Pendente",
+      fiscal: "A validar",
+      banking: "Não informado",
+      commission: Number(state.settings.defaultCommission || 0),
+      score: 35,
+      source: "Solicitação pelo app",
+      requestedAt
+    });
+    saveState();
+    render();
+    showToast("Solicitação enviada para Administração → Parceiros.");
+  });
 
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}

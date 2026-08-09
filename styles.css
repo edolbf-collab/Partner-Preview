@@ -279,7 +279,7 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 700px) {
   .app-shell { padding-left: 12px; padding-right: 12px; }
   .app-header { min-height: 66px; }
-  .role-switcher { width: 100%; display: grid; grid-template-columns: repeat(3,1fr); }
+  .role-switcher { width: 100%; display: grid; grid-template-columns: repeat(2,1fr); }
   .role-chip { padding: 9px 5px; }
   .page-header { align-items: flex-start; flex-direction: column; }
   .page-actions { width: 100%; justify-content: flex-start; }
@@ -2037,4 +2037,23 @@ html[data-theme="light"] .monthly-occurrence-list > span { background:rgba(5,63,
     border-left: 0;
     border-top: 1px solid var(--line);
   }
+}
+
+
+/* Partners Preview 0.1.30 — solicitação de parceria e sincronização */
+.candidate-area { max-width: 920px; }
+.partner-interest-card { overflow: hidden; }
+.partner-interest-form { margin-top: 14px; }
+.partner-interest-form > .full { grid-column: 1 / -1; }
+.partner-interest-consent { margin: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.025); }
+.partner-application-status { margin-bottom: 14px; }
+.partner-application-status > p,
+.partner-access-card > p { color: var(--muted); line-height: 1.55; }
+.partner-access-card { max-width: 720px; }
+html[data-theme="light"] .partner-interest-consent { background: rgba(8,71,44,.025); }
+@media (max-width: 700px) {
+  .role-chip { min-height: 40px; line-height: 1.15; }
+  .partner-interest-form > .full { grid-column: 1; }
+  .partner-interest-form input,
+  .partner-interest-form textarea { font-size: 16px; }
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f17" id="marketplaceThemeColor">
   <meta name="description" content="Protótipo operacional da futura área de parceiros do Tâmo On.">
-  <title>Tâmo On — Partners Preview 0.1.29</title>
+  <title>Tâmo On — Partners Preview 0.1.30</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/preview-icon.svg" type="image/svg+xml">
   <script>
@@ -29,7 +29,7 @@
         <div class="brand-symbol" aria-hidden="true">✓</div>
         <div>
           <div class="brand-name">Tâmo On</div>
-          <div class="brand-subtitle">Partners Preview 0.1.29</div>
+          <div class="brand-subtitle">Partners Preview 0.1.30</div>
         </div>
       </div>
       <div class="header-actions">
@@ -46,6 +46,7 @@
       <button class="role-chip active" data-role="user">Usuário</button>
       <button class="role-chip" data-role="partner">Parceiro</button>
       <button class="role-chip" data-role="admin">Administração</button>
+      <button class="role-chip" data-role="candidate">Quero ser parceiro</button>
     </section>
 
     <main id="app" tabindex="-1"></main>
@@ -255,16 +256,18 @@
       <div class="dialog-header">
         <div>
           <span class="eyebrow">Versão</span>
-          <h2>Partners Preview 0.1.29</h2>
+          <h2>Partners Preview 0.1.30</h2>
         </div>
         <button class="icon-button" value="cancel" formnovalidate aria-label="Fechar">×</button>
       </div>
-      <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro e administração, com tema claro opcional exclusivo do Marketplace. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
+      <p class="dialog-description">Protótipo local para validação das áreas do usuário, parceiro, administração e solicitação de novos parceiros, com tema claro opcional exclusivo do Marketplace. Todas as páginas internas estão navegáveis e os dados podem ser alterados no próprio navegador.</p>
       <ul class="plain-list">
         <li>Dados persistidos apenas no armazenamento local do navegador.</li>
         <li>Perfil único do Tâmo On reutilizado pelo marketplace, sem recadastro de dados pessoais.</li>
         <li>Campos mobile com tamanho compatível para evitar zoom automático durante o preenchimento.</li>
         <li>Cadastro de parceiros com blocos cadastral, operacional, contratual, fiscal e financeiro.</li>
+        <li>Administração → Parceiros sincronizada com o marketplace e com o Portal do parceiro aplicável.</li>
+        <li>Nova tela “Quero ser parceiro” para envio de solicitação básica diretamente pelo app e entrada automática na fila administrativa.</li>
         <li>Busca do usuário com cards compactos, fachada ilustrativa, agenda interna e preços por horário.</li>
         <li>Reservas, agenda, espaços, equipe, clientes, vouchers e controles administrativos funcionais.</li>
         <li>Vouchers promocionais aplicam desconto real ao checkout; parceiro e administração podem criar campanhas próprias.</li>

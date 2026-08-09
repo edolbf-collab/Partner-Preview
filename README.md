@@ -169,3 +169,22 @@ A aba Agenda do parceiro foi consolidada sobre uma única fonte de dados. A agen
 
 ## Partners Preview 0.1.28
 Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando todas as funções da grade operacional unificada.
+
+
+## Partners Preview 0.1.29 — ações da agenda 2 × 2
+
+- Ações dos horários em duas colunas também em desktop/tablet, e não apenas no mobile.
+- Ordem visual: Abrir | Editar / Bloquear ou Desbloquear | Excluir.
+- Removido o botão Novo bloqueio do cabeçalho para evitar redundância.
+
+## Partners Preview 0.1.30 — parceiros sincronizados e solicitação pelo app
+
+- Administração > Parceiros passa a ser a referência administrativa para nome, CNPJ, cidade, responsável, contatos, situação contratual, aceites, fiscal, comissão e status de homologação.
+- Alterações administrativas do parceiro atual da Preview são refletidas no Portal do parceiro e nos dados públicos correspondentes do marketplace.
+- Somente parceiros com status **Aprovado** são publicados na busca do usuário. Suspensão, encerramento, rejeição ou exclusão retiram o estabelecimento do marketplace.
+- Aprovar um parceiro que ainda não possui `venue` cria sua estrutura pública básica com agenda vazia, pronta para ser preenchida depois pelo Portal do parceiro.
+- Exclusão administrativa preserva reservas históricas, mas remove o estabelecimento das listas conectadas; parceiros com vouchers ativos continuam protegidos contra encerramento/exclusão.
+- Nova entrada **Quero ser parceiro** permite que um interessado envie nome fantasia, razão social, CNPJ, cidade, número/tipo de espaços, responsável e contatos diretamente pelo app.
+- A solicitação gera um registro em `partnerApplications` e uma pendência em Administração > Parceiros, sem publicar o estabelecimento antes da aprovação.
+- O solicitante acompanha no próprio app os estados Pendente, Em análise, Aprovado, Rejeitado ou removido pela Administração.
+- Dados continuam persistidos somente em `localStorage`; não há backend, autenticação real ou envio externo nesta Preview.

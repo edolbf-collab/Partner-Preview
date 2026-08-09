@@ -1,0 +1,14 @@
+PARTNERS PREVIEW 0.1.30
+
+Nenhuma alteração de banco de dados foi executada.
+
+A sincronização de parceiros e o novo fluxo "Quero ser parceiro" funcionam exclusivamente no estado local da Preview, persistido em localStorage.
+
+Quando a funcionalidade for levada ao backend, será necessário modelar ao menos:
+- parceiros;
+- estabelecimentos/espaços;
+- solicitações de parceria;
+- histórico de status/homologação;
+- aceites e documentos;
+- permissões de acesso do parceiro;
+- trilha de auditoria das alterações administrativas.

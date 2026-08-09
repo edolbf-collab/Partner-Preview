@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -8,11 +8,15 @@
   "payments": "multi-provider-preview",
   "pix_direct_partner": "adapter-contract-ready-network-disabled",
   "asaas": "credit-card-hosted-checkout-contract-ready-sandbox-disabled",
+  "partner_registry": "admin-marketplace-portal-synchronized-local-preview",
+  "partner_onboarding": "in-app-interest-request-local-preview",
   "real_money": false,
-  "released_at": "2026-08-08",
+  "released_at": "2026-08-09",
   "notes": [
-    "Os quatro comandos da agenda passam a usar grade 2x2 em desktop e mobile: Abrir/Editar e Bloquear/Excluir.",
-    "O botão Novo bloqueio foi removido do cabeçalho da Agenda; o bloqueio permanece disponível diretamente em cada horário livre.",
-    "A alteração corrige a regra CSS anterior que só aplicava a grade 2x2 abaixo de 700 px."
+    "Administração > Parceiros passa a sincronizar dados cadastrais e status com o marketplace e com o Portal do parceiro aplicável.",
+    "Parceiros não aprovados deixam de ser publicados na busca do usuário; suspensão, encerramento e exclusão retiram o espaço das áreas conectadas.",
+    "Nova tela Quero ser parceiro permite enviar dados básicos pelo próprio app e cria automaticamente uma pendência na fila administrativa.",
+    "Aprovação de uma solicitação cria ou publica o registro do estabelecimento no marketplace, ainda sem agenda até o parceiro cadastrar horários.",
+    "A Preview continua sem backend, banco de produção ou transações reais."
   ]
 }
