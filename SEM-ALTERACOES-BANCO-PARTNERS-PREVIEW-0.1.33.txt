@@ -1,0 +1,4 @@
+Partners Preview 0.1.33
+
+Nenhuma alteração de banco de dados foi realizada.
+A análise de luminosidade e os metadados de contraste permanecem apenas no estado local da Preview.

@@ -205,3 +205,12 @@ Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando
 - Galeria de fotos no cadastro do parceiro, com imagem favorita sincronizada com card e resumo da reserva.
 - Filtros administrativos de reservas por parceiro, usuário, data e status.
 - Exclusão segura de vouchers promocionais; itens em uso são protegidos e vouchers usados permanecem arquivados.
+
+## Partners Preview 0.1.33 — contraste automático das fotos
+
+- Cada foto carregada pelo parceiro recebe análise local de luminosidade via Canvas.
+- A região inferior da imagem recebe peso maior porque concentra os textos do card e do cabeçalho público.
+- Fundo classificado como escuro aplica textos claros e sombreado escuro; fundo claro aplica textos escuros e sombreado claro.
+- A classificação da foto favorita é sincronizada com o card do Marketplace e o balão/cabeçalho de detalhes do espaço.
+- Fotos antigas salvas sem metadados de contraste são analisadas automaticamente na abertura da Preview.
+- Nenhuma imagem é enviada a serviço externo para esta análise.

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.32",
+  "version": "0.1.33",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -13,12 +13,13 @@
   "real_money": false,
   "released_at": "2026-08-09",
   "notes": [
-    "Detalhe público do parceiro ganhou botão Galeria no canto superior direito, usando as fotos cadastradas pelo parceiro.",
-    "Endereço público passou a ser exibido em linha única no formato logradouro e número, bairro, cidade e CEP.",
-    "Agenda do usuário exibe apenas o dia atual e datas futuras; dias históricos permanecem somente nas áreas de Parceiro e Administração.",
-    "No dia atual, horários cujo término já ocorreu deixam de ser oferecidos ao usuário; Minhas reservas preserva reservas confirmadas e históricas."
+    "Fotos carregadas pelo parceiro passam por análise automática de luminosidade no navegador.",
+    "Fotos de fundo escuro usam texto claro; fotos de fundo claro usam texto escuro no card do marketplace e no cabeçalho público do espaço.",
+    "A análise dá peso maior à região inferior da imagem, onde ficam nome, localização e endereço, e é recalculada para fotos antigas sem metadados de contraste.",
+    "A foto favorita propaga seu perfil de contraste para o estabelecimento sempre que é selecionada."
   ],
-  "partner_media": "local-photo-gallery-favorite-synchronized",
+  "partner_media": "local-photo-gallery-favorite-synchronized-auto-contrast",
+  "photo_contrast": "automatic-luminance-light-dark",
   "chat_window": "payment-confirmed-until-final-occurrence-end",
   "admin_reservation_filters": "status-partner-user-date",
   "voucher_deletion": "safe-delete-with-history-preservation",

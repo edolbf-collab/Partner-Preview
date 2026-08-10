@@ -2185,3 +2185,49 @@ html[data-theme="light"] .partner-interest-consent { background: rgba(8,71,44,.0
   .venue-gallery-grid { grid-template-columns: 1fr; }
   .venue-gallery-button { top: 9px; right: 9px; }
 }
+
+
+/* Partners Preview 0.1.33 — contraste automático conforme luminosidade da foto favorita */
+.compact-venue-card.photo-tone-dark .venue-card-shade {
+  background: linear-gradient(180deg, rgba(3,13,9,.16) 0%, rgba(3,13,9,.18) 38%, rgba(3,13,9,.90) 100%);
+}
+.compact-venue-card.photo-tone-light .venue-card-shade {
+  background: linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.16) 38%, rgba(250,255,252,.88) 100%);
+}
+.compact-venue-card.photo-tone-light .venue-card-top-text h2,
+.compact-venue-card.photo-tone-light .venue-card-top-text .venue-location,
+.compact-venue-card.photo-tone-light .venue-card-top-text .venue-location strong {
+  color: #0b1f17;
+  text-shadow: 0 1px 1px rgba(255,255,255,.55);
+}
+.compact-venue-card.photo-tone-dark .venue-card-top-text h2,
+.compact-venue-card.photo-tone-dark .venue-card-top-text .venue-location,
+.compact-venue-card.photo-tone-dark .venue-card-top-text .venue-location strong {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.38);
+}
+.compact-venue-card.photo-tone-light .favorite-button {
+  color: #10271d;
+  border-color: rgba(10,35,25,.24);
+  background: rgba(255,255,255,.78);
+}
+.compact-venue-card.photo-tone-light .favorite-button.active {
+  color: #a31535;
+  background: rgba(255,245,247,.88);
+}
+.venue-detail-cover.photo-tone-dark .venue-detail-overlay {
+  color: #fff;
+  background: linear-gradient(180deg, rgba(3,13,9,.15), rgba(3,13,9,.84));
+}
+.venue-detail-cover.photo-tone-light .venue-detail-overlay {
+  color: #0b1f17;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(250,255,252,.86));
+}
+.venue-detail-cover.photo-tone-dark .venue-detail-overlay > div strong {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.38);
+}
+.venue-detail-cover.photo-tone-light .venue-detail-overlay > div strong {
+  color: #0b1f17;
+  text-shadow: 0 1px 1px rgba(255,255,255,.55);
+}

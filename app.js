@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.31";
+  const VERSION = "0.1.33";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -310,7 +310,7 @@
         commissionRate: 6,
         favoritePhotoId: "PHOTO-001",
         photos: [
-          { id:"PHOTO-001", name:"Fachada principal", src:"assets/venues/arena-central-fachada.png", favorite:true, uploadedAt:"Cadastro inicial" }
+          { id:"PHOTO-001", name:"Fachada principal", src:"assets/venues/arena-central-fachada.png", favorite:true, uploadedAt:"Cadastro inicial", tone:"dark", luminance:133 }
         ],
         documents: [
           { name: "Cartão CNPJ", status: "Validado" },
@@ -639,6 +639,8 @@
       if (favoritePhoto?.src) {
         venue.facadeImage = favoritePhoto.src;
         venue.facadeSource = "partner_upload";
+        venue.facadeTone = favoritePhoto.tone === "light" ? "light" : "dark";
+        venue.facadeLuminance = Number.isFinite(Number(favoritePhoto.luminance)) ? Number(favoritePhoto.luminance) : null;
       }
       if (state.partnerSpaces.length) venue.price = Math.min(...state.partnerSpaces.map((space) => Number(space.price || 0)).filter((value) => value > 0)) || venue.price;
       syncVenueNameReferences(profile.venueId, oldName, venue.name);
@@ -1944,10 +1946,12 @@
       id: photo.id || `VENUE-PHOTO-${index + 1}`,
       name: photo.name || `Foto ${index + 1}`,
       src: photo.src,
-      favorite: Boolean(photo.favorite || (state.partnerProfile?.venueId === venue.id && photo.id === state.partnerProfile.favoritePhotoId))
+      favorite: Boolean(photo.favorite || (state.partnerProfile?.venueId === venue.id && photo.id === state.partnerProfile.favoritePhotoId)),
+      tone: photo.tone === "light" ? "light" : photo.tone === "dark" ? "dark" : "",
+      luminance: Number.isFinite(Number(photo.luminance)) ? Number(photo.luminance) : null
     }));
     if (!normalized.length && venue.facadeImage) {
-      normalized.push({ id:`${venue.id}-facade`, name:"Fachada", src:venue.facadeImage, favorite:true });
+      normalized.push({ id:`${venue.id}-facade`, name:"Fachada", src:venue.facadeImage, favorite:true, tone:venue.facadeTone || "dark", luminance:Number.isFinite(Number(venue.facadeLuminance)) ? Number(venue.facadeLuminance) : null });
     }
     normalized.sort((a,b) => Number(b.favorite) - Number(a.favorite));
     return normalized;
@@ -1996,9 +2000,18 @@
     }
   }
 
+  function venuePhotoTone(venue) {
+    if (!venue) return "dark";
+    const photos = venueGalleryPhotos(venue);
+    const favoritePhoto = photos.find((photo) => photo.favorite) || photos[0];
+    const tone = favoritePhoto?.tone || venue.facadeTone;
+    return tone === "light" ? "light" : "dark";
+  }
+
   function venueCard(venue) {
     const favorite = state.favorites.includes(venue.id);
-    return `<article class="venue-card compact-venue-card">
+    const photoTone = venuePhotoTone(venue);
+    return `<article class="venue-card compact-venue-card photo-tone-${esc(photoTone)}">
       <div class="venue-card-media">
         <img class="venue-card-photo" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}" loading="lazy">
         <div class="venue-card-shade"></div>
@@ -2533,7 +2546,7 @@
       <div class="callout"><strong>Status administrativo: ${esc(adminRecord?.status || "Não localizado")}</strong><p>Alterações realizadas pela Administração neste cadastro são sincronizadas com este Portal e com os dados públicos aplicáveis.</p></div>
       <section class="card partner-photo-manager">
         <div class="section-heading"><div><h2>Fotos do estabelecimento</h2><p>A foto favorita é usada no card do marketplace e no resumo da reserva.</p></div><div class="item-actions"><input id="partnerPhotoUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><button class="button primary small" data-action="upload-partner-photos">Carregar fotos</button></div></div>
-        <div class="partner-photo-grid">${(p.photos || []).map((photo) => `<article class="partner-photo-item ${photo.id === p.favoritePhotoId ? "is-favorite" : ""}"><img src="${esc(photo.src)}" alt="${esc(photo.name || "Foto do estabelecimento")}"><div class="partner-photo-copy"><strong>${esc(photo.name || "Foto do estabelecimento")}</strong><small>${photo.id === p.favoritePhotoId ? "Favorita · visível no marketplace" : esc(photo.uploadedAt || "")}</small></div><div class="partner-photo-actions">${photo.id === p.favoritePhotoId ? `<span class="status status-ok">Favorita</span>` : `<button class="button secondary small" data-action="set-partner-favorite-photo" data-id="${esc(photo.id)}">Usar no card</button>`}<button class="button ghost small" data-action="remove-partner-photo" data-id="${esc(photo.id)}" ${photo.id === p.favoritePhotoId && (p.photos || []).length === 1 ? "disabled" : ""}>Remover</button></div></article>`).join("") || emptyState("▧", "Nenhuma foto carregada.")}</div>
+        <div class="partner-photo-grid">${(p.photos || []).map((photo) => `<article class="partner-photo-item ${photo.id === p.favoritePhotoId ? "is-favorite" : ""}"><img src="${esc(photo.src)}" alt="${esc(photo.name || "Foto do estabelecimento")}"><div class="partner-photo-copy"><strong>${esc(photo.name || "Foto do estabelecimento")}</strong><small>${photo.id === p.favoritePhotoId ? "Favorita · visível no marketplace" : esc(photo.uploadedAt || "")}${photo.tone ? ` · fundo ${photo.tone === "light" ? "claro" : "escuro"}` : ""}</small></div><div class="partner-photo-actions">${photo.id === p.favoritePhotoId ? `<span class="status status-ok">Favorita</span>` : `<button class="button secondary small" data-action="set-partner-favorite-photo" data-id="${esc(photo.id)}">Usar no card</button>`}<button class="button ghost small" data-action="remove-partner-photo" data-id="${esc(photo.id)}" ${photo.id === p.favoritePhotoId && (p.photos || []).length === 1 ? "disabled" : ""}>Remover</button></div></article>`).join("") || emptyState("▧", "Nenhuma foto carregada.")}</div>
         <small class="field-help">Até 6 fotos. A Preview reduz as imagens antes de armazená-las localmente.</small>
       </section>
       <section class="details-grid">
@@ -2711,16 +2724,17 @@
     const photos = venueGalleryPhotos(venue);
     const galleryButton = `<button type="button" class="venue-gallery-button" data-action="venue-gallery" data-id="${esc(venue.id)}" aria-label="Abrir galeria de fotos">Galeria${photos.length > 1 ? ` · ${photos.length}` : ""}</button>`;
     const address = venuePublicAddress(venue);
+    const photoTone = venuePhotoTone(venue);
     if (!publicDays.length) {
       selectedVenueSchedule = { venueId: venue.id, shortDate: "" };
-      return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge">${venue.reviews ? `★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small>` : "Novo parceiro"}</span><div><strong>${esc(address)}</strong></div></div></div>
+      return `<div class="venue-detail-cover photo-tone-${esc(photoTone)}"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge">${venue.reviews ? `★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small>` : "Novo parceiro"}</span><div><strong>${esc(address)}</strong></div></div></div>
         <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc((venue.types || []).join(" · ") || "A cadastrar")}</span><span><b>Estrutura</b>${esc((venue.amenities || []).join(" · ") || "A cadastrar")}</span></div>
         <section class="schedule-section">${emptyState("▦", "Não há horários atuais ou futuros publicados para reserva.")}</section>`;
     }
     const day = publicDays.find((item) => item.shortDate === selectedDate) || publicDays[0];
     const publicSlots = publicSlotsForDay(day);
     selectedVenueSchedule = { venueId: venue.id, shortDate: day.shortDate };
-    return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(address)}</strong></div></div></div>
+    return `<div class="venue-detail-cover photo-tone-${esc(photoTone)}"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(address)}</strong></div></div></div>
       <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc(venue.types.join(" · "))}</span><span><b>Estrutura</b>${esc(venue.amenities.join(" · "))}</span></div>
       <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Somente o dia atual e as próximas datas ficam disponíveis para novas reservas.</p></div></div>
       <div class="schedule-days" aria-label="Dias atuais e futuros com agenda">${publicDays.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>
@@ -3337,6 +3351,64 @@
     openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);syncCurrentPartnerToConnectedAreas();saveState();render();showToast(`${config.title} atualizado e sincronizado.`);}});
   }
 
+  function analyzePhotoTone(src) {
+    return new Promise((resolve) => {
+      const fallback = { tone:"dark", luminance:128 };
+      if (!src) { resolve(fallback); return; }
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const size = 32;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const context = canvas.getContext("2d", { willReadFrequently:true });
+          if (!context) { resolve(fallback); return; }
+          context.drawImage(image, 0, 0, size, size);
+          const pixels = context.getImageData(0, 0, size, size).data;
+          let weightedLuminance = 0;
+          let totalWeight = 0;
+          for (let y = 0; y < size; y += 1) {
+            const verticalWeight = y >= Math.floor(size * 0.45) ? 1.75 : 1;
+            for (let x = 0; x < size; x += 1) {
+              const index = (y * size + x) * 4;
+              const alpha = pixels[index + 3];
+              if (alpha < 32) continue;
+              const red = pixels[index];
+              const green = pixels[index + 1];
+              const blue = pixels[index + 2];
+              const luminance = (0.2126 * red) + (0.7152 * green) + (0.0722 * blue);
+              weightedLuminance += luminance * verticalWeight;
+              totalWeight += verticalWeight;
+            }
+          }
+          const average = totalWeight ? weightedLuminance / totalWeight : fallback.luminance;
+          resolve({ tone: average >= 150 ? "light" : "dark", luminance: Math.round(average) });
+        } catch (_error) {
+          resolve(fallback);
+        }
+      };
+      image.onerror = () => resolve(fallback);
+      image.src = src;
+    });
+  }
+
+  async function ensurePartnerPhotoTones() {
+    const photos = Array.isArray(state.partnerProfile?.photos) ? state.partnerProfile.photos : [];
+    let changed = false;
+    for (const photo of photos) {
+      if (!photo?.src || (["light","dark"].includes(photo.tone) && Number.isFinite(Number(photo.luminance)))) continue;
+      const analysis = await analyzePhotoTone(photo.src);
+      photo.tone = analysis.tone;
+      photo.luminance = analysis.luminance;
+      changed = true;
+    }
+    if (!changed) return;
+    syncCurrentPartnerToConnectedAreas();
+    saveState();
+    render();
+  }
+
   function resizePartnerPhoto(file, maxSize = 1280, quality = 0.82) {
     return new Promise((resolve, reject) => {
       if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type || "")) { reject(new Error("Formato não suportado")); return; }
@@ -3371,9 +3443,10 @@
     try {
       for (const file of files) {
         const src = await resizePartnerPhoto(file);
+        const analysis = await analyzePhotoTone(src);
         const id = nextId("PHOTO-", state.partnerProfile.photos);
         const favorite = !state.partnerProfile.favoritePhotoId;
-        state.partnerProfile.photos.push({ id, name:String(file.name || "Foto do estabelecimento").replace(/\.[^.]+$/, ""), src, favorite, uploadedAt:new Date().toLocaleString("pt-BR") });
+        state.partnerProfile.photos.push({ id, name:String(file.name || "Foto do estabelecimento").replace(/\.[^.]+$/, ""), src, favorite, uploadedAt:new Date().toLocaleString("pt-BR"), tone:analysis.tone, luminance:analysis.luminance });
         if (favorite) state.partnerProfile.favoritePhotoId = id;
       }
       state.partnerProfile.photos.forEach((photo)=>photo.favorite=photo.id===state.partnerProfile.favoritePhotoId);
@@ -3759,4 +3832,5 @@
   applyMarketplaceTheme(storedMarketplaceTheme(), false);
   if("serviceWorker" in navigator && location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});
   render();
+  ensurePartnerPhotoTones();
 })();
