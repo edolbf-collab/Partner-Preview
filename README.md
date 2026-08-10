@@ -188,3 +188,20 @@ Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando
 - A solicitação gera um registro em `partnerApplications` e uma pendência em Administração > Parceiros, sem publicar o estabelecimento antes da aprovação.
 - O solicitante acompanha no próprio app os estados Pendente, Em análise, Aprovado, Rejeitado ou removido pela Administração.
 - Dados continuam persistidos somente em `localStorage`; não há backend, autenticação real ou envio externo nesta Preview.
+
+
+## Partners Preview 0.1.31 — cadastro, mídia, chat e filtros
+
+- Máscaras obrigatórias de CNPJ e telefone nos principais fluxos cadastrais.
+- Chat ativo da confirmação do pagamento até o término da reserva; após esse horário, histórico em modo leitura.
+- Galeria de fotos no Cadastro do parceiro, com escolha da imagem principal usada no marketplace e no balão de reserva.
+- Administração > Reservas com filtros combináveis por status, parceiro, usuário e data.
+
+
+## Partners Preview 0.1.31 — dados, chat, fotos, filtros e vouchers
+
+- Máscaras obrigatórias para CNPJ e telefone nos fluxos de parceria e cadastro.
+- Chat ativo apenas entre a confirmação financeira e o fim do último horário da reserva; depois, histórico somente leitura.
+- Galeria de fotos no cadastro do parceiro, com imagem favorita sincronizada com card e resumo da reserva.
+- Filtros administrativos de reservas por parceiro, usuário, data e status.
+- Exclusão segura de vouchers promocionais; itens em uso são protegidos e vouchers usados permanecem arquivados.

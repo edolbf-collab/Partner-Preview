@@ -2057,3 +2057,68 @@ html[data-theme="light"] .partner-interest-consent { background: rgba(8,71,44,.0
   .partner-interest-form input,
   .partner-interest-form textarea { font-size: 16px; }
 }
+
+/* Partners Preview 0.1.31 — fotos, filtros e resumo da reserva */
+.reservation-summary-venue {
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+}
+.reservation-summary-venue > img {
+  width:58px;
+  height:58px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid var(--line);
+}
+.reservation-summary-venue .payment-summary-title { min-width:0; }
+
+.partner-photo-manager { margin-bottom:16px; }
+.partner-photo-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+.partner-photo-item {
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface-2, rgba(255,255,255,.025));
+}
+.partner-photo-item.is-favorite { border-color:rgba(30,209,122,.45); }
+.partner-photo-item > img {
+  width:76px;
+  height:68px;
+  object-fit:cover;
+  border-radius:10px;
+}
+.partner-photo-copy { min-width:0; }
+.partner-photo-copy strong,
+.partner-photo-copy small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.partner-photo-copy small { color:var(--muted); margin-top:4px; }
+.partner-photo-actions {
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.partner-photo-actions .button,
+.partner-photo-actions .status { width:100%; justify-content:center; text-align:center; }
+
+.admin-reservation-filters { align-items:end; flex-wrap:wrap; }
+.admin-date-filter { display:grid; gap:5px; min-width:158px; }
+.admin-date-filter > span { color:var(--muted); font-size:11px; }
+.admin-date-filter input { width:100%; min-height:42px; }
+
+@media (max-width:640px) {
+  .reservation-summary-venue { grid-template-columns:50px minmax(0,1fr); }
+  .reservation-summary-venue > img { width:50px; height:50px; border-radius:10px; }
+  .partner-photo-grid { grid-template-columns:1fr; }
+  .admin-reservation-filters > * { min-width:0; width:100%; }
+}

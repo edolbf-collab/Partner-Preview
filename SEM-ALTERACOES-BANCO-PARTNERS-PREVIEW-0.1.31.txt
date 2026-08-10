@@ -1,0 +1,5 @@
+Partners Preview 0.1.31
+
+Nenhuma alteração de banco de dados foi aplicada.
+
+As novas estruturas (galeria de fotos, foto favorita, filtros, janela do chat e arquivamento de vouchers) existem apenas no estado local da Preview. Na integração futura com Supabase serão necessárias tabelas/campos e políticas próprias antes da entrada em produção.

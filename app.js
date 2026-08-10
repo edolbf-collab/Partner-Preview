@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "0.1.30";
+  const VERSION = "0.1.31";
   const STORAGE_KEY = "tamo_on_partners_preview_0119";
   const THEME_STORAGE_KEY = "tamo_on_marketplace_theme";
   const app = document.getElementById("app");
@@ -121,7 +121,7 @@
       role: "user",
       activePage: { user: "discover", partner: "overview", admin: "overview", candidate: "apply" },
       search: { venue: "", adminPartner: "", adminUser: "" },
-      filters: { userReservationStatus: "Todas", adminPartnerStatus: "Todos", adminReservationStatus: "Todos", partnerReservationStatus: "Todos" },
+      filters: { userReservationStatus: "Todas", adminPartnerStatus: "Todos", adminReservationStatus: "Todos", adminReservationPartner: "Todos", adminReservationUser: "Todos", adminReservationDate: "", partnerReservationStatus: "Todos" },
       partnerDay: 6,
       userProfile: {
         name: "Eduardo Batista",
@@ -305,6 +305,10 @@
         asaasWalletId: "wallet_preview_arena_central",
         asaasCardStatus: "Checkout hospedado preparado",
         commissionRate: 6,
+        favoritePhotoId: "PHOTO-001",
+        photos: [
+          { id:"PHOTO-001", name:"Fachada principal", src:"assets/venues/arena-central-fachada.png", favorite:true, uploadedAt:"Cadastro inicial" }
+        ],
         documents: [
           { name: "Cartão CNPJ", status: "Validado" },
           { name: "Contrato social", status: "Validado" },
@@ -386,6 +390,21 @@
       if (!(saved && saved.activePage && saved.venues)) return initialState();
       saved.ui = saved.ui || {};
       saved.ui.selectedAvailabilityKeys = Array.isArray(saved.ui.selectedAvailabilityKeys) ? saved.ui.selectedAvailabilityKeys : [];
+      saved.filters = saved.filters || {};
+      saved.filters.adminReservationStatus = saved.filters.adminReservationStatus || "Todos";
+      saved.filters.adminReservationPartner = saved.filters.adminReservationPartner || "Todos";
+      saved.filters.adminReservationUser = saved.filters.adminReservationUser || "Todos";
+      saved.filters.adminReservationDate = saved.filters.adminReservationDate || "";
+      saved.partnerProfile = saved.partnerProfile || {};
+      if (!Array.isArray(saved.partnerProfile.photos) || !saved.partnerProfile.photos.length) {
+        const currentVenue = saved.venues?.find((venue) => venue.id === saved.partnerProfile.venueId);
+        saved.partnerProfile.photos = currentVenue?.facadeImage ? [{ id:"PHOTO-001", name:"Fachada principal", src:currentVenue.facadeImage, favorite:true, uploadedAt:"Cadastro existente" }] : [];
+      }
+      const existingFavorite = saved.partnerProfile.photos.find((photo) => photo.favorite) || saved.partnerProfile.photos[0];
+      if (existingFavorite) {
+        saved.partnerProfile.favoritePhotoId = saved.partnerProfile.favoritePhotoId || existingFavorite.id;
+        saved.partnerProfile.photos.forEach((photo) => { photo.favorite = photo.id === saved.partnerProfile.favoritePhotoId; });
+      }
       saved.activePage = saved.activePage || { user:"discover", partner:"overview", admin:"overview", candidate:"apply" };
       saved.activePage.candidate = saved.activePage.candidate || "apply";
       saved.partnerApplications = Array.isArray(saved.partnerApplications) ? saved.partnerApplications : [];
@@ -612,6 +631,11 @@
       venue.bankLabel = profile.bank || venue.bankLabel;
       venue.pixKey = profile.pixKey || venue.pixKey;
       venue.asaasWalletId = profile.asaasWalletId || venue.asaasWalletId;
+      const favoritePhoto = (profile.photos || []).find((photo) => photo.id === profile.favoritePhotoId) || (profile.photos || []).find((photo) => photo.favorite);
+      if (favoritePhoto?.src) {
+        venue.facadeImage = favoritePhoto.src;
+        venue.facadeSource = "partner_upload";
+      }
       if (state.partnerSpaces.length) venue.price = Math.min(...state.partnerSpaces.map((space) => Number(space.price || 0)).filter((value) => value > 0)) || venue.price;
       syncVenueNameReferences(profile.venueId, oldName, venue.name);
     }
@@ -656,6 +680,63 @@
 
   function money(value) {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+  }
+
+  function digitsOnly(value) {
+    return String(value || "").replace(/\D/g, "");
+  }
+
+  function maskCnpj(value) {
+    const digits = digitsOnly(value).slice(0, 14);
+    return digits
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  }
+
+  function maskPhone(value) {
+    const digits = digitsOnly(value).slice(0, 11);
+    if (!digits) return "";
+    if (digits.length <= 10) return digits
+      .replace(/^(\d{0,2})/, "($1")
+      .replace(/^\((\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d{1,4})$/, "$1-$2");
+    return digits
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+  }
+
+  function maskedFieldType(input) {
+    const name = String(input?.name || "").toLowerCase();
+    if (name === "cnpj") return "cnpj";
+    if (name === "phone" || name === "whatsapp") return "phone";
+    return "";
+  }
+
+  function validateMaskedField(input) {
+    const type = maskedFieldType(input);
+    if (!type) return true;
+    const digits = digitsOnly(input.value);
+    const valid = !digits.length ? !input.required : type === "cnpj" ? digits.length === 14 : [10,11].includes(digits.length);
+    input.setCustomValidity(valid ? "" : type === "cnpj" ? "Informe o CNPJ completo no formato 00.000.000/0000-00." : "Informe o telefone completo com DDD.");
+    return valid;
+  }
+
+  function applyMaskToField(input) {
+    const type = maskedFieldType(input);
+    if (!type) return;
+    input.value = type === "cnpj" ? maskCnpj(input.value) : maskPhone(input.value);
+    validateMaskedField(input);
+  }
+
+  function validateMaskedFields(root) {
+    let valid = true;
+    root?.querySelectorAll?.('input[name="cnpj"],input[name="phone"],input[name="whatsapp"]').forEach((input) => {
+      applyMaskToField(input);
+      if (!validateMaskedField(input)) valid = false;
+    });
+    return valid;
   }
 
 
@@ -722,6 +803,11 @@
 
   function isoDateString(date) {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+  }
+
+  function ptDateToIso(date) {
+    const [day, month, year] = String(date || "").split("/");
+    return day && month && year ? `${year}-${month.padStart(2,"0")}-${day.padStart(2,"0")}` : "";
   }
 
   function timeRangesOverlap(startA, endA, startB, endB) {
@@ -1377,7 +1463,7 @@
     const complement = Math.max(0, total - Number(voucher.amount || 0));
     const occurrences = isMonthlySelection() ? monthlyOccurrencesForSelection(selectedReservation) : [{ date: selectedReservation.day.date }];
     const modeLabel = isMonthlySelection() ? `Mensalista · ${occurrences.length} data(s)` : "Reserva avulsa";
-    reservationSummaryHead.innerHTML = `<div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div>`;
+    reservationSummaryHead.innerHTML = `<div class="reservation-summary-venue"><img src="${esc(selectedReservation.venue.facadeImage || "assets/preview-icon.svg")}" alt="${esc(selectedReservation.venue.name)}"><div class="payment-summary-title"><div><strong>${esc(selectedReservation.venue.name)}</strong><small>${esc(selectedReservation.day.date)} · ${esc(timeRange(selectedReservation.time, slotEndTime(selectedReservation.slot)))}</small></div><span class="status ${isMonthlySelection() ? "status-ok" : "status-neutral"}">${modeLabel}</span></div></div>`;
     reservationSummaryTotal.innerHTML = `<div class="reservation-total-line"><span>${voucher.amount > 0 ? `Valor ${money(total)} · voucher −${money(voucher.amount)}` : "Valor total"}</span><strong>${money(complement)}</strong></div>`;
   }
 
@@ -1694,7 +1780,8 @@
     } else if (field.type === "textarea") {
       control = `<textarea name="${esc(field.name)}" ${required}>${esc(field.value ?? "")}</textarea>`;
     } else {
-      const input = `<input type="${esc(field.type || "text")}" name="${esc(field.name)}" value="${esc(field.value ?? "")}" ${field.min !== undefined ? `min="${esc(field.min)}"` : ""} ${field.max !== undefined ? `max="${esc(field.max)}"` : ""} ${field.step !== undefined ? `step="${esc(field.step)}"` : ""} ${required}>`;
+      const maskAttrs = field.name === "cnpj" ? 'inputmode="numeric" maxlength="18" autocomplete="off"' : ["phone","whatsapp"].includes(field.name) ? 'inputmode="tel" maxlength="15" autocomplete="tel"' : "";
+      const input = `<input type="${esc(field.type || "text")}" name="${esc(field.name)}" value="${esc(field.value ?? "")}" ${field.min !== undefined ? `min="${esc(field.min)}"` : ""} ${field.max !== undefined ? `max="${esc(field.max)}"` : ""} ${field.step !== undefined ? `step="${esc(field.step)}"` : ""} ${maskAttrs} ${required}>`;
       const temporalTypes = ["date", "time", "datetime-local", "month", "week"];
       control = temporalTypes.includes(field.type) ? `<span class="temporal-control">${input}</span>` : input;
     }
@@ -1708,6 +1795,7 @@
     formDescription.hidden = !description;
     formSubmit.textContent = submitLabel;
     formFields.innerHTML = fields.map(fieldMarkup).join("");
+    validateMaskedFields(formFields);
     formHandler = onSubmit;
     formDialog.showModal();
     if (allowAutomaticFieldFocus) setTimeout(() => formFields.querySelector("input,select,textarea")?.focus({ preventScroll: true }), 30);
@@ -1977,6 +2065,7 @@
     if (!reservation || !reservationPaymentConfirmed(reservation)) return null;
     let thread = chatThreadForReservation(reservation.id);
     if (thread) return thread;
+    if (!chatWindowState(reservation).active) return null;
     const partnerReservation = partnerReservationForUserReservation(reservation.id);
     thread = {
       id: `CHAT-${reservation.id}`,
@@ -1996,18 +2085,49 @@
     return thread;
   }
 
+  function finalReservationOccurrence(reservation) {
+    const occurrences = Array.isArray(reservation?.occurrences) && reservation.occurrences.length
+      ? [...reservation.occurrences]
+      : [{ date:reservation?.date, time:reservation?.time, endTime:reservation?.endTime }];
+    occurrences.sort((a,b) => parsePtDateTime(a.date, a.endTime || minutesToTime(timeToMinutes(a.time) + 60)).getTime() - parsePtDateTime(b.date, b.endTime || minutesToTime(timeToMinutes(b.time) + 60)).getTime());
+    return occurrences[occurrences.length - 1] || null;
+  }
+
+  function reservationChatEndsAt(reservation) {
+    const occurrence = finalReservationOccurrence(reservation);
+    if (!occurrence?.date) return null;
+    let endTime = occurrence.endTime;
+    if (!endTime) {
+      const venue = state.venues.find((item) => item.id === reservation.venueId);
+      const day = venue?.schedule?.find((item) => item.date === occurrence.date || item.shortDate === occurrence.shortDate);
+      const slot = day?.slots?.find((item) => item.time === occurrence.time);
+      endTime = slot ? slotEndTime(slot) : minutesToTime(timeToMinutes(occurrence.time) + 60);
+    }
+    return parsePtDateTime(occurrence.date, endTime);
+  }
+
+  function chatWindowState(reservation) {
+    const paid = reservationPaymentConfirmed(reservation);
+    const endsAt = reservationChatEndsAt(reservation);
+    const ended = Boolean(endsAt && Date.now() >= endsAt.getTime());
+    const active = Boolean(paid && reservation?.statusKey === "confirmed" && !ended);
+    return { paid, endsAt, ended, active };
+  }
+
   function chatAvailableForReservation(reservation) {
-    return Boolean(reservationPaymentConfirmed(reservation) || chatThreadForReservation(reservation?.id));
+    const thread = chatThreadForReservation(reservation?.id);
+    const windowState = chatWindowState(reservation);
+    return Boolean(thread || (windowState.paid && !windowState.ended));
   }
 
   function chatCanSendForReservation(reservation) {
-    return Boolean(reservationPaymentConfirmed(reservation) && reservation.statusKey === "confirmed");
+    return chatWindowState(reservation).active;
   }
 
   function chatButtonForUser(reservation) {
     if (!chatAvailableForReservation(reservation)) return "";
     const unread = unreadForReservation(reservation.id, "user");
-    const label = reservation.statusKey === "confirmed" ? "Falar com parceiro" : "Ver conversa";
+    const label = chatCanSendForReservation(reservation) ? "Falar com parceiro" : "Ver conversa";
     return `<button class="button secondary small chat-entry-button ${unread ? "has-unread" : ""}" data-action="open-reservation-chat" data-id="${esc(reservation.id)}"><span>${label}</span>${messageBadge(unread)}</button>`;
   }
 
@@ -2015,7 +2135,7 @@
     const reservation = state.reservations.find((entry) => entry.id === item.userReservationId);
     if (!reservation || !chatAvailableForReservation(reservation)) return "";
     const unread = unreadForReservation(reservation.id, "partner");
-    const label = reservation.statusKey === "confirmed" ? "Chat com usuário" : "Ver conversa";
+    const label = chatCanSendForReservation(reservation) ? "Chat com usuário" : "Ver conversa";
     return `<button class="button secondary small chat-entry-button ${unread ? "has-unread" : ""}" data-action="open-reservation-chat" data-id="${esc(reservation.id)}"><span>${label}</span>${messageBadge(unread)}</button>`;
   }
 
@@ -2080,10 +2200,13 @@
     const thread = reservation ? chatThreadForReservation(reservation.id) : null;
     if (!reservation || !thread) return;
     const canSend = chatCanSendForReservation(reservation);
+    const windowState = chatWindowState(reservation);
+    const finalOccurrence = finalReservationOccurrence(reservation);
+    if (!canSend && windowState.ended && thread.status !== "history") { thread.status = "history"; thread.closedAt = new Date().toLocaleString("pt-BR"); saveState(); }
     chatTitle.textContent = state.role === "partner" ? thread.user : thread.venue;
     chatSubtitle.textContent = `${reservation.id} · ${reservation.date} · ${timeRange(reservation.time,reservation.endTime)}`;
     chatMessages.innerHTML = chatMessagesMarkup(thread, state.role);
-    chatStatus.textContent = canSend ? "Reserva paga · conversa ativa" : "Reserva encerrada · conversa somente para consulta";
+    chatStatus.textContent = canSend ? `Conversa ativa até ${finalOccurrence?.date || reservation.date} às ${finalOccurrence?.endTime || reservation.endTime || minutesToTime(timeToMinutes(reservation.time) + 60)}` : "Horário encerrado · conversa somente para consulta";
     chatStatus.className = `status ${canSend ? "status-ok" : "status-neutral"}`;
     chatInput.disabled = !canSend;
     chatSend.disabled = !canSend;
@@ -2276,19 +2399,40 @@
     return promo.bookingMode === "monthly" ? "Mensalista" : promo.bookingMode === "single" ? "Avulsa" : "Avulsa ou mensalista";
   }
 
+  function promotionCurrentlyInUse(promo) {
+    if (!promo) return false;
+    const selectedNow = Boolean(reservationDialog?.open && voucherSelect?.value === `PROMO:${promo.code}`);
+    const pendingReservation = state.reservations.some((reservation) => reservation.promotionalVoucherId === promo.id && reservation.statusKey === "pending");
+    return selectedNow || pendingReservation;
+  }
+
+  function promotionHasHistory(promo) {
+    return Number(promo?.usedCount || 0) > 0 || state.reservations.some((reservation) => reservation.promotionalVoucherId === promo?.id);
+  }
+
+  function promotionCanBeManagedByCurrentRole(promo) {
+    if (!promo) return false;
+    if (state.role === "admin") return true;
+    return state.role === "partner" && promotionIssuerType(promo) === "partner" && promotionVenueId(promo) === state.partnerProfile.venueId;
+  }
+
   function promotionCard(promo, management = false) {
     const valid = promotionValid(promo);
-    return `<article class="card voucher-management-card"><div class="voucher-management-head"><div><span class="status ${promotionStatusClass(promo)}">${valid ? "Ativo" : promo.active ? "Expirado" : "Inativo"}</span><h3>${esc(promo.title)}</h3></div><strong class="voucher-code-large">${esc(promo.code)}</strong></div><div class="detail-list"><div class="detail-line"><span>Desconto</span><strong>${esc(promotionBenefitLabel(promo))}</strong></div><div class="detail-line"><span>Parceiro</span><strong>${esc(promo.venue || "Todos os parceiros")}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${esc(promotionBookingLabel(promo))}</strong></div><div class="detail-line"><span>Reserva mínima</span><strong>${money(promo.minimumReservationValue || 0)}</strong></div><div class="detail-line"><span>Validade</span><strong>${esc(promo.validUntil)}</strong></div><div class="detail-line"><span>Criado por</span><strong>${esc(promo.issuerName || (promotionIssuerType(promo) === "partner" ? promo.venue : "Tâmo On"))}</strong></div></div>${management ? `<div class="reservation-card-actions"><button class="button ghost small" data-action="toggle-promotion" data-id="${esc(promo.id)}">${promo.active ? "Desativar" : "Ativar"}</button></div>` : ""}</article>`;
+    const inUse = promotionCurrentlyInUse(promo);
+    return `<article class="card voucher-management-card"><div class="voucher-management-head"><div><span class="status ${promotionStatusClass(promo)}">${valid ? "Ativo" : promo.active ? "Expirado" : "Inativo"}</span><h3>${esc(promo.title)}</h3></div><strong class="voucher-code-large">${esc(promo.code)}</strong></div><div class="detail-list"><div class="detail-line"><span>Desconto</span><strong>${esc(promotionBenefitLabel(promo))}</strong></div><div class="detail-line"><span>Parceiro</span><strong>${esc(promo.venue || "Todos os parceiros")}</strong></div><div class="detail-line"><span>Modalidade</span><strong>${esc(promotionBookingLabel(promo))}</strong></div><div class="detail-line"><span>Reserva mínima</span><strong>${money(promo.minimumReservationValue || 0)}</strong></div><div class="detail-line"><span>Validade</span><strong>${esc(promo.validUntil)}</strong></div><div class="detail-line"><span>Utilizações</span><strong>${Number(promo.usedCount || 0)}</strong></div><div class="detail-line"><span>Criado por</span><strong>${esc(promo.issuerName || (promotionIssuerType(promo) === "partner" ? promo.venue : "Tâmo On"))}</strong></div></div>${management ? `<div class="reservation-card-actions"><button class="button ghost small" data-action="toggle-promotion" data-id="${esc(promo.id)}">${promo.active ? "Desativar" : "Ativar"}</button><button class="button danger small" data-action="delete-promotion" data-id="${esc(promo.id)}" ${inUse ? "disabled" : ""}>${inUse ? "Em uso" : "Excluir"}</button></div>` : ""}</article>`;
   }
 
   function partnerVouchers() {
     const venueId = state.partnerProfile.venueId;
-    const items = state.promotions.filter((promo) => promotionVenueId(promo) === venueId && promotionIssuerType(promo) === "partner");
-    return `${pageHeader("Portal do parceiro", "Vouchers", "Crie descontos promocionais válidos apenas para reservas do seu espaço.", `<button class="button primary" data-action="create-partner-promotion">Criar voucher</button>`)}<section class="grid two">${items.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional criado pelo parceiro.")}</section><div class="callout section"><strong>Aplicação no checkout</strong><p>O desconto é calculado automaticamente quando o usuário seleciona o voucher em uma reserva elegível. O valor a pagar, o rateio Pix e o cartão Asaas passam a considerar o valor já descontado.</p></div>`;
+    const items = state.promotions.filter((promo) => promotionVenueId(promo) === venueId && promotionIssuerType(promo) === "partner" && !promo.deleted);
+    const history = state.promotions.filter((promo) => promotionVenueId(promo) === venueId && promotionIssuerType(promo) === "partner" && promo.deleted && promotionHasHistory(promo));
+    return `${pageHeader("Portal do parceiro", "Vouchers", "Crie descontos promocionais válidos apenas para reservas do seu espaço.", `<button class="button primary" data-action="create-partner-promotion">Criar voucher</button>`)}<section class="grid two">${items.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional criado pelo parceiro.")}</section>${history.length ? `<section class="card section"><div class="section-heading"><div><h2>Histórico</h2><p>Vouchers excluídos que já possuem utilização permanecem para auditoria.</p></div></div><div class="detail-list">${history.map((promo)=>`<div class="detail-line"><span>${esc(promo.code)} · ${esc(promo.title)}</span><strong>${Number(promo.usedCount||0)} utilização(ões) · excluído em ${esc(promo.deletedAt||"—")}</strong></div>`).join("")}</div></section>` : ""}<div class="callout section"><strong>Aplicação no checkout</strong><p>O desconto é calculado automaticamente quando o usuário seleciona o voucher em uma reserva elegível. O valor a pagar, o rateio Pix e o cartão Asaas passam a considerar o valor já descontado.</p></div>`;
   }
 
   function adminVouchers() {
-    return `${pageHeader("Administração", "Vouchers", "Crie vouchers globais ou vinculados a um parceiro e acompanhe as regras promocionais.", `<button class="button primary" data-action="create-admin-promotion">Criar voucher</button>`)}<section class="grid two">${state.promotions.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional cadastrado.")}</section>`;
+    const activeItems = state.promotions.filter((promo) => !promo.deleted);
+    const history = state.promotions.filter((promo) => promo.deleted && promotionHasHistory(promo));
+    return `${pageHeader("Administração", "Vouchers", "Crie vouchers globais ou vinculados a um parceiro e acompanhe as regras promocionais.", `<button class="button primary" data-action="create-admin-promotion">Criar voucher</button>`)}<section class="grid two">${activeItems.map((promo) => promotionCard(promo, true)).join("") || emptyState("%", "Nenhum voucher promocional cadastrado.")}</section>${history.length ? `<section class="card section"><div class="section-heading"><div><h2>Histórico de vouchers excluídos</h2><p>Registros com utilização são preservados para reservas, financeiro e auditoria.</p></div></div><div class="table-wrap" style="border:0"><table><thead><tr><th>Código</th><th>Parceiro</th><th>Utilizações</th><th>Última utilização</th><th>Excluído em</th></tr></thead><tbody>${history.map((promo)=>`<tr><td>${esc(promo.code)}</td><td>${esc(promo.venue||"Todos")}</td><td>${Number(promo.usedCount||0)}</td><td>${esc(promo.lastUsedAt||"—")}</td><td>${esc(promo.deletedAt||"—")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`;
   }
 
   function partnerFinance() {
@@ -2318,6 +2462,11 @@
     const group = (title, lines, action) => `<article class="detail-group"><div class="section-heading"><div><h2>${esc(title)}</h2></div><button class="button ghost small" data-action="${action}">Editar</button></div><div class="detail-list">${lines.map(([label,value]) => `<div class="detail-line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("")}</div></article>`;
     return `${pageHeader("Portal do parceiro", "Cadastro", "Dados cadastrais, operacionais, contratuais, fiscais e financeiros definidos para a homologação do parceiro.")}
       <div class="callout"><strong>Status administrativo: ${esc(adminRecord?.status || "Não localizado")}</strong><p>Alterações realizadas pela Administração neste cadastro são sincronizadas com este Portal e com os dados públicos aplicáveis.</p></div>
+      <section class="card partner-photo-manager">
+        <div class="section-heading"><div><h2>Fotos do estabelecimento</h2><p>A foto favorita é usada no card do marketplace e no resumo da reserva.</p></div><div class="item-actions"><input id="partnerPhotoUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><button class="button primary small" data-action="upload-partner-photos">Carregar fotos</button></div></div>
+        <div class="partner-photo-grid">${(p.photos || []).map((photo) => `<article class="partner-photo-item ${photo.id === p.favoritePhotoId ? "is-favorite" : ""}"><img src="${esc(photo.src)}" alt="${esc(photo.name || "Foto do estabelecimento")}"><div class="partner-photo-copy"><strong>${esc(photo.name || "Foto do estabelecimento")}</strong><small>${photo.id === p.favoritePhotoId ? "Favorita · visível no marketplace" : esc(photo.uploadedAt || "")}</small></div><div class="partner-photo-actions">${photo.id === p.favoritePhotoId ? `<span class="status status-ok">Favorita</span>` : `<button class="button secondary small" data-action="set-partner-favorite-photo" data-id="${esc(photo.id)}">Usar no card</button>`}<button class="button ghost small" data-action="remove-partner-photo" data-id="${esc(photo.id)}" ${photo.id === p.favoritePhotoId && (p.photos || []).length === 1 ? "disabled" : ""}>Remover</button></div></article>`).join("") || emptyState("▧", "Nenhuma foto carregada.")}</div>
+        <small class="field-help">Até 6 fotos. A Preview reduz as imagens antes de armazená-las localmente.</small>
+      </section>
       <section class="details-grid">
         ${group("Empresa", [["Nome fantasia",p.tradeName],["Razão social",p.legalName],["CNPJ",p.cnpj],["Natureza jurídica",p.legalNature],["Regime tributário",p.taxRegime],["Atividade declarada",p.declaredActivity],["Inscrição municipal",p.municipalRegistration]], "edit-company-data")}
         ${group("Responsável", [["Nome",p.responsibleName],["CPF",p.responsibleCpf],["Função",p.responsibleRole],["E-mail",p.email],["Telefone",p.phone],["WhatsApp",p.whatsapp]], "edit-responsible-data")}
@@ -2365,13 +2514,13 @@
         <form id="partnerInterestForm" class="form-grid partner-interest-form">
           <label class="field"><span>Nome fantasia</span><input name="tradeName" required></label>
           <label class="field"><span>Razão social</span><input name="legalName" required></label>
-          <label class="field"><span>CNPJ</span><input name="cnpj" required></label>
+          <label class="field"><span>CNPJ</span><input name="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" required></label>
           <label class="field"><span>Cidade</span><input name="city" required></label>
           <label class="field"><span>Número de espaços</span><input type="number" min="1" name="spaces" value="1" required></label>
           <label class="field"><span>Tipos de espaço</span><input name="types" placeholder="Ex.: Society, Futsal" required></label>
           <label class="field"><span>Responsável</span><input name="responsible" required></label>
           <label class="field"><span>E-mail</span><input type="email" name="email" required></label>
-          <label class="field"><span>Telefone / WhatsApp</span><input name="phone" required></label>
+          <label class="field"><span>Telefone / WhatsApp</span><input name="phone" inputmode="tel" maxlength="15" placeholder="(00) 00000-0000" required></label>
           <label class="field full"><span>Observação</span><textarea name="notes" placeholder="Conte brevemente sobre o espaço ou deixe uma informação para a equipe."></textarea></label>
           <label class="cancellation-acknowledge full partner-interest-consent"><input type="checkbox" name="contactConsent" value="yes" required><span><strong>Autorizo o Tâmo On a entrar em contato sobre esta solicitação de parceria.</strong></span></label>
           <div class="dialog-actions full"><button class="button primary" type="submit">Enviar solicitação</button></div>
@@ -2411,9 +2560,19 @@
 
   function adminReservations() {
     const filter = state.filters.adminReservationStatus;
-    const items = state.reservations.filter((item) => filter === "Todos" || reservationStatus(item.statusKey).label === filter);
-    return `${pageHeader("Administração", "Reservas", "Acompanhe o status operacional e o último endpoint aplicado.")}
-      <div class="toolbar"><select class="filter-select" id="adminReservationFilter"><option>Todos</option><option>Reserva pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="export-admin-reservations">Exportar CSV</button></div>
+    const partnerFilter = state.filters.adminReservationPartner || "Todos";
+    const userFilter = state.filters.adminReservationUser || "Todos";
+    const dateFilter = state.filters.adminReservationDate || "";
+    const partners = [...new Set(state.reservations.map((item) => item.venue).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const users = [...new Set(state.reservations.map((item) => item.user).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const items = state.reservations.filter((item) =>
+      (filter === "Todos" || reservationStatus(item.statusKey).label === filter) &&
+      (partnerFilter === "Todos" || item.venue === partnerFilter) &&
+      (userFilter === "Todos" || item.user === userFilter) &&
+      (!dateFilter || ptDateToIso(item.date) === dateFilter)
+    );
+    return `${pageHeader("Administração", "Reservas", "Acompanhe o status operacional e filtre por parceiro, usuário ou data.")}
+      <div class="toolbar admin-reservation-filters"><select class="filter-select" id="adminReservationPartner"><option value="Todos">Todos os parceiros</option>${partners.map((name)=>`<option ${name===partnerFilter?"selected":""}>${esc(name)}</option>`).join("")}</select><select class="filter-select" id="adminReservationUser"><option value="Todos">Todos os usuários</option>${users.map((name)=>`<option ${name===userFilter?"selected":""}>${esc(name)}</option>`).join("")}</select><label class="admin-date-filter"><span>Data</span><input id="adminReservationDate" type="date" value="${esc(dateFilter)}"></label><select class="filter-select" id="adminReservationFilter"><option value="Todos">Todos os status</option><option>Reserva pendente</option><option>Confirmada</option><option>Cancelada</option></select><button class="button ghost" data-action="clear-admin-reservation-filters">Limpar filtros</button><button class="button ghost" data-action="export-admin-reservations">Exportar CSV</button></div>
       <div class="table-wrap"><table><thead><tr><th>Reserva</th><th>Parceiro</th><th>Usuário</th><th>Data</th><th>Valor</th><th>Status</th><th>Endpoint</th><th>Ações</th></tr></thead><tbody>${items.map((item) => { const visual = reservationStatus(item.statusKey); return `<tr><td>${esc(item.id)}</td><td>${esc(item.venue)}</td><td>${esc(item.user)}</td><td>${esc(item.date)} · ${esc(item.time)}</td><td>${money(item.value)}</td><td><span class="status ${visual.status}">${visual.label}</span></td><td>${esc(item.endpoint)}</td><td><div class="item-actions"><button class="button ghost small" data-action="admin-reservation-edit" data-id="${esc(item.id)}">Alterar status</button>${item.statusKey === "confirmed" ? `<button class="button danger small" data-action="cancel-paid-tamo-reservation" data-id="${esc(item.id)}">Cancelar pelo Tâmo On</button>` : ""}</div></td></tr>`; }).join("")}</tbody></table></div>`;
   }
 
@@ -2695,7 +2854,35 @@
       const promo = state.promotions.find((item) => item.id === id);
       const partnerCanManage = state.role === "partner" && promotionIssuerType(promo) === "partner" && promotionVenueId(promo) === state.partnerProfile.venueId;
       const adminCanManage = state.role === "admin";
-      if (promo && (partnerCanManage || adminCanManage)) { promo.active = !promo.active; saveState(); render(); showToast(`Voucher ${promo.code} ${promo.active ? "ativado" : "desativado"}.`); }
+      if (promo && !promo.deleted && (partnerCanManage || adminCanManage)) { promo.active = !promo.active; saveState(); render(); showToast(`Voucher ${promo.code} ${promo.active ? "ativado" : "desativado"}.`); }
+    } else if (action === "delete-promotion") {
+      const promo = state.promotions.find((item) => item.id === id);
+      if (!promotionCanBeManagedByCurrentRole(promo)) return;
+      if (promotionCurrentlyInUse(promo)) {
+        openDetail({eyebrow:"Voucher",title:"Exclusão indisponível",body:`<div class="cancellation-warning"><strong>${esc(promo.code)} está em uso</strong><p>Há uma seleção ou reserva pendente utilizando este voucher. Finalize ou cancele essa operação antes de excluir.</p></div>`});
+        return;
+      }
+      const hasHistory = promotionHasHistory(promo);
+      askConfirm({title:"Excluir voucher",message:hasHistory ? `O voucher ${promo.code} já foi utilizado. Ele será retirado das ofertas, mas permanecerá no histórico das reservas e do financeiro.` : `Excluir definitivamente o voucher ${promo.code}?`,confirmLabel:"Excluir voucher",onConfirm:()=>{
+        if (hasHistory) { Object.assign(promo,{deleted:true,active:false,deletedAt:new Date().toLocaleString("pt-BR"),deletedBy:state.role === "admin" ? "Administração" : "Parceiro"}); state.appliedVouchers = state.appliedVouchers.filter((code)=>code !== promo.code); }
+        else { state.promotions = state.promotions.filter((item)=>item.id !== promo.id); state.appliedVouchers = state.appliedVouchers.filter((code)=>code !== promo.code); }
+        saveState();render();showToast(hasHistory ? "Voucher removido das ofertas e preservado no histórico." : "Voucher excluído.");
+      }});
+    } else if (action === "upload-partner-photos") {
+      document.getElementById("partnerPhotoUpload")?.click();
+    } else if (action === "set-partner-favorite-photo") {
+      const photo=(state.partnerProfile.photos||[]).find((item)=>item.id===id);if(!photo)return;
+      state.partnerProfile.favoritePhotoId=photo.id;state.partnerProfile.photos.forEach((item)=>item.favorite=item.id===photo.id);syncCurrentPartnerToConnectedAreas();saveState();render();showToast("Foto favorita atualizada no marketplace e no resumo da reserva.");
+    } else if (action === "remove-partner-photo") {
+      const photos=state.partnerProfile.photos||[];const photo=photos.find((item)=>item.id===id);if(!photo)return;
+      if(photo.id===state.partnerProfile.favoritePhotoId && photos.length===1){showToast("Carregue outra foto antes de remover a única imagem do estabelecimento.");return;}
+      askConfirm({title:"Remover foto",message:`Remover ${photo.name || "esta foto"} do cadastro?`,confirmLabel:"Remover",onConfirm:()=>{
+        state.partnerProfile.photos=photos.filter((item)=>item.id!==photo.id);
+        if(photo.id===state.partnerProfile.favoritePhotoId){const next=state.partnerProfile.photos[0];state.partnerProfile.favoritePhotoId=next?.id||"";state.partnerProfile.photos.forEach((item)=>item.favorite=item.id===state.partnerProfile.favoritePhotoId);}
+        syncCurrentPartnerToConnectedAreas();saveState();render();showToast("Foto removida.");
+      }});
+    } else if (action === "clear-admin-reservation-filters") {
+      state.filters.adminReservationStatus="Todos";state.filters.adminReservationPartner="Todos";state.filters.adminReservationUser="Todos";state.filters.adminReservationDate="";saveState();render();
     } else if (action === "partner-schedule-date") {
       state.ui = state.ui || {};
       state.ui.partnerAgendaDate = button.dataset.date || "";
@@ -2961,7 +3148,7 @@
         {name:"types",label:"Tipos de espaço",value:item?.types||"Society"},
         {name:"responsible",label:"Responsável",value:item?.responsible||""},
         {name:"email",label:"E-mail",type:"email",value:item?.email||""},
-        {name:"phone",label:"Telefone",value:item?.phone||""},
+        {name:"phone",label:"Telefone",value:item?.phone||"",required:true},
         {name:"taxRegime",label:"Regime tributário",value:item?.taxRegime||"Simples Nacional"},
         {name:"activity",label:"Atividade declarada",value:item?.activity||"Gestão de espaços esportivos",full:true},
         {name:"status",label:"Status",type:"select",value:item?.status||"Pendente",options:["Pendente","Em análise","Aprovado","Suspenso","Rejeitado","Encerrado"]},
@@ -3062,8 +3249,8 @@
   function editPartnerProfileSection(action) {
     const p=state.partnerProfile;
     const configs={
-      "edit-company-data":{title:"Dados da empresa",fields:[{name:"tradeName",label:"Nome fantasia",value:p.tradeName},{name:"legalName",label:"Razão social",value:p.legalName},{name:"cnpj",label:"CNPJ",value:p.cnpj},{name:"legalNature",label:"Natureza jurídica",value:p.legalNature},{name:"taxRegime",label:"Regime tributário",value:p.taxRegime},{name:"declaredActivity",label:"Atividade declarada",value:p.declaredActivity,full:true},{name:"municipalRegistration",label:"Inscrição municipal",value:p.municipalRegistration}]},
-      "edit-responsible-data":{title:"Responsável e contatos",fields:[{name:"responsibleName",label:"Nome",value:p.responsibleName},{name:"responsibleCpf",label:"CPF",value:p.responsibleCpf},{name:"responsibleRole",label:"Função",value:p.responsibleRole},{name:"email",label:"E-mail",type:"email",value:p.email},{name:"phone",label:"Telefone",value:p.phone},{name:"whatsapp",label:"WhatsApp",value:p.whatsapp}]},
+      "edit-company-data":{title:"Dados da empresa",fields:[{name:"tradeName",label:"Nome fantasia",value:p.tradeName},{name:"legalName",label:"Razão social",value:p.legalName},{name:"cnpj",label:"CNPJ",value:p.cnpj,required:true},{name:"legalNature",label:"Natureza jurídica",value:p.legalNature},{name:"taxRegime",label:"Regime tributário",value:p.taxRegime},{name:"declaredActivity",label:"Atividade declarada",value:p.declaredActivity,full:true},{name:"municipalRegistration",label:"Inscrição municipal",value:p.municipalRegistration}]},
+      "edit-responsible-data":{title:"Responsável e contatos",fields:[{name:"responsibleName",label:"Nome",value:p.responsibleName},{name:"responsibleCpf",label:"CPF",value:p.responsibleCpf},{name:"responsibleRole",label:"Função",value:p.responsibleRole},{name:"email",label:"E-mail",type:"email",value:p.email},{name:"phone",label:"Telefone",value:p.phone,required:true},{name:"whatsapp",label:"WhatsApp",value:p.whatsapp}]},
       "edit-address-data":{title:"Endereço",fields:[{name:"address",label:"Logradouro",value:p.address,full:true},{name:"neighborhood",label:"Bairro",value:p.neighborhood},{name:"city",label:"Cidade",value:p.city},{name:"state",label:"UF",value:p.state},{name:"zip",label:"CEP",value:p.zip}]},
       "edit-contract-data":{title:"Contratos e regras",fields:[{name:"contractStatus",label:"Contrato",type:"select",value:p.contractStatus,options:["Não enviado","Enviado","Assinado"]},{name:"termsStatus",label:"Termos",type:"select",value:p.termsStatus,options:["Pendente","Aceitos"]},{name:"privacyStatus",label:"LGPD",type:"select",value:p.privacyStatus,options:["Pendente","Aceita"]},{name:"cancellationPolicy",label:"Política de cancelamento",value:p.cancellationPolicy,full:true}]},
       "edit-fiscal-data":{title:"Fiscal e financeiro",fields:[{name:"fiscalIssuer",label:"Documento fiscal do serviço",value:p.fiscalIssuer,full:true},{name:"commissionInvoice",label:"Documento fiscal da comissão",value:p.commissionInvoice,full:true},{name:"paymentModel",label:"Modelo de pagamento",value:p.paymentModel},{name:"commissionRate",label:"Comissão (%)",type:"number",step:"0.1",value:p.commissionRate}]},
@@ -3071,6 +3258,52 @@
     };
     const config=configs[action];if(!config)return;
     openForm({eyebrow:"Cadastro do parceiro",title:config.title,fields:config.fields,onSubmit:(data)=>{if("commissionRate" in data)data.commissionRate=Number(data.commissionRate);if(data.bankProviderId){const provider=window.TamoOnBankPix?.provider(data.bankProviderId);if(provider){data.bank=provider.label;data.pixAutoReconciliation=provider.mode==="api";data.pixWebhookStatus=provider.mode==="api"?"Rota preparada":"Confirmação manual";}}Object.assign(p,data);syncCurrentPartnerToConnectedAreas();saveState();render();showToast(`${config.title} atualizado e sincronizado.`);}});
+  }
+
+  function resizePartnerPhoto(file, maxSize = 1280, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type || "")) { reject(new Error("Formato não suportado")); return; }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Falha ao ler a imagem"));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("Imagem inválida"));
+        image.onload = () => {
+          const scale = Math.min(1, maxSize / Math.max(image.width || 1, image.height || 1));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          const context = canvas.getContext("2d");
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePartnerPhotoUpload(fileList) {
+    const existing = state.partnerProfile.photos || (state.partnerProfile.photos = []);
+    const originalPhotos = existing.map((photo) => ({...photo}));
+    const originalFavorite = state.partnerProfile.favoritePhotoId || "";
+    const room = Math.max(0, 6 - existing.length);
+    const files = [...fileList].slice(0, room);
+    if (!room) { showToast("O limite de 6 fotos já foi atingido."); return; }
+    if (!files.length) return;
+    try {
+      for (const file of files) {
+        const src = await resizePartnerPhoto(file);
+        const id = nextId("PHOTO-", state.partnerProfile.photos);
+        const favorite = !state.partnerProfile.favoritePhotoId;
+        state.partnerProfile.photos.push({ id, name:String(file.name || "Foto do estabelecimento").replace(/\.[^.]+$/, ""), src, favorite, uploadedAt:new Date().toLocaleString("pt-BR") });
+        if (favorite) state.partnerProfile.favoritePhotoId = id;
+      }
+      state.partnerProfile.photos.forEach((photo)=>photo.favorite=photo.id===state.partnerProfile.favoritePhotoId);
+      syncCurrentPartnerToConnectedAreas();
+      try { saveState(); } catch (_error) { state.partnerProfile.photos = originalPhotos; state.partnerProfile.favoritePhotoId = originalFavorite; syncCurrentPartnerToConnectedAreas(); showToast("As imagens ficaram grandes demais para o armazenamento local. Tente arquivos menores ou remova uma foto."); return; }
+      render();showToast(`${files.length} foto(s) adicionada(s).`);
+    } catch (_error) { showToast("Não foi possível processar uma das imagens selecionadas."); }
   }
 
   function resetState() {
@@ -3131,6 +3364,7 @@
   app.addEventListener("submit", (event) => {
     if (event.target.id !== "partnerInterestForm") return;
     event.preventDefault();
+    validateMaskedFields(event.target);
     if (!event.target.reportValidity()) return;
     const data = Object.fromEntries(new FormData(event.target).entries());
     if (data.contactConsent !== "yes") {
@@ -3197,6 +3431,13 @@
     showToast("Solicitação enviada para Administração → Parceiros.");
   });
 
+  document.addEventListener("input", (event) => {
+    if (maskedFieldType(event.target)) applyMaskToField(event.target);
+  });
+  document.addEventListener("blur", (event) => {
+    if (maskedFieldType(event.target)) validateMaskedField(event.target);
+  }, true);
+
   app.addEventListener("input", (event) => {
     if(event.target.id==="venueSearch"){state.search.venue=event.target.value;saveState();render();const input=document.getElementById("venueSearch");input?.focus();input?.setSelectionRange(state.search.venue.length,state.search.venue.length);}
     if(event.target.id==="adminPartnerSearch"){state.search.adminPartner=event.target.value;saveState();render();const input=document.getElementById("adminPartnerSearch");input?.focus();input?.setSelectionRange(state.search.adminPartner.length,state.search.adminPartner.length);}
@@ -3208,7 +3449,15 @@
     if(event.target.id==="partnerReservationFilter"){state.filters.partnerReservationStatus=event.target.value;saveState();render();}
     if(event.target.id==="adminPartnerFilter"){state.filters.adminPartnerStatus=event.target.value;saveState();render();}
     if(event.target.id==="adminReservationFilter"){state.filters.adminReservationStatus=event.target.value;saveState();render();}
+    if(event.target.id==="adminReservationPartner"){state.filters.adminReservationPartner=event.target.value;saveState();render();}
+    if(event.target.id==="adminReservationUser"){state.filters.adminReservationUser=event.target.value;saveState();render();}
+    if(event.target.id==="adminReservationDate"){state.filters.adminReservationDate=event.target.value;saveState();render();}
+    if(event.target.id==="partnerPhotoUpload" && event.target.files?.length){handlePartnerPhotoUpload(event.target.files);}
   });
+
+  setInterval(() => {
+    if (chatDialog?.open && selectedChatReservationId) renderOpenChat();
+  }, 30000);
 
   roleButtons.forEach((button)=>button.addEventListener("click",()=>setRole(button.dataset.role)));
   themeButton?.addEventListener("click", toggleMarketplaceTheme);
@@ -3218,6 +3467,7 @@
   dynamicForm.addEventListener("submit",(event)=>{
     if(event.submitter?.value==="cancel")return;
     event.preventDefault();
+    validateMaskedFields(dynamicForm);
     if(!dynamicForm.reportValidity())return;
     const data=Object.fromEntries(new FormData(dynamicForm).entries());
     const handler=formHandler;formDialog.close();formHandler=null;handler?.(data);

@@ -1,6 +1,6 @@
 {
   "product": "Tâmo On Partners Preview",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "channel": "partners-preview",
   "environment": "isolated-prototype",
   "database": "not-connected",
@@ -13,10 +13,14 @@
   "real_money": false,
   "released_at": "2026-08-09",
   "notes": [
-    "Administração > Parceiros passa a sincronizar dados cadastrais e status com o marketplace e com o Portal do parceiro aplicável.",
-    "Parceiros não aprovados deixam de ser publicados na busca do usuário; suspensão, encerramento e exclusão retiram o espaço das áreas conectadas.",
-    "Nova tela Quero ser parceiro permite enviar dados básicos pelo próprio app e cria automaticamente uma pendência na fila administrativa.",
-    "Aprovação de uma solicitação cria ou publica o registro do estabelecimento no marketplace, ainda sem agenda até o parceiro cadastrar horários.",
-    "A Preview continua sem backend, banco de produção ou transações reais."
-  ]
+    "Telefone e CNPJ recebem máscara e validação de preenchimento completo nos cadastros de parceiros e solicitações pelo app.",
+    "Chat da reserva fica ativo da confirmação do pagamento até o término do horário; depois permanece somente como histórico.",
+    "Cadastro do parceiro ganhou galeria local de fotos e seleção da imagem favorita, refletida no card e no resumo da reserva.",
+    "Administração > Reservas ganhou filtros combináveis por parceiro, usuário, data e status.",
+    "Parceiro e Administração podem excluir vouchers promocionais quando não estão em uso; vouchers já utilizados são arquivados para histórico."
+  ],
+  "partner_media": "local-photo-gallery-favorite-synchronized",
+  "chat_window": "payment-confirmed-until-final-occurrence-end",
+  "admin_reservation_filters": "status-partner-user-date",
+  "voucher_deletion": "safe-delete-with-history-preservation"
 }
