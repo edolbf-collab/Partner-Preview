@@ -35,6 +35,9 @@
   const pixSplitSummary = document.getElementById("pixSplitSummary");
   const reservationPolicyAcknowledge = document.getElementById("reservationPolicyAcknowledge");
   const reservationPolicyText = document.getElementById("reservationPolicyText");
+  const galleryDialog = document.getElementById("galleryDialog");
+  const galleryTitle = document.getElementById("galleryTitle");
+  const galleryBody = document.getElementById("galleryBody");
   const monthlyReservationToggle = document.getElementById("monthlyReservationToggle");
   const monthlyReservationPanel = document.getElementById("monthlyReservationPanel");
   const monthlyReservationPreview = document.getElementById("monthlyReservationPreview");
@@ -192,7 +195,7 @@
       venues: [
         {
           id: "arena-central", name: "Arena Central", city: "Curitiba", neighborhood: "Água Verde", distance: "2,4 km",
-          rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250",
+          rating: 4.8, reviews: 126, ratingSource: "users", types: ["Futsal", "Society"], price: 120, address: "Rua das Palmeiras, 250", zip: "80.000-000",
           facadeImage: "assets/venues/arena-central-fachada.png", facadeSource: "partner_upload", amenities: ["Vestiário", "Estacionamento", "Churrasqueira"], bankProviderId:"SICOOB", bankLabel:"Sicoob", pixKey:"CNPJ cadastrado", asaasWalletId:"wallet_preview_arena_central",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", endTime: "19:00", price: 120, monthlyEligible: true, monthlyPrice: 440, space: "Quadra Society 1" }, { time: "19:00", endTime: "20:00", price: 120, blocked: true, space: "Quadra Society 1" }, { time: "20:00", endTime: "21:30", price: 150, space: "Quadra Society 1" }, { time: "21:30", endTime: "22:30", price: 130, space: "Quadra Society 1" }] },
@@ -209,7 +212,7 @@
         },
         {
           id: "cancha-horizonte", name: "Cancha Horizonte", city: "São José dos Pinhais", neighborhood: "Centro", distance: "8,1 km",
-          rating: 4.6, reviews: 74, ratingSource: "users", types: ["Society"], price: 105, address: "Avenida Central, 840",
+          rating: 4.6, reviews: 74, ratingSource: "users", types: ["Society"], price: 105, address: "Avenida Central, 840", zip: "83.005-000",
           facadeImage: "assets/venues/cancha-horizonte.svg", facadeSource: "partner_upload", amenities: ["Estacionamento", "Lanchonete"], bankProviderId:"SICREDI", bankLabel:"Sicredi", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_cancha_horizonte",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "17:30", price: 105 }, { time: "19:00", price: 105 }, { time: "20:30", price: 115, blocked: true }, { time: "22:00", price: 105 }] },
@@ -219,7 +222,7 @@
         },
         {
           id: "vale-verde", name: "Complexo Vale Verde", city: "Colombo", neighborhood: "Roça Grande", distance: "11,7 km",
-          rating: 4.7, reviews: 91, ratingSource: "users", types: ["Futsal", "Campo"], price: 95, address: "Estrada do Vale, 41",
+          rating: 4.7, reviews: 91, ratingSource: "users", types: ["Futsal", "Campo"], price: 95, address: "Estrada do Vale, 41", zip: "83.414-000",
           facadeImage: "assets/venues/vale-verde.svg", facadeSource: "partner_upload", amenities: ["Vestiário", "Arquibancada", "Iluminação"], bankProviderId:"BB", bankLabel:"Banco do Brasil", pixKey:"Chave Pix cadastrada", asaasWalletId:"wallet_preview_vale_verde",
           schedule: [
             { date: "06/08/2026", shortDate: "06/08", weekday: "Qui", dayLabel: "6 ago", slots: [{ time: "18:00", price: 95 }, { time: "19:30", price: 105 }, { time: "21:00", price: 105 }] },
@@ -626,6 +629,7 @@
       venue.city = profile.city;
       venue.neighborhood = profile.neighborhood;
       venue.address = profile.address;
+      venue.zip = profile.zip || venue.zip || "";
       venue.types = types.length ? types : venue.types;
       venue.bankProviderId = profile.bankProviderId || venue.bankProviderId;
       venue.bankLabel = profile.bank || venue.bankLabel;
@@ -1927,6 +1931,71 @@
     };
   }
 
+
+  function venueGalleryPhotos(venue) {
+    if (!venue) return [];
+    let photos = [];
+    if (state.partnerProfile?.venueId === venue.id && Array.isArray(state.partnerProfile.photos)) {
+      photos = state.partnerProfile.photos;
+    } else if (Array.isArray(venue.photos)) {
+      photos = venue.photos;
+    }
+    const normalized = photos.filter((photo) => photo?.src).map((photo, index) => ({
+      id: photo.id || `VENUE-PHOTO-${index + 1}`,
+      name: photo.name || `Foto ${index + 1}`,
+      src: photo.src,
+      favorite: Boolean(photo.favorite || (state.partnerProfile?.venueId === venue.id && photo.id === state.partnerProfile.favoritePhotoId))
+    }));
+    if (!normalized.length && venue.facadeImage) {
+      normalized.push({ id:`${venue.id}-facade`, name:"Fachada", src:venue.facadeImage, favorite:true });
+    }
+    normalized.sort((a,b) => Number(b.favorite) - Number(a.favorite));
+    return normalized;
+  }
+
+  function venuePublicAddress(venue) {
+    if (!venue) return "Endereço a cadastrar";
+    const profile = state.partnerProfile?.venueId === venue.id ? state.partnerProfile : null;
+    const streetAndNumber = String(profile?.address || venue.address || "Endereço a cadastrar").trim();
+    const neighborhood = String(profile?.neighborhood || venue.neighborhood || "Bairro a cadastrar").trim();
+    const city = String(profile?.city || venue.city || "Cidade a cadastrar").trim();
+    const zip = String(profile?.zip || venue.zip || "CEP a cadastrar").trim();
+    return [streetAndNumber, neighborhood, city, zip].filter(Boolean).join(", ");
+  }
+
+  function publicScheduleDays(venue) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    return (venue?.schedule || [])
+      .filter((day) => {
+        const date = parsePtDateTime(day.date, "00:00");
+        return Number.isFinite(date.getTime()) && date >= today;
+      })
+      .sort((a,b) => parsePtDateTime(a.date,"00:00") - parsePtDateTime(b.date,"00:00"));
+  }
+
+  function publicSlotsForDay(day) {
+    if (!day) return [];
+    const now = new Date();
+    const dayDate = parsePtDateTime(day.date, "00:00");
+    const isToday = dayDate.getFullYear() === now.getFullYear() && dayDate.getMonth() === now.getMonth() && dayDate.getDate() === now.getDate();
+    return (day.slots || []).filter((slot) => !isToday || parsePtDateTime(day.date, slotEndTime(slot)) > now);
+  }
+
+  function openVenueGallery(venueId) {
+    const venue = state.venues.find((item) => item.id === venueId);
+    if (!venue || !galleryDialog || !galleryTitle || !galleryBody) return;
+    const photos = venueGalleryPhotos(venue);
+    galleryTitle.textContent = venue.name;
+    galleryBody.innerHTML = photos.length
+      ? `<div class="venue-gallery-grid">${photos.map((photo) => `<figure class="venue-gallery-item ${photo.favorite ? "is-favorite" : ""}"><div class="venue-gallery-image-wrap"><img src="${esc(photo.src)}" alt="${esc(photo.name)}" loading="lazy">${photo.favorite ? `<span class="venue-gallery-favorite">Foto principal</span>` : ""}</div><figcaption>${esc(photo.name)}</figcaption></figure>`).join("")}</div>`
+      : emptyState("▧", "Este parceiro ainda não publicou fotos do estabelecimento.");
+    if (!galleryDialog.open) {
+      galleryDialog.showModal();
+      focusDialog(galleryDialog);
+    }
+  }
+
   function venueCard(venue) {
     const favorite = state.favorites.includes(venue.id);
     return `<article class="venue-card compact-venue-card">
@@ -2638,19 +2707,24 @@
 
   function venueScheduleBody(venue, selectedDate) {
     venue.schedule = Array.isArray(venue.schedule) ? venue.schedule : [];
-    if (!venue.schedule.length) {
+    const publicDays = publicScheduleDays(venue).filter((day) => publicSlotsForDay(day).length > 0);
+    const photos = venueGalleryPhotos(venue);
+    const galleryButton = `<button type="button" class="venue-gallery-button" data-action="venue-gallery" data-id="${esc(venue.id)}" aria-label="Abrir galeria de fotos">Galeria${photos.length > 1 ? ` · ${photos.length}` : ""}</button>`;
+    const address = venuePublicAddress(venue);
+    if (!publicDays.length) {
       selectedVenueSchedule = { venueId: venue.id, shortDate: "" };
-      return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}"><div class="venue-detail-overlay"><span class="rating-badge">Novo parceiro</span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood || "Localização a completar")}</strong><small>${esc(venue.address || "Endereço a cadastrar")}</small></div></div></div>
+      return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge">${venue.reviews ? `★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small>` : "Novo parceiro"}</span><div><strong>${esc(address)}</strong></div></div></div>
         <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc((venue.types || []).join(" · ") || "A cadastrar")}</span><span><b>Estrutura</b>${esc((venue.amenities || []).join(" · ") || "A cadastrar")}</span></div>
-        <section class="schedule-section">${emptyState("▦", "Este parceiro ainda não publicou horários no marketplace.")}</section>`;
+        <section class="schedule-section">${emptyState("▦", "Não há horários atuais ou futuros publicados para reserva.")}</section>`;
     }
-    const day = venue.schedule.find((item) => item.shortDate === selectedDate) || venue.schedule[0];
+    const day = publicDays.find((item) => item.shortDate === selectedDate) || publicDays[0];
+    const publicSlots = publicSlotsForDay(day);
     selectedVenueSchedule = { venueId: venue.id, shortDate: day.shortDate };
-    return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}"><div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(venue.city)} · ${esc(venue.neighborhood)}</strong><small>${esc(venue.address)} · ${esc(venue.distance)}</small></div></div></div>
+    return `<div class="venue-detail-cover"><img class="venue-detail-image" src="${esc(venue.facadeImage)}" alt="Fachada de ${esc(venue.name)}">${galleryButton}<div class="venue-detail-overlay"><span class="rating-badge" title="Nota calculada pelas avaliações dos usuários">★ ${esc(venue.rating)} <small>${esc(venue.reviews)} avaliações</small></span><div><strong>${esc(address)}</strong></div></div></div>
       <div class="venue-detail-summary"><span><b>Tipos disponíveis</b>${esc(venue.types.join(" · "))}</span><span><b>Estrutura</b>${esc(venue.amenities.join(" · "))}</span></div>
-      <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Deslize a linha de dias para consultar toda a agenda cadastrada.</p></div></div>
-      <div class="schedule-days" aria-label="Dias com agenda disponível">${venue.schedule.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>
-      <div class="schedule-slots">${day.slots.map((slot) => {
+      <section class="schedule-section"><div class="section-heading"><div><h2>Agenda do parceiro</h2><p>Somente o dia atual e as próximas datas ficam disponíveis para novas reservas.</p></div></div>
+      <div class="schedule-days" aria-label="Dias atuais e futuros com agenda">${publicDays.map((item) => `<button type="button" class="schedule-day ${item.shortDate === day.shortDate ? "active" : ""}" data-action="venue-schedule-day" data-id="${esc(venue.id)}" data-date="${esc(item.shortDate)}"><small>${esc(item.weekday)}</small><strong>${esc(item.dayLabel)}</strong></button>`).join("")}</div>
+      <div class="schedule-slots">${publicSlots.map((slot) => {
         const reservation = findReservationForSlot(venue.id, slot.time, day.shortDate, slotEndTime(slot), normalizedSlotSpace(slot));
         const visual = reservation ? reservationStatus(reservation.statusKey) : null;
         const cls = slot.blocked ? "unavailable" : visual?.slot || "available";
@@ -2664,7 +2738,8 @@
     if (!venue) return;
     detailEyebrow.textContent = "Espaço parceiro";
     detailTitle.textContent = venue.name;
-    detailBody.innerHTML = venueScheduleBody(venue, shortDate || venue.schedule?.[0]?.shortDate || "");
+    const firstPublicDay = publicScheduleDays(venue).find((day) => publicSlotsForDay(day).length > 0);
+    detailBody.innerHTML = venueScheduleBody(venue, shortDate || firstPublicDay?.shortDate || "");
     if (!detailDialog.open) {
       detailDialog.showModal();
       focusDialog(detailDialog);
@@ -2819,6 +2894,8 @@
       openReservation(button.dataset.venue, button.dataset.time, button.dataset.date, button.dataset.end || "");
     } else if (action === "venue-details") {
       openVenueSchedule(id);
+    } else if (action === "venue-gallery") {
+      openVenueGallery(id);
     } else if (action === "venue-schedule-day") {
       openVenueSchedule(id, button.dataset.date);
     } else if (action === "reservation-details") {

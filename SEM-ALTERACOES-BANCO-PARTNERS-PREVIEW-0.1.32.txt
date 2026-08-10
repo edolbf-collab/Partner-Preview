@@ -1,0 +1,1 @@
+Partners Preview 0.1.32: nenhuma alteração de banco de dados. A galeria e a filtragem de agenda continuam simuladas/persistidas localmente.

@@ -190,7 +190,7 @@ Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando
 - Dados continuam persistidos somente em `localStorage`; não há backend, autenticação real ou envio externo nesta Preview.
 
 
-## Partners Preview 0.1.31 — cadastro, mídia, chat e filtros
+## Partners Preview 0.1.32 — cadastro, mídia, chat e filtros
 
 - Máscaras obrigatórias de CNPJ e telefone nos principais fluxos cadastrais.
 - Chat ativo da confirmação do pagamento até o término da reserva; após esse horário, histórico em modo leitura.
@@ -198,7 +198,7 @@ Ações da agenda do parceiro compactadas em duas colunas no mobile, preservando
 - Administração > Reservas com filtros combináveis por status, parceiro, usuário e data.
 
 
-## Partners Preview 0.1.31 — dados, chat, fotos, filtros e vouchers
+## Partners Preview 0.1.32 — dados, chat, fotos, filtros e vouchers
 
 - Máscaras obrigatórias para CNPJ e telefone nos fluxos de parceria e cadastro.
 - Chat ativo apenas entre a confirmação financeira e o fim do último horário da reserva; depois, histórico somente leitura.
